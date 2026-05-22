@@ -1,0 +1,102 @@
+sequenceDiagram
+    participant User as 用户
+    participant UI as UI组件
+    participant GS as gameStore
+    participant PS as ProducerSystem
+    participant MS as MultiplierSystem
+    participant PrS as PrestigeSystem
+    participant BN as BigNumber
+    participant FM as Formatter
+    participant SS as saveStore
+    participant DB as database.ts
+
+    rect rgb(30, 30, 50)
+        Note over User,DB: 游戏启动
+        User->>UI: 打开页面
+        UI->>SS: onMounted → loadSave()
+        SS->>DB: getLatestSave()
+        DB-->>SS: SaveData | null
+        alt 存档存在
+            SS->>GS: deserializeAndRestore(data)
+        else 无存档
+            GS->>GS: initNewGame()
+        end
+        GS->>GS: checkUnlocks()
+    end
+
+    rect rgb(20, 50, 20)
+        Note over User,DB: 脉冲点击
+        User->>UI: 点击脉冲按钮
+        UI->>UI: Math.random() < 0.05 ?
+        alt 暴击(5%)
+            UI->>GS: pulseClick(isCrit: true)
+            GS->>BN: baseClickValue.mul(10)
+            GS->>GS: number.add(critValue)
+            UI->>UI: 暴击特效(金色+放大)
+        else 普通(95%)
+            UI->>GS: pulseClick(isCrit: false)
+            GS->>GS: number.add(baseClickValue)
+            UI->>UI: 普通飘字(绿色+1)
+        end
+    end
+
+    rect rgb(50, 30, 20)
+        Note over User,DB: 购买生产者
+        User->>UI: 点击购买生产者
+        UI->>GS: buyProducer(producerId)
+        GS->>PS: calculateCost(config, level)
+        PS->>BN: baseCost * costMultiplier^level
+        BN-->>PS: cost
+        PS-->>GS: cost
+        GS->>GS: number.gte(cost) ?
+        alt 数字充足
+            GS->>GS: number.sub(cost)
+            GS->>GS: producer.level += 1
+            GS->>GS: recalcOutput()
+        else 数字不足
+            GS-->>UI: 购买失败
+        end
+    end
+
+    rect rgb(40, 20, 50)
+        Note over User,DB: 坍缩(Prestige)
+        User->>UI: 点击坍缩按钮
+        UI->>GS: canPrestige()
+        GS->>PrS: canPrestige(state)
+        PrS->>BN: number.gte(1e15)
+        alt 可以坍缩
+            UI->>UI: 显示确认弹窗
+            User->>UI: 确认坍缩
+            UI->>GS: executePrestige()
+            GS->>PrS: calculateStardustGain(number)
+            PrS->>BN: log10(number).mul(0.1).floor()
+            GS->>GS: stardust += gain
+            GS->>GS: 重置 number/producers/upgrades
+            Note over GS: 保留 stardust/stardustUpgrades
+        end
+    end
+
+    rect rgb(20, 40, 50)
+        Note over User,DB: 游戏循环(每50ms)
+        loop GameLoop tick
+            GS->>MS: getGlobalMultiplier()
+            MS-->>GS: globalMult
+            GS->>PS: calculateTotalOutput(state, multiplier)
+            PS-->>GS: totalOutputPerSec
+            GS->>BN: totalOutputPerSec.mul(deltaTime)
+            GS->>GS: number.add(deltaOutput)
+            GS->>GS: totalNumber.add(deltaOutput)
+            GS->>GS: checkUnlocks() / checkEpoch()
+            GS->>FM: format(number)
+            FM-->>UI: 格式化字符串
+        end
+    end
+
+    rect rgb(50, 50, 20)
+        Note over User,DB: 自动存档(每30s)
+        loop AutoSave timer
+            SS->>GS: getSnapshot()
+            GS-->>SS: GameState
+            SS->>DB: save(serialized)
+        end
+    end

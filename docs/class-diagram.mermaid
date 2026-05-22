@@ -1,0 +1,211 @@
+classDiagram
+    direction TB
+
+    class Decimal {
+        <<external>>
+        +from(value) Decimal
+        +add(other) Decimal
+        +sub(other) Decimal
+        +mul(other) Decimal
+        +div(other) Decimal
+        +pow(other) Decimal
+        +log10() Decimal
+        +lt(other) boolean
+        +gte(other) boolean
+        +eq(other) boolean
+        +floor() Decimal
+        +toString() string
+    }
+
+    class BigNumber {
+        -_d: Decimal
+        +static from(val: string|number|Decimal) BigNumber
+        +add(other: BigNumberish) BigNumber
+        +sub(other: BigNumberish) BigNumber
+        +mul(other: BigNumberish) BigNumber
+        +div(other: BigNumberish) BigNumber
+        +pow(other: BigNumberish) BigNumber
+        +log10() BigNumber
+        +lt(other: BigNumberish) boolean
+        +gte(other: BigNumberish) boolean
+        +gteZero() boolean
+        +floor() BigNumber
+        +toDecimal() Decimal
+        +toString() string
+        +static zero() BigNumber
+        +static one() BigNumber
+    }
+
+    class Formatter {
+        +static format(value: BigNumber) string
+        -static formatL1(n: number) string
+        -static formatL2(d: Decimal) string
+        -static formatL3(d: Decimal) string
+        -static formatL4(d: Decimal) string
+        -static formatL5(d: Decimal) string
+        -static getSuffixName(exp: number) string
+    }
+
+    class Serializer {
+        +static serialize(state: GameState) SaveData
+        +static deserialize(data: SaveData) GameState
+        +static decimalToJSON(d: Decimal) DecimalJSON
+        +static jsonToDecimal(json: DecimalJSON) Decimal
+    }
+
+    class ProducerConfig {
+        +id: string
+        +name: string
+        +baseOutput: number
+        +baseCost: number
+        +costMultiplier: number
+        +unlockThreshold: number
+        +unlockName: string
+    }
+
+    class ProducerState {
+        +id: string
+        +level: number
+        +get totalOutput() BigNumber
+    }
+
+    class UpgradeDef {
+        +id: string
+        +name: string
+        +description: string
+        +baseCost: BigNumber
+        +effectType: UpgradeEffectType
+        +effectValue: number
+        +maxLevel: number
+        +unlockCondition: UnlockCondition
+    }
+
+    class UpgradeState {
+        +id: string
+        +level: number
+        +purchased: boolean
+    }
+
+    class StardustUpgradeDef {
+        +id: string
+        +name: string
+        +description: string
+        +stardustCost: number
+        +costScaling: number
+        +effectType: StardustEffectType
+        +effectValue: number
+        +maxLevel: number
+    }
+
+    class StardustUpgradeState {
+        +id: string
+        +level: number
+    }
+
+    class MultiplierEntry {
+        +id: string
+        +source: MultiplierSource
+        +target: string
+        +value: BigNumber
+    }
+
+    class MultiplierSystem {
+        -entries: MultiplierEntry[]
+        +register(entry: MultiplierEntry) void
+        +unregister(id: string) void
+        +getGlobalMultiplier() BigNumber
+        +getProducerMultiplier(producerId: string) BigNumber
+        +getTotalMultiplier(producerId: string) BigNumber
+    }
+
+    class EpochConfig {
+        +id: string
+        +name: string
+        +threshold: BigNumber
+        +narrative: string
+        +visualClass: string
+    }
+
+    class GameState {
+        +number: BigNumber
+        +totalNumber: BigNumber
+        +stardust: number
+        +prestigeCount: number
+        +producers: Map~string, ProducerState~
+        +upgrades: Map~string, UpgradeState~
+        +stardustUpgrades: Map~string, StardustUpgradeState~
+        +currentEpoch: string
+        +unlockedProducers: Set~string~
+        +lastTickTime: number
+        +gameStartTime: number
+    }
+
+    class SaveData {
+        +version: number
+        +timestamp: number
+        +state: SerializedState
+    }
+
+    class SerializedState {
+        +number: string
+        +totalNumber: string
+        +stardust: number
+        +prestigeCount: number
+        +producers: Record~string, number~
+        +upgrades: Record~string, number~
+        +stardustUpgrades: Record~string, number~
+        +currentEpoch: string
+        +unlockedProducers: string[]
+        +lastTickTime: number
+        +gameStartTime: number
+    }
+
+    class GameLoop {
+        -running: boolean
+        -lastTick: number
+        -tickInterval: number
+        -onTick: callback
+        +start() void
+        +stop() void
+        +setTickRate(ms: number) void
+    }
+
+    class ProducerSystem {
+        +buyProducer(id: string, state: GameState) boolean
+        +calculateCost(config: ProducerConfig, level: number) BigNumber
+        +calculateTotalOutput(state: GameState, multiplier: MultiplierSystem) BigNumber
+        +checkUnlocks(state: GameState) string[]
+    }
+
+    class PrestigeSystem {
+        +canPrestige(state: GameState) boolean
+        +calculateStardustGain(number: BigNumber) number
+        +executePrestige(state: GameState) GameState
+    }
+
+    class EpochSystem {
+        +checkEpochTransition(totalNumber: BigNumber) string|null
+        +getCurrentEpoch(totalNumber: BigNumber) EpochConfig
+    }
+
+    class OfflineSystem {
+        +calculateOfflineGain(state: GameState, offlineMs: number) BigNumber
+        +getOfflineEarnings(state: GameState, offlineMs: number) OfflineResult
+    }
+
+    class OfflineResult {
+        +gainedNumber: BigNumber
+        +offlineDuration: number
+        +efficiency: number
+    }
+
+    BigNumber --> Decimal : wraps
+    Serializer --> GameState : serializes
+    Serializer --> SaveData : produces
+    SaveData --> SerializedState : contains
+    ProducerSystem --> ProducerConfig : uses
+    ProducerSystem --> ProducerState : manages
+    PrestigeSystem --> StardustUpgradeState : preserves
+    MultiplierSystem --> MultiplierEntry : aggregates
+    OfflineSystem --> OfflineResult : returns
+    EpochSystem --> EpochConfig : references

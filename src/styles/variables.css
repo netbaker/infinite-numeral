@@ -1,0 +1,44 @@
+:root {
+  /* 语义颜色 */
+  --color-current: #FFFFFF;
+  --color-growth: #4CAF50;
+  --color-cost: #F44336;
+  --color-milestone: #FFD700;
+  --color-prestige: #9C27B0;
+  --color-narrative: #00BCD4;
+
+  /* 背景与表面 */
+  --color-bg: #0a0a1a;
+  --color-surface: #1a1a2e;
+  --color-surface-hover: #252540;
+
+  /* 文字 */
+  --color-text: #e0e0e0;
+  --color-text-dim: #888;
+
+  /* 间距 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+
+  /* 圆角 */
+  --border-radius: 8px;
+}
+
+/* 中等高度屏幕：缩小间距 */
+@media (max-height: 850px) {
+  :root {
+    --spacing-lg: 16px;
+    --spacing-md: 12px;
+  }
+}
+
+/* 低高度屏幕（笔记本 768px 高度附近）：进一步缩小 */
+@media (max-height: 700px) {
+  :root {
+    --spacing-lg: 12px;
+    --spacing-md: 8px;
+    --spacing-sm: 6px;
+  }
+}

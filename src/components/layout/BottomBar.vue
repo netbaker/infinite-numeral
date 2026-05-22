@@ -1,0 +1,138 @@
+<template>
+  <footer class="bottom-bar">
+    <div class="bottom-bar__item">
+      <span class="bottom-bar__label">坍缩</span>
+      <span class="bottom-bar__value bottom-bar__value--prestige">
+        {{ prestigeCount }}
+      </span>
+    </div>
+    <div class="bottom-bar__divider" />
+    <div class="bottom-bar__item">
+      <span class="bottom-bar__label">星尘</span>
+      <span class="bottom-bar__value bottom-bar__value--stardust">
+        ✦ {{ stardust }}
+      </span>
+    </div>
+    <div class="bottom-bar__divider" />
+    <div class="bottom-bar__item" v-if="expansionCount > 0 || darkEnergy > 0">
+      <span class="bottom-bar__label">暗能</span>
+      <span class="bottom-bar__value bottom-bar__value--darkenergy">
+        ◉ {{ darkEnergy }}
+      </span>
+    </div>
+    <div class="bottom-bar__divider" v-if="expansionCount > 0 || darkEnergy > 0" />
+    <div class="bottom-bar__item" v-if="transcendCount > 0 || singularity > 0">
+      <span class="bottom-bar__label">奇点</span>
+      <span class="bottom-bar__value bottom-bar__value--transcend">
+        ◆ {{ singularity }}
+      </span>
+    </div>
+    <div class="bottom-bar__divider" v-if="transcendCount > 0 || singularity > 0" />
+    <div class="bottom-bar__item">
+      <span class="bottom-bar__label">纪元</span>
+      <span class="bottom-bar__value bottom-bar__value--narrative">
+        {{ currentEpochName }}
+      </span>
+    </div>
+    <div class="bottom-bar__divider" />
+    <div class="bottom-bar__item">
+      <span class="bottom-bar__label">存档</span>
+      <span class="bottom-bar__value bottom-bar__value--dim">
+        {{ saveStatusText }}
+      </span>
+    </div>
+    <div class="bottom-bar__divider" />
+    <button class="bottom-bar__settings-btn" @click="$emit('openStats')" title="统计">📊</button>
+    <button class="bottom-bar__settings-btn" @click="$emit('openHelp')" title="帮助">?</button>
+    <button class="bottom-bar__settings-btn" @click="$emit('openSettings')" title="设置">⚙</button>
+  </footer>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue';
+import { useGameStore } from '@/stores/gameStore';
+import { useSaveStore } from '@/stores/saveStore';
+import { EPOCH_CONFIGS } from '@/core/Constants';
+
+const gameStore = useGameStore();
+const saveStore = useSaveStore();
+
+defineEmits<{ openSettings: []; openHelp: []; openStats: [] }>();
+
+const prestigeCount = computed(() => {
+  void gameStore.stateVersion;
+  return gameStore.gameState.prestigeCount;
+});
+
+const stardust = computed(() => {
+  void gameStore.stateVersion;
+  return gameStore.gameState.stardust;
+});
+
+const darkEnergy = computed(() => {
+  void gameStore.stateVersion;
+  return gameStore.gameState.darkEnergy;
+});
+
+const expansionCount = computed(() => {
+  void gameStore.stateVersion;
+  return gameStore.gameState.expansionCount;
+});
+
+const transcendCount = computed(() => {
+  void gameStore.stateVersion;
+  return gameStore.gameState.transcendCount;
+});
+
+const singularity = computed(() => {
+  void gameStore.stateVersion;
+  return gameStore.gameState.singularity;
+});
+
+const currentEpochName = computed(() => {
+  void gameStore.stateVersion;
+  const epoch = EPOCH_CONFIGS.find((e) => e.id === gameStore.gameState.currentEpoch);
+  return epoch ? epoch.name : '未知';
+});
+
+const saveStatusText = computed(() => {
+  if (saveStore.isSaving) return '保存中...';
+  if (saveStore.lastSaveTime === 0) return '未保存';
+  const elapsed = Math.floor((Date.now() - saveStore.lastSaveTime) / 1000);
+  if (elapsed < 60) return `${elapsed}秒前`;
+  const minutes = Math.floor(elapsed / 60);
+  if (minutes < 60) return `${minutes}分钟前`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours}小时前`;
+});
+</script>
+
+<style scoped>
+.bottom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  height: 40px;
+  padding: 0 var(--spacing-lg);
+  background-color: var(--color-surface);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 12px;
+}
+.bottom-bar__item { display: flex; align-items: center; gap: var(--spacing-xs); }
+.bottom-bar__label { color: var(--color-text-dim); }
+.bottom-bar__value { font-weight: 600; }
+.bottom-bar__value--prestige { color: var(--color-prestige); }
+.bottom-bar__value--stardust { color: var(--color-milestone); }
+.bottom-bar__value--darkenergy { color: #00bcd4; }
+.bottom-bar__value--transcend { color: #ffd700; }
+.bottom-bar__value--narrative { color: var(--color-narrative); }
+.bottom-bar__value--dim { color: var(--color-text-dim); }
+.bottom-bar__divider { width: 1px; height: 16px; background-color: rgba(255, 255, 255, 0.1); }
+.bottom-bar__settings-btn {
+  background: none; border: 1px solid rgba(255,255,255,0.1);
+  color: var(--color-text-dim); font-size: 16px; cursor: pointer;
+  padding: 2px 6px; border-radius: 4px; line-height: 1;
+}
+.bottom-bar__settings-btn:hover { color: var(--color-text); border-color: rgba(255,255,255,0.3); }
+</style>
