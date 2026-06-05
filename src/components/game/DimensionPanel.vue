@@ -1,8 +1,8 @@
 <template>
-  <div class="dimension-panel">
+  <div v-if="visible" class="dimension-panel">
     <div class="panel-header">
       <h3>🗐 维度系统</h3>
-      <button class="close-btn" @click="$emit('close')">✕</button>
+      <button class="close-btn" @click="emit('close')">✕</button>
     </div>
 
     <div class="dimension-crystals">
@@ -107,6 +107,10 @@ import { computed } from 'vue';
 import Decimal from 'break_eternity.js';
 import { useGameStore } from '@/stores/gameStore';
 import type { DimensionPanelData, DimensionId } from '@/types/game';
+
+const { visible } = defineProps<{
+  visible: boolean;
+}>();
 
 const emit = defineEmits<{
   (e: 'close'): void;
