@@ -3,8 +3,9 @@ import { ref, markRaw, shallowRef } from 'vue';
 import { BigNumber } from '@/core/BigNumber';
 import { format } from '@/core/Formatter';
 import { deserialize } from '@/core/Serializer';
-import { GameState, type EpochConfig } from '@/types/game';
+import { GameState, type EpochConfig, type DimensionId } from '@/types/game';
 import type { SaveData } from '@/types/save';
+import Decimal from 'break_eternity.js';
 import { ProducerSystem } from '@/systems/ProducerSystem';
 import { MultiplierSystem } from '@/systems/MultiplierSystem';
 import { PrestigeSystem } from '@/systems/PrestigeSystem';
@@ -1306,7 +1307,7 @@ export const useGameStore = defineStore('game', () => {
    */
   function getDimensionPanelData() {
     const state = gameState.value;
-    return dimensionSystem.getPanelData(state);
+    return dimensionSystem.getDimensionPanelData(state);
   }
 
   /**

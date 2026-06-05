@@ -1,5 +1,5 @@
 import Decimal from 'break_eternity.js';
-import type { DimensionId, DimensionDef, DimensionState, GameState } from '@/types/game';
+import type { DimensionId, GameState } from '@/types/game';
 import {
   DIMENSION_DEFS,
   DIMENSION_SWITCH_NARRATIVES,
@@ -245,7 +245,8 @@ export class DimensionSystem {
     // 精通度加速（每20点精通 +10% 资源获取）
     const master = this.getMastery(state, dimId);
     const masterBonus = 1 + Math.floor(master / 20) * 0.1;
-    // 已在乘率中体现，此处仅记录
+    // 应用精通加成到资源获取
+    dimState.resource = dimState.resource.add(baseGain.mul(masterBonus - 1));
   }
 
   // ---- 工具方法 ----
@@ -316,7 +317,7 @@ export class DimensionSystem {
 
     dimState.resource = dimState.resource.sub(cost);
     dimState.crystals += 1;
-    state.dimensionCrystals += 1;
+    state.dimensionCrystals = state.dimensionCrystals.add(1);
     return true;
   }
 
