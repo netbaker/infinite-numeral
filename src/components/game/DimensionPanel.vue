@@ -7,7 +7,7 @@
 
     <div class="dimension-crystals">
       <span class="crystal-icon">💎</span>
-      <span class="crystal-amount">{{ formatDecimal(state.dimensionCrystals) }}</span>
+      <span class="crystal-amount">{{ store.dimensionCrystals }}</span>
       <span class="crystal-label">维度晶体</span>
     </div>
 

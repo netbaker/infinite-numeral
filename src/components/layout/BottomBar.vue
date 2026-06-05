@@ -135,7 +135,7 @@ const rewinds = computed(() => gameStore.gameState.entropyRewinds);
 // ---- 维度系统数据 ----
 const dimensionCrystals = computed<number>(() => {
   void gameStore.stateVersion;
-  return gameStore.gameState.dimensionCrystals || 0;
+  return gameStore.gameState.dimensionCrystals.toNumber() || 0;
 });
 </script>
 

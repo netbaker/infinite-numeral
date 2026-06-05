@@ -38,6 +38,8 @@ import {
   EVENT_POST_NARRATIVES,
   ENTROPY_WARNING_NARRATIVES,
   ENTROPY_RECOVERY_NARRATIVES,
+  DIMENSION_DEFS,
+  DIMENSION_SWITCH_NARRATIVES,
 } from '@/core/Constants';
 
 /**
@@ -567,11 +569,11 @@ export const useGameStore = defineStore('game', () => {
 
     // 9.7 刷新维度系统 UI 状态
     currentDimensionId.value = state.currentDimension;
-    dimensionCrystals.value = state.dimensionCrystals;
+    dimensionCrystals.value = state.dimensionCrystals.toNumber();
     const dimState = state.dimensionStates.get(state.currentDimension);
     if (dimState) {
       currentDimensionMastery.value = dimState.master;
-      currentDimensionResource.value = format(dimState.resource);
+      currentDimensionResource.value = format(BigNumber.from(dimState.resource));
     }
     chaosMultiplier.value = dimensionSystem.getChaosMultiplier(state);
     chaosTimer.value = dimensionSystem.getChaosTimer(state);
@@ -1228,7 +1230,7 @@ export const useGameStore = defineStore('game', () => {
    * @param targetDim 目标维度ID
    * @returns 是否切换成功
    */
-  function switchDimension(targetDim: number): boolean {
+  function switchDimension(targetDim: DimensionId): boolean {
     const state = gameState.value;
     const result = dimensionSystem.switchDimension(state, targetDim);
     
@@ -1243,8 +1245,8 @@ export const useGameStore = defineStore('game', () => {
       currentDimensionId.value = state.currentDimension;
       const dimState = state.dimensionStates.get(state.currentDimension);
       if (dimState) {
-        currentDimensionMastery.value = dimState.mastery;
-        currentDimensionResource.value = format(dimState.resource);
+        currentDimensionMastery.value = dimState.master;
+        currentDimensionResource.value = format(BigNumber.from(dimState.resource));
       }
       
       bumpVersion();
@@ -1258,7 +1260,7 @@ export const useGameStore = defineStore('game', () => {
    * @param dimId 维度ID
    * @returns 是否解锁成功
    */
-  function unlockDimension(dimId: number): boolean {
+  function unlockDimension(dimId: DimensionId): boolean {
     const state = gameState.value;
     const result = dimensionSystem.unlockDimension(state, dimId);
     
@@ -1287,13 +1289,13 @@ export const useGameStore = defineStore('game', () => {
     
     // 扣除资源并合成晶体
     dimState.resource = dimState.resource.sub(cost);
-    state.dimensionCrystals += 1;
+    state.dimensionCrystals = state.dimensionCrystals.add(1);
     
     showNarration([`💎 合成成功！获得 1 个维度晶体`], 3000);
     
     // 更新 UI 状态
-    dimensionCrystals.value = state.dimensionCrystals;
-    currentDimensionResource.value = format(dimState.resource);
+    dimensionCrystals.value = state.dimensionCrystals.toNumber();
+    currentDimensionResource.value = format(BigNumber.from(dimState.resource));
     
     bumpVersion();
     return true;
