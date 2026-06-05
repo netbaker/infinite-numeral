@@ -120,6 +120,32 @@ export class PrestigeSystem {
     newState.totalClicks = state.totalClicks;
     newState.totalManualEarnings = state.totalManualEarnings;
 
+    // --- 新字段：Prestige(星尘)策略 ---
+    // 因子：保留已发现因子（永久进度），但重置量级检测
+    newState.lastMagnitude = -1;
+    newState.factors = new Map(state.factors);
+
+    // 挑战：每日/里程碑保留，计时挑战重置进度
+    for (const [id, cs] of state.challenges) {
+      const cloned = { ...cs };
+      // 计时挑战重置进度
+      if (cs.id.startsWith('ch_timed_')) {
+        cloned.progress = 0;
+        cloned.completed = false;
+        cloned.remainingTime = undefined;
+        cloned.startedAt = undefined;
+      }
+      newState.challenges.set(id, cloned);
+    }
+    newState.completedMilestones = new Set(state.completedMilestones);
+    newState.lastTimedChallengeTime = 0;
+
+    // 清除事件状态
+    newState.activeEvent = null;
+    newState.eventCooldown = 0;
+    newState.ongoingEffects = [];
+    newState.timeSpeedMultiplier = 1;
+
     // 重置 lastTickTime 为当前时间
     newState.lastTickTime = Date.now();
 

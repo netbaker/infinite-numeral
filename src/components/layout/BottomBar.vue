@@ -42,7 +42,23 @@
       </span>
     </div>
     <div class="bottom-bar__divider" />
+    <!-- 熵值进度条 -->
+    <EntropyBar
+      :entropy="entropy"
+      :stabilizers="stabilizers"
+      :rewinds="rewinds"
+      @open-details="$emit('openStats')"
+      @use-stabilizer="$emit('useStabilizer')"
+      @use-rewind="$emit('useRewind')"
+    />
+    <div class="bottom-bar__divider" />
+    <button class="bottom-bar__settings-btn bottom-bar__settings-btn--dimension" @click="$emit('openDimension')" title="维度系统">
+      🗺️
+      <span v-if="dimensionCrystals > 0" class="dimension-badge">{{ dimensionCrystals }}</span>
+    </button>
     <button class="bottom-bar__settings-btn" @click="$emit('openStats')" title="统计">📊</button>
+    <button class="bottom-bar__settings-btn" @click="$emit('openAchievements')" title="成就">🏆</button>
+    <button class="bottom-bar__settings-btn bottom-bar__settings-btn--challenge" @click="$emit('openChallenge')" title="挑战任务">⚔️</button>
     <button class="bottom-bar__settings-btn" @click="$emit('openHelp')" title="帮助">?</button>
     <button class="bottom-bar__settings-btn" @click="$emit('openSettings')" title="设置">⚙</button>
   </footer>
@@ -53,11 +69,15 @@ import { computed } from 'vue';
 import { useGameStore } from '@/stores/gameStore';
 import { useSaveStore } from '@/stores/saveStore';
 import { EPOCH_CONFIGS } from '@/core/Constants';
+import EntropyBar from '@/components/game/EntropyBar.vue';
 
 const gameStore = useGameStore();
 const saveStore = useSaveStore();
 
-defineEmits<{ openSettings: []; openHelp: []; openStats: [] }>();
+defineEmits<{
+  openSettings: []; openHelp: []; openStats: []; openAchievements: []; openChallenge: [];
+  useStabilizer: []; useRewind: [];
+}>();
 
 const prestigeCount = computed(() => {
   void gameStore.stateVersion;
@@ -105,6 +125,17 @@ const saveStatusText = computed(() => {
   const hours = Math.floor(minutes / 60);
   return `${hours}小时前`;
 });
+
+// ---- 熵崩系统数据 ----
+const entropy = computed(() => gameStore.entropyDisplayPercent || gameStore.gameState.entropy);
+const stabilizers = computed(() => gameStore.gameState.entropyStabilizers);
+const rewinds = computed(() => gameStore.gameState.entropyRewinds);
+
+// ---- 维度系统数据 ----
+const dimensionCrystals = computed(() => {
+  void gameStore.stateVersion;
+  return gameStore.gameState.dimensionCrystals || 0;
+});
 </script>
 
 <style scoped>
@@ -135,4 +166,22 @@ const saveStatusText = computed(() => {
   padding: 2px 6px; border-radius: 4px; line-height: 1;
 }
 .bottom-bar__settings-btn:hover { color: var(--color-text); border-color: rgba(255,255,255,0.3); }
+
+/* ---- 移动端适配 ---- */
+@media (max-width: 767px) {
+  .bottom-bar {
+    height: auto;
+    min-height: 36px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px 6px;
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  .bottom-bar__divider { height: 10px; }
+  .bottom-bar__settings-btn {
+    padding: 1px 4px;
+    font-size: 13px;
+  }
+}
 </style>

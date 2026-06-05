@@ -1,5 +1,5 @@
 import { BigNumber } from '@/core/BigNumber';
-import { UPGRADE_DEFS, STARDUST_UPGRADE_DEFS, TECH_TREE_DEFS, EXPANSION_UPGRADE_DEFS, TRANSCEND_UPGRADE_DEFS, TRANSCEND_MILESTONE_DEFS } from '@/core/Constants';
+import { UPGRADE_DEFS, STARDUST_UPGRADE_DEFS, TECH_TREE_DEFS, EXPANSION_UPGRADE_DEFS, TRANSCEND_UPGRADE_DEFS, TRANSCEND_MILESTONE_DEFS, FACTOR_DEFS } from '@/core/Constants';
 import type { MultiplierEntry, GameState } from '@/types/game';
 
 /**
@@ -246,6 +246,40 @@ export class MultiplierSystem {
         });
       }
     }
+
+    // 数字分解因子加成
+    if (state.factors) {
+      for (const fDef of FACTOR_DEFS) {
+        const fState = state.factors.get(fDef.id);
+        if (!fState || !fState.active) continue;
+
+        // 效果值 = baseEffect + effectPerLevel * (level - 1)
+        const effectValue = fDef.baseEffect + fDef.effectPerLevel * (fState.level - 1);
+        if (effectValue <= 0) continue;
+
+        let target = '';
+        switch (fDef.effectType) {
+          case 'global_multiplier':
+          case 'click_multiplier':
+            target = '';
+            break;
+          case 'cost_discount':
+            continue; // 因子折扣不产生倍增器条目
+          case 'producer_multiplier':
+            target = 'all_producers';
+            break;
+          default:
+            continue;
+        }
+
+        this.register({
+          id: `factor_${fDef.id}`,
+          source: 'factor',
+          target,
+          value: 1 + effectValue,
+        });
+      }
+    }
   }
 
   /**
@@ -287,6 +321,29 @@ export class MultiplierSystem {
     }
 
     // 上限50%
+    return Math.min(totalDiscount, 0.5);
+  }
+
+  /**
+   * 获取含因子的总折扣百分比
+   *
+   * @param state 当前游戏状态
+   * @returns 折扣百分比（0-1）
+   */
+  getTotalCostDiscount(state: GameState): number {
+    let totalDiscount = this.getCostDiscountPercent(state);
+
+    // 因子系统提供的 cost_discount
+    if (state.factors) {
+      for (const fDef of FACTOR_DEFS) {
+        if (fDef.effectType !== 'cost_discount') continue;
+        const fState = state.factors.get(fDef.id);
+        if (!fState || !fState.active) continue;
+        const effectValue = fDef.baseEffect + fDef.effectPerLevel * (fState.level - 1);
+        totalDiscount += effectValue;
+      }
+    }
+
     return Math.min(totalDiscount, 0.5);
   }
 }

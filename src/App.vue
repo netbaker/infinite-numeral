@@ -47,17 +47,71 @@
       </div>
     </main>
 
+    <!-- 持续效果指示器（在底栏上方） -->
+    <EffectIndicator
+      v-if="gameStore.activeEffects.length > 0"
+      :effects="gameStore.activeEffects"
+    />
+
+    <!-- 任务徽章（悬浮按钮） -->
+    <TaskBadge
+      :unclaimed-count="unclaimedCount"
+      @open="showChallenge = true"
+    />
+
     <!-- 底栏 -->
-    <BottomBar @open-settings="showSettings = true" @open-help="showHelp = true" @open-stats="showStats = true" />
+    <BottomBar
+      @open-settings="showSettings = true"
+      @open-help="showHelp = true"
+      @open-stats="showStats = true"
+      @open-achievements="showAchievements = true"
+      @open-challenge="showChallenge = true"
+      @open-dimension="showDimension = true"
+      @use-stabilizer="gameStore.useEntropyStabilizer()"
+      @use-rewind="gameStore.useEntropyRewind()"
+    />
 
     <!-- 弹窗 -->
     <OfflineRewardModal />
     <NarrationToast />
+    <AchievementToast />
     <HelpModal :visible="showHelp" @close="showHelp = false" />
     <StatsModal :visible="showStats" @close="showStats = false" />
+    <AchievementsModal :visible="showAchievements" @close="showAchievements = false" />
     <SettingsModal
       :visible="showSettings"
       @close="showSettings = false"
+    />
+
+    <!-- 事件弹窗 -->
+    <EventModal
+      :visible="!!gameStore.activeEventDef"
+      :event-def="gameStore.activeEventDef?.def ?? null"
+      :countdown="gameStore.eventCountdown"
+      @choose="gameStore.makeEventChoice"
+      @timeout="gameStore.dismissEvent"
+    />
+
+    <!-- 挑战任务面板 -->
+    <ChallengePanel
+      :visible="showChallenge"
+      :daily-challenges="challengeData.daily"
+      :timed-challenges="challengeData.timed"
+      :milestone-challenges="challengeData.milestone"
+      :daily-stats="dailyStats"
+      :unclaimed-count="unclaimedCount"
+      @close="showChallenge = false"
+      @claim="(id) => gameStore.claimChallengeReward(id)"
+      @start-timed="(id) => gameStore.startTimedChallenge(id)"
+    />
+
+    <!-- 维度面板 -->
+    <DimensionPanel
+      :visible="showDimension"
+      @close="showDimension = false"
+      @switch="(id) => gameStore.switchDimension(id)"
+      @unlock="(id) => gameStore.unlockDimension(id)"
+      @synthesize="gameStore.synthesizeCrystal()"
     />
   </div>
 </template>
@@ -76,9 +130,16 @@ import RightPanel from '@/components/layout/RightPanel.vue';
 import BottomBar from '@/components/layout/BottomBar.vue';
 import OfflineRewardModal from '@/components/modals/OfflineRewardModal.vue';
 import NarrationToast from '@/components/feedback/NarrationToast.vue';
+import AchievementToast from '@/components/feedback/AchievementToast.vue';
+import AchievementsModal from '@/components/modals/AchievementsModal.vue';
 import HelpModal from '@/components/modals/HelpModal.vue';
 import StatsModal from '@/components/modals/StatsModal.vue';
 import SettingsModal from '@/components/modals/SettingsModal.vue';
+import EventModal from '@/components/modals/EventModal.vue';
+import EffectIndicator from '@/components/game/EffectIndicator.vue';
+import ChallengePanel from '@/components/modals/ChallengePanel.vue';
+import TaskBadge from '@/components/game/TaskBadge.vue';
+import DimensionPanel from '@/components/game/DimensionPanel.vue';
 
 const gameStore = useGameStore();
 useOffline();
@@ -103,6 +164,29 @@ const epochClass = computed(() => {
 const showSettings = ref(false);
 const showHelp = ref(false);
 const showStats = ref(false);
+const showAchievements = ref(false);
+const showChallenge = ref(false);
+const showDimension = ref(false);
+
+// 挑战面板数据
+const challengeData = computed(() => {
+  const data = gameStore.getChallengePanelData();
+  return {
+    daily: data.filter(c => c.def.category === 'daily').map(c => ({
+      def: c.def, state: c.state, progressPercent: c.progressPercent,
+    })),
+    timed: data.filter(c => c.def.category === 'timed').map(c => ({
+      def: c.def, state: c.state, progressPercent: c.progressPercent,
+      isActive: c.isActive, isExpired: c.isExpired, canStart: c.canStart,
+      remainingFormat: c.remainingFormatted,
+    })),
+    milestone: data.filter(c => c.def.category === 'milestone').map(c => ({
+      def: c.def, state: c.state, progressPercent: c.progressPercent,
+    })),
+  };
+});
+const dailyStats = computed(() => gameStore.challengeSystem.getDailyStats(gameStore.gameState));
+const unclaimedCount = computed(() => gameStore.getChallengeUnclaimedCount());
 
 // PWA 安装提示
 const showInstallBanner = ref(false);

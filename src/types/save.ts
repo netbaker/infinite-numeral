@@ -46,6 +46,22 @@ export interface SerializedState {
   totalClicks: number;
   /** 总计手动点击收益（字符串表示） */
   totalManualEarnings: string;
+  /** 成就解锁状态（id→unlockedAt timestamp，未解锁则不存在） */
+  achievements?: Record<string, number>;
+  /** 上次量级（因子系统用，-1表示未初始化） */
+  lastMagnitude: number;
+  /** 因子状态（id→{level, active}） */
+  factors?: Record<string, { level: number; active: boolean }>;
+  /** 挑战状态（id→{progress, completed, claimed}） */
+  challenges?: Record<string, { progress: number; completed: boolean; claimed: boolean }>;
+  /** 已完成的里程碑ID列表 */
+  completedMilestones?: string[];
+  /** 上次计时挑战时间戳(ms) */
+  lastTimedChallengeTime: number;
+  /** 事件冷却剩余秒数 */
+  eventCooldown: number;
+  /** 时间速度倍率 */
+  timeSpeedMultiplier: number;
 }
 
 /**

@@ -105,6 +105,30 @@ export class TranscendSystem {
     newState.totalClicks = state.totalClicks;
     newState.totalManualEarnings = state.totalManualEarnings;
 
+    // --- 新字段：Transcend(奇点)策略（最激进重置） ---
+    // 因子：全部重置（超越后重新发现）
+    newState.lastMagnitude = -1;
+    // factors 留空 Map（new GameState() 已初始化）
+
+    // 挑战：全部重置
+    // daily 保留进度但标记未完成，timed/milestone 全清
+    for (const [id, cs] of state.challenges) {
+      if (id.startsWith('ch_daily_')) {
+        // 每日任务保留 progress 但重置完成状态
+        newState.challenges.set(id, { id, progress: cs.progress, completed: false, claimed: false });
+      }
+      // timed 和 milestone 不复制 → 自然丢失
+    }
+    // completedMilestones 清空
+    // （new GameState() 已初始化为空 Set）
+    newState.lastTimedChallengeTime = 0;
+
+    // 清除事件状态
+    newState.activeEvent = null;
+    newState.eventCooldown = 0;
+    newState.ongoingEffects = [];
+    newState.timeSpeedMultiplier = 1;
+
     return newState;
   }
 }

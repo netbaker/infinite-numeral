@@ -9,10 +9,16 @@ import { ProducerSystem } from '@/systems/ProducerSystem';
 import { MultiplierSystem } from '@/systems/MultiplierSystem';
 import { PrestigeSystem } from '@/systems/PrestigeSystem';
 import { ExpansionSystem } from '@/systems/ExpansionSystem';
-import { TranscendSystem, getTranscendNarrative } from '@/systems/TranscendSystem';
+import { TranscendSystem } from '@/systems/TranscendSystem';
 import { TechTreeSystem } from '@/systems/TechTreeSystem';
 import { EpochSystem } from '@/systems/EpochSystem';
 import { MilestoneSystem } from '@/systems/MilestoneSystem';
+import { AchievementSystem } from '@/systems/AchievementSystem';
+import { FactorSystem } from '@/systems/FactorSystem';
+import { EventSystem } from '@/systems/EventSystem';
+import { ChallengeSystem } from '@/systems/ChallengeSystem';
+import { EntropySystem } from '@/systems/EntropySystem';
+import { DimensionSystem } from '@/systems/DimensionSystem';
 import {
   PRODUCER_CONFIGS,
   UPGRADE_DEFS,
@@ -24,6 +30,14 @@ import {
   CRIT_CHANCE,
   CRIT_MULTIPLIER,
   BASE_CLICK_VALUE,
+  PRESTIGE_NARRATIVES,
+  EXPANSION_NARRATIVES,
+  TRANSCEND_NARRATIVES,
+  PRODUCER_UNLOCK_NARRATIVES,
+  NUMBER_MILESTONE_NARRATIVES,
+  EVENT_POST_NARRATIVES,
+  ENTROPY_WARNING_NARRATIVES,
+  ENTROPY_RECOVERY_NARRATIVES,
 } from '@/core/Constants';
 
 /**
@@ -45,6 +59,12 @@ export const useGameStore = defineStore('game', () => {
   const techTreeSystem = new TechTreeSystem();
   const epochSystem = new EpochSystem();
   const milestoneSystem = new MilestoneSystem();
+  const achievementSystem = new AchievementSystem();
+  const factorSystem = new FactorSystem();
+  const eventSystem = new EventSystem();
+  const challengeSystem = new ChallengeSystem();
+  const entropySystem = new EntropySystem();
+  const dimensionSystem = new DimensionSystem();
 
   // ============================================================
   // State — Decimal 字段用 markRaw 包裹以避免 Vue proxy
@@ -68,13 +88,97 @@ export const useGameStore = defineStore('game', () => {
   /** 叙事消息（Toast显示） */
   const narrationMessage = ref<string>('');
 
+  /** 成就 Toast 队列（待显示的成就定义） */
+  const achievementQueue = ref<Array<{ id: string; name: string; description: string; icon: string }>>([]);
+
+  /** 当前正在显示的成就 Toast */
+  const currentAchievement = ref<{ id: string; name: string; description: string; icon: string } | null>(null);
+
   /** 游戏是否运行中 */
   const isRunning = ref<boolean>(false);
+
+  // ---- 事件系统 UI 状态 ----
+  /** 当前需要弹窗显示的事件定义 */
+  const activeEventDef = ref<{ def: import('@/types/game').EventDef; triggeredAt: number } | null>(null);
+  /** 是否有活跃事件等待玩家选择 */
+  const hasActiveEvent = () => activeEventDef.value !== null;
+  /** 事件选择倒计时（非重大事件的自动超时） */
+  const eventCountdown = ref<number>(0);
+  /** 当前所有持续效果（供 EffectIndicator 使用） */
+  const activeEffects = ref<Array<{
+    id: string;
+    sourceEventId: string;
+    icon: string;
+    name: string;
+    summary: string;
+    remainingSeconds: number;
+    effects: import('@/types/game').EventEffect[];
+  }>>([]);
+  /** 事件倒计时 timer handle */
+  let eventCountdownTimer: ReturnType<typeof setInterval> | null = null;
+
+  // ---- 熵崩系统 UI 状态 ----
+  /** 当前熵值 (0-100) */
+  const entropyValue = ref<number>(0);
+  /** 熵值崩溃等级 */
+  const entropyLevel = ref<'stable' | 'unstable' | 'critical' | 'collapsed'>('stable');
+  /** 熵值显示百分比整数 */
+  const entropyDisplayPercent = ref<number>(0);
+  /** 是否建议立即 Prestige */
+  const suggestPrestige = ref<boolean>(false);
+
+  // ---- 维度系统 UI 状态 ----
+  /** 当前维度ID */
+  const currentDimensionId = ref<number>(0);
+  /** 维度晶体数量 */
+  const dimensionCrystals = ref<number>(0);
+  /** 维度面板是否打开 */
+  const isDimensionPanelOpen = ref<boolean>(false);
+  /** 当前维度的精通度 */
+  const currentDimensionMastery = ref<number>(0);
+  /** 当前维度的资源 */
+  const currentDimensionResource = ref<string>('0');
+  /** 混沌倍率（仅混沌维度） */
+  const chaosMultiplier = ref<number>(1);
+  /** 混沌倍率倒计时 */
+  const chaosTimer = ref<number>(0);
+  /** 是否正在临界爆发（仅奇点维度） */
+  const isSingularityBursting = ref<boolean>(false);
 
   /** 注入状态变更信号 */
   function bumpVersion(): void {
     stateVersion.value++;
   }
+
+  /** 随机取池中一条叙事，显示 duration ms */
+  function showNarration(pool: string[], duration = 4000): void {
+    const text = pool[Math.floor(Math.random() * pool.length)];
+    narrationMessage.value = text;
+    setTimeout(() => { narrationMessage.value = ''; }, duration);
+  }
+
+  /** 推入成就并驱动队列显示 */
+  function pushAchievement(def: { id: string; name: string; description: string; icon: string }): void {
+    achievementQueue.value.push(def);
+    if (!currentAchievement.value) {
+      drainAchievementQueue();
+    }
+  }
+
+  function drainAchievementQueue(): void {
+    if (achievementQueue.value.length === 0) {
+      currentAchievement.value = null;
+      return;
+    }
+    currentAchievement.value = achievementQueue.value.shift()!;
+    setTimeout(() => {
+      currentAchievement.value = null;
+      drainAchievementQueue();
+    }, 3500);
+  }
+
+  /** 已触发过的数字里程碑（防止重复弹出） */
+  const triggeredNumberMilestones = new Set<string>();
 
   // ============================================================
   // Getters
@@ -207,6 +311,28 @@ export const useGameStore = defineStore('game', () => {
     state.lastTickTime = Date.now();
     state.gameStartTime = Date.now();
 
+    // 初始化成就
+    achievementSystem.initAchievements(state);
+
+    // 初始化数字分解系统
+    factorSystem.initFactors(state);
+
+    // 初始化事件系统字段
+    state._lastEventTick = Date.now();
+    state.eventCooldown = 0;
+    state.activeEvent = null;
+    state.ongoingEffects = [];
+    state.timeSpeedMultiplier = 1;
+
+    // 初始化挑战系统
+    challengeSystem.initialize(state);
+
+    // 初始化熵崩系统
+    entropySystem.initialize(state);
+
+    // 初始化维度系统
+    dimensionSystem.initialize(state);
+
     // 初始化倍增器
     multiplierSystem.recalculateFromState(state);
 
@@ -256,6 +382,28 @@ export const useGameStore = defineStore('game', () => {
       }
     }
 
+    // 补全成就状态（兼容旧存档）
+    achievementSystem.initAchievements(state);
+
+    // 补全因子状态（兼容旧存档）
+    factorSystem.initFactors(state);
+
+    // 补全事件系统字段（兼容旧存档）
+    if (!state._lastEventTick) state._lastEventTick = Date.now();
+    if (state.eventCooldown === undefined) state.eventCooldown = 0;
+    if (state.activeEvent === undefined) state.activeEvent = null;
+    if (!state.ongoingEffects) state.ongoingEffects = [];
+    if (state.timeSpeedMultiplier === undefined) state.timeSpeedMultiplier = 1;
+
+    // 补全挑战系统状态（兼容旧存档）
+    challengeSystem.initialize(state);
+
+    // 补全熵崩系统状态（兼容旧存档）
+    entropySystem.initialize(state);
+
+    // 补全维度系统状态（兼容旧存档）
+    dimensionSystem.initialize(state);
+
     // 重新计算倍增器
     multiplierSystem.recalculateFromState(state);
 
@@ -279,12 +427,63 @@ export const useGameStore = defineStore('game', () => {
    */
   function gameTick(deltaTime: number): void {
     const state = gameState.value;
+    const now = Date.now();
 
-    // 1. 计算总产出/秒
-    const outputPerSec = producerSystem.calculateTotalOutput(state, multiplierSystem);
+    // 0. 事件系统 tick（清理过期效果 + 尝试触发新事件）
+    const hasNewEvent = eventSystem.tick(state, now);
+    if (hasNewEvent && eventSystem.newEvent) {
+      // 有新事件需要弹窗 → 设置 UI 状态
+      const def = eventSystem.newEvent;
+      activeEventDef.value = { def, triggeredAt: now };
+      // 非重大事件启动倒计时
+      if (!def.isMajor) {
+        eventCountdown.value = 60;
+        startEventCountdown();
+      } else {
+        eventCountdown.value = 0;
+      }
+    }
 
-    // 2. 计算增量 = outputPerSec × (deltaTime / 1000)
-    const deltaSec = deltaTime / 1000;
+    // ---- 预计算产出（用于熵值增长计算）----
+    const rawOutputPerSec = producerSystem.calculateTotalOutput(state, multiplierSystem);
+
+    // 0.25 熵崩系统 tick（熵值增长 + 崩溃检测）
+    const entropyChanged = entropySystem.tick(state, deltaTime, rawOutputPerSec);
+    if (entropyChanged) {
+      // 熵崩触发 → 全屏叙事
+      if (entropySystem.collapsedThisTick && entropySystem.collapseNarration) {
+        showNarration([entropySystem.collapseNarration], 5000);
+      }
+      // 等级变化预警
+      if (entropySystem.warningLevel) {
+        const warnText = ENTROPY_WARNING_NARRATIVES[entropySystem.warningLevel];
+        if (warnText) showNarration([warnText], 4000);
+      }
+    }
+
+    // 0.3 维度系统 tick（精通度增长 + 混沌倍率重投 + 临界爆发检测）
+    dimensionSystem.tickMastery(state, deltaTime, rawOutputPerSec);
+    dimensionSystem.checkChaosMultiplier(state);
+    dimensionSystem.checkSingularityBurst(state);
+
+    // 0.5 挑战系统 tick（每日重置 + 限时挑战计时 + 进度检测）
+    const effectiveDeltaSec = (deltaTime * (state.timeSpeedMultiplier || 1)) / 1000;
+    challengeSystem.tick(state, now, effectiveDeltaSec);
+    if (challengeSystem.newlyCompleted.length > 0) {
+      for (const cid of challengeSystem.newlyCompleted) {
+        showNarration([`⚔️ 挑战完成: ${cid}！`]);
+      }
+    }
+
+    // 应用时间加速（事件系统 speed_change 效果）
+    const effectiveDelta = deltaTime * (state.timeSpeedMultiplier || 1);
+
+    // 1. 计算总产出/秒（应用熵值惩罚）
+    const entropyMult = entropySystem.getProductionMultiplier(state.entropy);
+    const outputPerSec = rawOutputPerSec.mul(entropyMult);
+
+    // 2. 计算增量 = outputPerSec × (effectiveDelta / 1000)
+    const deltaSec = effectiveDelta / 1000;
     const increment = outputPerSec.mul(deltaSec);
 
     // 3. 更新 number 和 totalNumber
@@ -295,6 +494,19 @@ export const useGameStore = defineStore('game', () => {
     const newUnlocks = producerSystem.checkUnlocks(state);
     for (const id of newUnlocks) {
       state.unlockedProducers.add(id);
+      // 生产者首次解锁叙事
+      const narrative = PRODUCER_UNLOCK_NARRATIVES[id];
+      if (narrative) {
+        narrationMessage.value = narrative;
+        setTimeout(() => { narrationMessage.value = ''; }, 4000);
+      }
+    }
+
+    // 4.5 数字分解检测（量级变化时触发）
+    const triggeredFactors = factorSystem.tick(state);
+    if (triggeredFactors.length > 0) {
+      // 新发现的因子 → 重算倍增器
+      multiplierSystem.recalculateFromState(state);
     }
 
     // 5. 检查纪元切换
@@ -319,8 +531,51 @@ export const useGameStore = defineStore('game', () => {
     // 6. 更新显示字符串
     updateDisplayStrings(state);
 
+    // 7. 检查成就
+    const newAchievements = achievementSystem.checkAchievements(state);
+    for (const def of newAchievements) {
+      const achState = state.achievements.get(def.id);
+      if (achState) {
+        achState.unlocked = true;
+        achState.unlockedAt = Date.now();
+      }
+      pushAchievement({ id: def.id, name: def.name, description: def.description, icon: def.icon });
+    }
+
+    // 8. 数字里程碑叙事（仅在无活跃叙事时触发）
+    if (!narrationMessage.value) {
+      const logE = Math.floor(Math.log10(BigNumber.from(state.number).toDecimal().toNumber() || 1));
+      const key = String(logE);
+      if (NUMBER_MILESTONE_NARRATIVES[key] && !triggeredNumberMilestones.has(key)) {
+        triggeredNumberMilestones.add(key);
+        narrationMessage.value = NUMBER_MILESTONE_NARRATIVES[key];
+        setTimeout(() => { narrationMessage.value = ''; }, 4000);
+      }
+    }
+
     // 更新 lastTickTime
     state.lastTickTime = Date.now();
+
+    // 9. 刷新持续效果列表（供 EffectIndicator 实时显示）
+    activeEffects.value = eventSystem.getActiveEffects(state, Date.now());
+
+    // 9.5 刷新熵值 UI 状态
+    entropyValue.value = state.entropy;
+    entropyLevel.value = entropySystem.getCollapseLevel(state.entropy);
+    entropyDisplayPercent.value = entropySystem.getDisplayPercent(state.entropy);
+    suggestPrestige.value = entropySystem.shouldSuggestPrestige(state);
+
+    // 9.7 刷新维度系统 UI 状态
+    currentDimensionId.value = state.currentDimension;
+    dimensionCrystals.value = state.dimensionCrystals;
+    const dimState = state.dimensionStates.get(state.currentDimension);
+    if (dimState) {
+      currentDimensionMastery.value = dimState.mastery;
+      currentDimensionResource.value = format(dimState.resource);
+    }
+    chaosMultiplier.value = dimensionSystem.getChaosMultiplier(state);
+    chaosTimer.value = dimensionSystem.getChaosTimer(state);
+    isSingularityBursting.value = dimensionSystem.isBursting(state);
 
     bumpVersion();
   }
@@ -365,6 +620,8 @@ export const useGameStore = defineStore('game', () => {
     state.number = BigNumber.from(state.number).add(clickValue).toDecimal();
     state.totalNumber = BigNumber.from(state.totalNumber).add(clickValue).toDecimal();
     state.totalClicks += 1;
+    // 挑战：记录点击
+    challengeSystem.recordClick(state);
     state.totalManualEarnings = state.totalManualEarnings.add(clickValue.toDecimal());
 
     updateDisplayStrings(state);
@@ -402,6 +659,13 @@ export const useGameStore = defineStore('game', () => {
     const result = producerSystem.buyProducerBulk(id, state, quantity, discountPercent);
 
     if (result.success) {
+      // 大倍率购买增加额外熵值
+      if (quantity >= 10) {
+        const penalty = entropySystem.calculateBulkPenalty(quantity);
+        if (penalty > 0) {
+          entropySystem.addEntropy(state, penalty);
+        }
+      }
       updateDisplayStrings(state);
       bumpVersion();
     }
@@ -522,11 +786,23 @@ export const useGameStore = defineStore('game', () => {
 
     const newState = prestigeSystem.executePrestige(gameState.value);
 
+    // 熵崩系统：Prestige 完全重置熵值
+    if (newState.entropy > 0) {
+      entropySystem.resetOnPrestige(newState);
+      // Prestige 后显示恢复叙事
+      showNarration(ENTROPY_RECOVERY_NARRATIVES, 3000);
+    }
+
+    // 挑战：记录坍缩
+    challengeSystem.recordPrestige(newState);
+
     // 重新计算倍增器
     multiplierSystem.recalculateFromState(newState);
 
     gameState.value = markRaw(newState);
     updateDisplayStrings(newState);
+    // 坍缩叙事
+    showNarration(PRESTIGE_NARRATIVES);
     bumpVersion();
   }
 
@@ -570,11 +846,21 @@ export const useGameStore = defineStore('game', () => {
 
     const newState = expansionSystem.executeExpansion(gameState.value);
 
+    // 熵崩系统：Expansion 完全重置熵值
+    if (newState.entropy > 0) {
+      entropySystem.resetOnExpansion(newState);
+    }
+
+    // 挑战：记录膨胀
+    challengeSystem.recordExpansion(newState);
+
     // 重新计算倍增器
     multiplierSystem.recalculateFromState(newState);
 
     gameState.value = markRaw(newState);
     updateDisplayStrings(newState);
+    // 膨胀叙事
+    showNarration(EXPANSION_NARRATIVES);
     bumpVersion();
   }
 
@@ -588,6 +874,9 @@ export const useGameStore = defineStore('game', () => {
 
     const newState = transcendSystem.executeTranscend(gameState.value);
 
+    // 挑战：记录超越
+    challengeSystem.recordTranscend(newState);
+
     // 检查里程碑
     const milestoneResult = milestoneSystem.checkMilestones(newState);
     for (const m of milestoneResult.newlyUnlocked) {
@@ -600,10 +889,8 @@ export const useGameStore = defineStore('game', () => {
     gameState.value = markRaw(newState);
     updateDisplayStrings(newState);
 
-    // 动态叙事
-    const narrative = getTranscendNarrative(newState.transcendCount);
-    narrationMessage.value = narrative;
-    setTimeout(() => { narrationMessage.value = ''; }, 4000);
+    // 超越叙事（随机池）
+    showNarration(TRANSCEND_NARRATIVES, 5000);
 
     bumpVersion();
   }
@@ -689,6 +976,36 @@ export const useGameStore = defineStore('game', () => {
     return def.deCost * Math.pow(def.costScaling, level);
   }
 
+  // ---- 熵崩系统公开方法 ----
+
+  /**
+   * 使用熵稳定剂
+   * @returns 是否成功使用
+   */
+  function useEntropyStabilizer(): boolean {
+    const state = gameState.value;
+    if (state.stardust < 50) return false;
+    state.stardust -= 50;
+    const ok = entropySystem.applyStabilizer(state);
+    if (ok) showNarration(ENTROPY_RECOVERY_NARRATIVES, 2500);
+    bumpVersion();
+    return ok;
+  }
+
+  /**
+   * 使用时间回溯
+   * @returns 是否成功使用
+   */
+  function useEntropyRewind(): boolean {
+    const state = gameState.value;
+    if (state.stardust < 120) return false;
+    state.stardust -= 120;
+    const ok = entropySystem.applyRewind(state);
+    if (ok) showNarration(ENTROPY_RECOVERY_NARRATIVES, 2500);
+    bumpVersion();
+    return ok;
+  }
+
   /**
    * 获取当前游戏状态快照
    *
@@ -760,6 +1077,105 @@ export const useGameStore = defineStore('game', () => {
   }
 
   // ============================================================
+  // 事件系统 Actions
+  // ============================================================
+
+  /**
+   * 启动事件倒计时（非重大事件 60s 自动选择）
+   */
+  function startEventCountdown(): void {
+    if (eventCountdownTimer) clearInterval(eventCountdownTimer);
+    eventCountdownTimer = setInterval(() => {
+      if (eventCountdown.value > 0) {
+        eventCountdown.value--;
+        if (eventCountdown.value <= 0) {
+          // 倒计时结束 → 自动选第一个选项
+          makeEventChoice(0);
+        }
+      }
+    }, 1000);
+  }
+
+  /**
+   * 停止事件倒计时
+   */
+  function stopEventCountdown(): void {
+    if (eventCountdownTimer) {
+      clearInterval(eventCountdownTimer);
+      eventCountdownTimer = null;
+    }
+  }
+
+  /**
+   * 玩家对活跃事件做出选择
+   *
+   * @param optionIndex 选项索引（0 或 1）
+   */
+  function makeEventChoice(optionIndex: number): void {
+    const ae = activeEventDef.value;
+    if (!ae) return;
+
+    const state = gameState.value;
+    eventSystem.applyChoice(state, ae.def, optionIndex, Date.now());
+
+    // 清除 UI 状态
+    stopEventCountdown();
+    activeEventDef.value = null;
+    eventCountdown.value = 0;
+
+    // 重算倍增器（持续效果可能影响产出）
+    multiplierSystem.recalculateFromState(state);
+
+    // 显示后选择叙事（如果有的话）
+    const postNarrative = EVENT_POST_NARRATIVES[ae.def.id];
+    if (postNarrative) {
+      showNarration([postNarrative], 4000);
+    }
+
+    updateDisplayStrings(state);
+    bumpVersion();
+  }
+
+  /**
+   * 关闭事件弹窗（不做出选择，等同于超时 → 自动选选项0）
+   */
+  function dismissEvent(): void {
+    makeEventChoice(0);
+  }
+
+  // ---- 挑战系统公开方法 ----
+
+  /** 领取挑战奖励 */
+  function claimChallengeReward(challengeId: string): { stardust: number; de: number } | null {
+    const state = gameState.value;
+    const result = challengeSystem.claimReward(state, challengeId);
+    if (result) {
+      updateDisplayStrings(state);
+      bumpVersion();
+    }
+    return result;
+  }
+
+  /** 开始限时挑战 */
+  function startTimedChallenge(challengeId: string): boolean {
+    const state = gameState.value;
+    const ok = challengeSystem.startTimedChallenge(state, challengeId, Date.now());
+    if (ok) bumpVersion();
+    return ok;
+  }
+
+  /** 获取挑战面板数据 */
+  function getChallengePanelData() {
+    const state = gameState.value;
+    return challengeSystem.getAllChallenges(state, Date.now());
+  }
+
+  /** 获取未领取奖励数量 */
+  function getChallengeUnclaimedCount(): number {
+    return challengeSystem.getUnclaimedCount(gameState.value);
+  }
+
+  // ============================================================
   // 内部辅助
   // ============================================================
 
@@ -804,8 +1220,100 @@ export const useGameStore = defineStore('game', () => {
   }
 
   // ============================================================
-  // 返回 Store 接口
+  // 维度系统 Actions
   // ============================================================
+
+  /**
+   * 切换维度
+   * @param targetDim 目标维度ID
+   * @returns 是否切换成功
+   */
+  function switchDimension(targetDim: number): boolean {
+    const state = gameState.value;
+    const result = dimensionSystem.switchDimension(state, targetDim);
+    
+    if (result) {
+      // 切换成功后显示叙事
+      const narratives = DIMENSION_SWITCH_NARRATIVES[targetDim];
+      if (narratives && narratives.length > 0) {
+        showNarration([narratives[Math.floor(Math.random() * narratives.length)]], 4000);
+      }
+      
+      // 更新 UI 状态
+      currentDimensionId.value = state.currentDimension;
+      const dimState = state.dimensionStates.get(state.currentDimension);
+      if (dimState) {
+        currentDimensionMastery.value = dimState.mastery;
+        currentDimensionResource.value = format(dimState.resource);
+      }
+      
+      bumpVersion();
+    }
+    
+    return result;
+  }
+
+  /**
+   * 解锁维度
+   * @param dimId 维度ID
+   * @returns 是否解锁成功
+   */
+  function unlockDimension(dimId: number): boolean {
+    const state = gameState.value;
+    const result = dimensionSystem.unlockDimension(state, dimId);
+    
+    if (result) {
+      showNarration([`🗺️ 维度 ${DIMENSION_DEFS[dimId]?.name || dimId} 已解锁！`], 3000);
+      bumpVersion();
+    }
+    
+    return result;
+  }
+
+  /**
+   * 合成维度晶体
+   * @returns 是否合成成功
+   */
+  function synthesizeCrystal(): boolean {
+    const state = gameState.value;
+    const currentDim = state.currentDimension;
+    const dimState = state.dimensionStates.get(currentDim);
+    
+    if (!dimState || !dimState.unlocked) return false;
+    
+    // 检查是否有足够资源（1000 当前维度资源）
+    const cost = new Decimal(1000);
+    if (dimState.resource.lt(cost)) return false;
+    
+    // 扣除资源并合成晶体
+    dimState.resource = dimState.resource.sub(cost);
+    state.dimensionCrystals += 1;
+    
+    showNarration([`💎 合成成功！获得 1 个维度晶体`], 3000);
+    
+    // 更新 UI 状态
+    dimensionCrystals.value = state.dimensionCrystals;
+    currentDimensionResource.value = format(dimState.resource);
+    
+    bumpVersion();
+    return true;
+  }
+
+  /**
+   * 获取维度面板数据（供 DimensionPanel.vue 使用）
+   */
+  function getDimensionPanelData() {
+    const state = gameState.value;
+    return dimensionSystem.getPanelData(state);
+  }
+
+  /**
+   * 获取当前维度的加成倍率
+   */
+  function getDimensionBoost(): Decimal {
+    const state = gameState.value;
+    return dimensionSystem.applyDimensionBonus(state, new Decimal(1));
+  }
 
   return {
     // State
@@ -815,6 +1323,8 @@ export const useGameStore = defineStore('game', () => {
     displayTotalNumber,
     displayOutputPerSec,
     narrationMessage,
+    achievementQueue,
+    currentAchievement,
     isRunning,
 
     // Getters
@@ -859,5 +1369,47 @@ export const useGameStore = defineStore('game', () => {
     transcendSystem,
     milestoneSystem,
     multiplierSystem,
+    eventSystem,
+
+    // 事件系统 UI 状态
+    activeEventDef,
+    hasActiveEvent,
+    eventCountdown,
+    activeEffects,
+    makeEventChoice,
+    dismissEvent,
+
+    // 挑战系统
+    challengeSystem,
+    claimChallengeReward,
+    startTimedChallenge,
+    getChallengePanelData,
+    getChallengeUnclaimedCount,
+
+    // 熵崩系统
+    entropySystem,
+    entropyValue,
+    entropyLevel,
+    entropyDisplayPercent,
+    suggestPrestige,
+    useEntropyStabilizer,
+    useEntropyRewind,
+
+    // 维度系统 State
+    currentDimensionId,
+    dimensionCrystals,
+    isDimensionPanelOpen,
+    currentDimensionMastery,
+    currentDimensionResource,
+    chaosMultiplier,
+    chaosTimer,
+    isSingularityBursting,
+
+    // 维度系统 Actions
+    switchDimension,
+    unlockDimension,
+    synthesizeCrystal,
+    getDimensionPanelData,
+    getDimensionBoost,
   };
 });

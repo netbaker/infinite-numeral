@@ -116,6 +116,27 @@ export class ExpansionSystem {
     // 重置 lastTickTime
     newState.lastTickTime = Date.now();
 
+    // --- 新字段：Expansion(暗能量)策略 ---
+    newState.lastMagnitude = -1;
+    newState.factors = new Map(state.factors);
+
+    for (const [id, cs] of state.challenges) {
+      const cloned = { ...cs };
+      if (cs.id.startsWith('ch_timed_')) {
+        cloned.progress = 0;
+        cloned.completed = false;
+        cloned.remainingTime = undefined;
+        cloned.startedAt = undefined;
+      }
+      newState.challenges.set(id, cloned);
+    }
+    newState.completedMilestones = new Set(state.completedMilestones);
+    newState.lastTimedChallengeTime = 0;
+    newState.activeEvent = null;
+    newState.eventCooldown = 0;
+    newState.ongoingEffects = [];
+    newState.timeSpeedMultiplier = 1;
+
     return newState;
   }
 }

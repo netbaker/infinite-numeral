@@ -1,5 +1,6 @@
 import Decimal from 'break_eternity.js';
 import { GameState } from '@/types/game';
+import type { AchievementState } from '@/types/game';
 import type { SaveData, SerializedState } from '@/types/save';
 
 /** 当前存档版本号 */
@@ -37,6 +38,18 @@ export function serialize(state: GameState): SaveData {
     gameStartTime: state.gameStartTime,
     totalClicks: state.totalClicks,
     totalManualEarnings: state.totalManualEarnings.toString(),
+    achievements: serializeAchievements(state.achievements),
+    lastMagnitude: state.lastMagnitude,
+    factors: mapToRecord(state.factors, (fs) => ({ level: fs.level, active: fs.active })),
+    challenges: mapToRecord(state.challenges, (cs) => ({
+      progress: cs.progress,
+      completed: cs.completed,
+      claimed: cs.claimed,
+    })),
+    completedMilestones: Array.from(state.completedMilestones),
+    lastTimedChallengeTime: state.lastTimedChallengeTime,
+    eventCooldown: state.eventCooldown,
+    timeSpeedMultiplier: state.timeSpeedMultiplier,
   };
 
   return {
@@ -83,6 +96,43 @@ export function deserialize(data: SaveData): GameState {
   state.totalClicks = s.totalClicks ?? 0;
   state.totalManualEarnings = s.totalManualEarnings ? new Decimal(s.totalManualEarnings) : new Decimal(0);
 
+  // 成就（兼容旧存档：若无 achievements 字段则保持空 Map，由 initAchievements 补全）
+  if (s.achievements) {
+    for (const [id, ts] of Object.entries(s.achievements)) {
+      state.achievements.set(id, { id, unlocked: true, unlockedAt: ts });
+    }
+  }
+
+  // 因子系统
+  if (s.factors) {
+    for (const [id, data] of Object.entries(s.factors)) {
+      state.factors.set(id, { id, level: data.level, active: data.active });
+    }
+  }
+  state.lastMagnitude = s.lastMagnitude ?? -1;
+
+  // 挑战系统
+  if (s.challenges) {
+    for (const [id, data] of Object.entries(s.challenges)) {
+      const cs = state.challenges.get(id) ?? { id, progress: 0, completed: false, claimed: false };
+      cs.progress = data.progress ?? cs.progress;
+      cs.completed = data.completed ?? cs.completed;
+      cs.claimed = data.claimed ?? cs.claimed;
+      state.challenges.set(id, cs);
+    }
+  }
+
+  // 已完成里程碑集合
+  if (s.completedMilestones) {
+    for (const id of s.completedMilestones) {
+      state.completedMilestones.add(id);
+    }
+  }
+
+  state.lastTimedChallengeTime = s.lastTimedChallengeTime ?? 0;
+  state.eventCooldown = s.eventCooldown ?? 0;
+  state.timeSpeedMultiplier = s.timeSpeedMultiplier ?? 1;
+
   return state;
 }
 
@@ -120,4 +170,19 @@ function recordToMap<R, V>(
     map.set(key, valueFactory(key, value));
   }
   return map;
+}
+
+/**
+ * 序列化成就 Map：只保存已解锁的条目（id→unlockedAt timestamp）
+ */
+function serializeAchievements(
+  achievements: Map<string, AchievementState>,
+): Record<string, number> {
+  const result: Record<string, number> = {};
+  for (const [id, ach] of achievements) {
+    if (ach.unlocked) {
+      result[id] = ach.unlockedAt ?? Date.now();
+    }
+  }
+  return result;
 }

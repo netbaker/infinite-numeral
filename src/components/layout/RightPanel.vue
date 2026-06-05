@@ -22,6 +22,34 @@
       <TechTreeGraph />
     </div>
 
+    <!-- 数字分解因子 -->
+    <div v-if="activeFactors.length > 0 || discoveredFactors.length > 0" class="right-panel__section">
+      <h3 class="right-panel__section-title right-panel__section-title--factor">
+        数字分解
+        <span class="right-panel__res-count">{{ activeFactors.length }}/{{ FACTOR_DEFS.length }}</span>
+      </h3>
+      <div class="right-panel__list right-panel__list--compact">
+        <!-- 已发现因子优先展示 -->
+        <FactorCard
+          v-for="f in sortedFactors"
+          :key="f.def.id"
+          :def="f.def"
+          :level="f.level"
+          :active="f.active"
+        />
+        <!-- 未发现的只显示暗影占位 -->
+        <div
+          v-for="f in undiscoveredFactors"
+          :key="'unk-' + f.id"
+          class="factor-unknown"
+        >
+          <span class="factor-unknown__icon">?</span>
+          <span class="factor-unknown__name">{{ f.category }} 因子</span>
+          <span class="factor-unknown__hint">需要 10^{{ f.magnitudeThreshold }}+</span>
+        </div>
+      </div>
+    </div>
+
     <!-- 星尘升级 -->
     <div v-if="prestigeCount > 0" class="right-panel__section">
       <h3 class="right-panel__section-title right-panel__section-title--stardust">
@@ -97,9 +125,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useGameStore } from '@/stores/gameStore';
-import { EXPANSION_UPGRADE_DEFS, TRANSCEND_UPGRADE_DEFS } from '@/core/Constants';
+import { EXPANSION_UPGRADE_DEFS, TRANSCEND_UPGRADE_DEFS, FACTOR_DEFS } from '@/core/Constants';
 import UpgradeCard from '@/components/game/UpgradeCard.vue';
 import TechTreeGraph from '@/components/game/TechTreeGraph.vue';
+import FactorCard from '@/components/game/FactorCard.vue';
 
 const gameStore = useGameStore();
 
@@ -188,6 +217,49 @@ function canBuyTc(id: string): boolean {
 function handleBuyTc(id: string): void {
   gameStore.buyTranscendUpgrade(id);
 }
+
+// ============================================================
+// 数字分解因子计算属性
+// ============================================================
+
+/** 所有已发现的因子（有 FactorState 记录的） */
+const discoveredFactors = computed(() => {
+  void gameStore.stateVersion;
+  const state = gameStore.gameState;
+  if (!state.factors) return [];
+  return FACTOR_DEFS.filter((fDef) => state.factors.has(fDef.id));
+});
+
+/** 当前激活中的因子 */
+const activeFactors = computed(() => {
+  return discoveredFactors.value.filter((fDef) => {
+    const fs = gameStore.gameState.factors?.get(fDef.id);
+    return fs?.active === true;
+  });
+});
+
+/** 排序后的因子列表：激活优先 → 同激活按等级排序 */
+const sortedFactors = computed(() => {
+  return discoveredFactors.value
+    .map((fDef) => ({
+      def: fDef,
+      level: gameStore.gameState.factors?.get(fDef.id)?.level ?? 0,
+      active: gameStore.gameState.factors?.get(fDef.id)?.active ?? false,
+    }))
+    .sort((a, b) => {
+      // 激活的排前面
+      if (a.active !== b.active) return a.active ? -1 : 1;
+      // 等级高的排前面
+      return b.level - a.level;
+    });
+});
+
+/** 未发现的因子（显示暗影提示） */
+const undiscoveredFactors = computed(() => {
+  return FACTOR_DEFS.filter(
+    (fDef) => !gameStore.gameState.factors?.has(fDef.id)
+  );
+});
 </script>
 
 <style scoped>
@@ -235,6 +307,7 @@ function handleBuyTc(id: string): void {
 .right-panel__section-title--tech { color: #4dd0e1; border-bottom-color: rgba(0,188,212,0.25); }
 .right-panel__section-title--expansion { color: #4dd0e1; border-bottom-color: rgba(0,188,212,0.25); }
 .right-panel__section-title--transcend { color: #ffd54f; border-bottom-color: rgba(255,215,0,0.25); }
+.right-panel__section-title--factor { color: #ff8a65; border-bottom-color: rgba(255,138,101,0.25); }
 
 .right-panel__res-count { font-size: 11px; opacity: 0.85; }
 .right-panel__list { display: flex; flex-direction: column; gap: var(--spacing-xs); }
@@ -263,6 +336,28 @@ function handleBuyTc(id: string): void {
 .upgrade-mini__btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .upgrade-mini__btn--gold { background: rgba(255,215,0,0.15); color: #ffd54f; }
 .upgrade-mini__btn--gold:hover:not(:disabled) { background: rgba(255,215,0,0.28); }
+
+/* ---- 未发现因子占位 ---- */
+.factor-unknown {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: var(--border-radius, 4px);
+  background: rgba(255,255,255,0.02);
+  border: 1px dashed rgba(255,255,255,0.08);
+}
+.factor-unknown__icon {
+  width: 16px; height: 16px; line-height: 16px; text-align: center;
+  font-size: 10px; color: rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04); border-radius: 50%;
+}
+.factor-unknown__name {
+  font-size: 10px; color: rgba(255,255,255,0.2); flex: 1;
+}
+.factor-unknown__hint {
+  font-size: 9px; color: rgba(255,255,255,0.15); white-space: nowrap;
+}
 
 /* ---- 响应式断点 ---- */
 @media (max-width: 1100px) {

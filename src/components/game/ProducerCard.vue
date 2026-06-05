@@ -14,23 +14,17 @@
         <span class="producer-card__cost-value">{{ formattedBulkCost }}</span>
       </div>
     </div>
-    <div class="producer-card__bulk">
+    <div class="producer-card__action">
+      <button class="producer-card__bulk-btn" @click.stop="cycleBulk">
+        ×{{ bulkMode === 0 ? 'MAX' : bulkMode }}
+      </button>
       <button
-        v-for="m in bulkMultipliers"
-        :key="m"
-        class="producer-card__bulk-btn"
-        :class="{ active: bulkMode === m }"
-        @click="bulkMode = m"
-      >×{{ m === 0 ? 'MAX' : m }}</button>
+        class="producer-card__buy-btn"
+        :class="{ 'producer-card__buy-btn--disabled': !canAfford }"
+        :disabled="!canAfford"
+        @click="handleBuy"
+      >购买</button>
     </div>
-    <button
-      class="producer-card__buy-btn"
-      :class="{ 'producer-card__buy-btn--disabled': !canAfford }"
-      :disabled="!canAfford"
-      @click="handleBuy"
-    >
-      购买 ×{{ bulkMode === 0 ? 'MAX' : bulkMode }}
-    </button>
   </div>
 </template>
 
@@ -46,6 +40,12 @@ const gameStore = useGameStore();
 
 const bulkMultipliers = [1, 5, 10, 100, 0]; // 0 = MAX
 const bulkMode = ref<number>(1);
+
+/** 在倍数间循环切换：×1 → ×5 → ×10 → ×100 → MAX → ×1 */
+function cycleBulk(): void {
+  const idx = bulkMultipliers.indexOf(bulkMode.value);
+  bulkMode.value = bulkMultipliers[(idx + 1) % bulkMultipliers.length];
+}
 
 const config = computed(() => PRODUCER_CONFIGS.find((c) => c.id === props.producerId)!);
 
@@ -118,16 +118,19 @@ function handleBuy(): void {
 .producer-card__cost { display: flex; gap: 3px; }
 .producer-card__cost-label { color: var(--color-text-dim); }
 .producer-card__cost-value { color: var(--color-cost); font-weight: 500; }
-.producer-card__bulk { display: flex; gap: 2px; flex-wrap: wrap; }
+.producer-card__action { display: flex; gap: 4px; align-items: center; }
 .producer-card__bulk-btn {
-  padding: 1px 5px; font-size: 9px; border-radius: 3px;
-  border: 1px solid rgba(255,255,255,0.08); color: var(--color-text-dim);
-  background: transparent; cursor: pointer;
+  flex-shrink: 0;
+  padding: 2px 7px; font-size: 10px; border-radius: 10px;
+  border: 1px solid var(--color-growth); color: var(--color-growth);
+  background-color: rgba(76,175,80,0.1); cursor: pointer;
+  font-weight: 600; transition: all 0.15s; white-space: nowrap;
 }
-.producer-card__bulk-btn.active { border-color: var(--color-growth); color: var(--color-growth); }
-.producer-card__bulk-btn:hover { border-color: rgba(76,175,80,0.3); }
+.producer-card__bulk-btn:hover { background-color: rgba(76,175,80,0.25); }
+.producer-card__bulk-btn:active { transform: scale(0.93); }
 .producer-card__buy-btn {
-  padding: 3px 0; border-radius: 3px; background-color: rgba(76,175,80,0.15);
+  flex: 1;
+  padding: 2px 0; border-radius: 3px; background-color: rgba(76,175,80,0.15);
   color: var(--color-growth); font-size: 11px; font-weight: 600; cursor: pointer;
 }
 .producer-card__buy-btn:hover:not(:disabled) { background-color: rgba(76,175,80,0.3); }
@@ -138,9 +141,9 @@ function handleBuy(): void {
   .producer-card { padding: 4px 5px; gap: 2px; }
   .producer-card__name { font-size: 11px; }
   .producer-card__body { font-size: 10px; }
-  .producer-card__bulk { display: none; }  /* 隐藏 bulk 选择器，保留购买按钮 */
-  .producer-card__buy-btn { font-size: 10px; padding: 3px 0; }
+  .producer-card__bulk-btn { padding: 1px 6px; font-size: 9px; }
+  .producer-card__buy-btn { font-size: 10px; padding: 2px 0; }
   .producer-card__output-label,
-  .producer-card__cost-label { display: none; }  /* 隐藏文字标签节省空间 */
+  .producer-card__cost-label { display: none; }
 }
 </style>

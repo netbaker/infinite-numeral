@@ -7,6 +7,13 @@ import type {
   ExpansionUpgradeDef,
   TranscendUpgradeDef,
   MilestoneDef,
+  AchievementDef,
+  FactorDef,
+  ChallengeDef,
+  EventDef,
+  EntropyItemDef,
+  DimensionDef,
+  DimensionState,
 } from '@/types/game';
 
 // ============================================================
@@ -501,3 +508,939 @@ export const TRANSCEND_UPGRADE_DEFS: TranscendUpgradeDef[] = [
     maxLevel: 3,
   },
 ];
+
+// ============================================================
+// 成就定义
+// ============================================================
+
+export const ACHIEVEMENT_DEFS: AchievementDef[] = [
+  // —— 增长成就 ——
+  {
+    id: 'ach_1e3',
+    name: '初露锋芒',
+    description: '数字突破 1,000',
+    hint: '让数字持续增长……',
+    icon: '🌱',
+    conditionType: 'number_reach',
+    conditionValue: 1e3,
+    group: 'growth',
+  },
+  {
+    id: 'ach_1e6',
+    name: '百万之门',
+    description: '数字突破 1,000,000',
+    hint: '继续积累，门在前方',
+    icon: '🔢',
+    conditionType: 'number_reach',
+    conditionValue: 1e6,
+    group: 'growth',
+  },
+  {
+    id: 'ach_1e12',
+    name: '万亿宇宙',
+    description: '数字突破 1 兆',
+    hint: '宇宙在你掌中',
+    icon: '🌌',
+    conditionType: 'number_reach',
+    conditionValue: 1e12,
+    group: 'growth',
+  },
+  {
+    id: 'ach_1e30',
+    name: '量子涌现',
+    description: '数字突破 1e30',
+    hint: '超越物质，进入量子领域',
+    icon: '⚛️',
+    conditionType: 'number_reach',
+    conditionValue: 1e30,
+    group: 'growth',
+  },
+  {
+    id: 'ach_1e100',
+    name: 'Googol 之境',
+    description: '数字突破 Googol (1e100)',
+    hint: '有些数字只存在于数学梦境中……',
+    icon: '♾️',
+    conditionType: 'number_reach',
+    conditionValue: 1e100,
+    group: 'legend',
+  },
+  // —— 点击成就 ——
+  {
+    id: 'ach_click_100',
+    name: '脉冲新人',
+    description: '累计点击 100 次',
+    hint: '点击是力量的来源',
+    icon: '👆',
+    conditionType: 'click_count',
+    conditionValue: 100,
+    group: 'growth',
+  },
+  {
+    id: 'ach_click_1000',
+    name: '脉冲狂热',
+    description: '累计点击 1,000 次',
+    hint: '手指与宇宙共鸣',
+    icon: '⚡',
+    conditionType: 'click_count',
+    conditionValue: 1000,
+    group: 'growth',
+  },
+  // —— Prestige 成就 ——
+  {
+    id: 'ach_prestige_1',
+    name: '第一次坍缩',
+    description: '完成第一次宇宙坍缩',
+    hint: '有些终点即是新的起点',
+    icon: '💫',
+    conditionType: 'prestige_count',
+    conditionValue: 1,
+    group: 'prestige',
+  },
+  {
+    id: 'ach_prestige_5',
+    name: '坍缩轮回',
+    description: '累计坍缩 5 次',
+    hint: '宇宙喜欢周期',
+    icon: '🔄',
+    conditionType: 'prestige_count',
+    conditionValue: 5,
+    group: 'prestige',
+  },
+  {
+    id: 'ach_expansion_1',
+    name: '暗能觉醒',
+    description: '完成第一次宇宙膨胀',
+    hint: '黑暗中隐藏着能量',
+    icon: '🌑',
+    conditionType: 'expansion_count',
+    conditionValue: 1,
+    group: 'prestige',
+  },
+  {
+    id: 'ach_expansion_3',
+    name: '暗能主宰',
+    description: '累计膨胀 3 次',
+    hint: '暗能量渗透一切',
+    icon: '🌚',
+    conditionType: 'expansion_count',
+    conditionValue: 3,
+    group: 'prestige',
+  },
+  {
+    id: 'ach_transcend_1',
+    name: '初次超越',
+    description: '完成第一次超越',
+    hint: '什么在宇宙之外？',
+    icon: '✨',
+    conditionType: 'transcend_count',
+    conditionValue: 1,
+    group: 'prestige',
+  },
+  {
+    id: 'ach_transcend_5',
+    name: '超越者',
+    description: '累计超越 5 次',
+    hint: '你开始理解无限',
+    icon: '🌠',
+    conditionType: 'transcend_count',
+    conditionValue: 5,
+    group: 'legend',
+  },
+  // —— 生产者成就 ——
+  {
+    id: 'ach_producer1_10',
+    name: '量数工厂',
+    description: '量数等级达到 10',
+    hint: '数字工厂初具规模',
+    icon: '🏭',
+    conditionType: 'producer_level',
+    conditionValue: 10,
+    conditionTarget: 'producer1',
+    group: 'producer',
+  },
+  {
+    id: 'ach_producer5_1',
+    name: '铸数师',
+    description: '解锁并购买铸数',
+    hint: '更高级的铸造……',
+    icon: '⚒️',
+    conditionType: 'producer_level',
+    conditionValue: 1,
+    conditionTarget: 'producer5',
+    group: 'producer',
+  },
+  {
+    id: 'ach_producer9_1',
+    name: '超数之巅',
+    description: '解锁并购买超数',
+    hint: '极限之上还有极限',
+    icon: '🚀',
+    conditionType: 'producer_level',
+    conditionValue: 1,
+    conditionTarget: 'producer9',
+    group: 'producer',
+  },
+  // —— 纪元探索成就 ——
+  {
+    id: 'ach_epoch_construct',
+    name: '秩序诞生',
+    description: '进入构建期',
+    hint: '混沌终将归于秩序',
+    icon: '🏗️',
+    conditionType: 'epoch_reach',
+    conditionValue: 0,
+    conditionTarget: 'construct',
+    group: 'exploration',
+  },
+  {
+    id: 'ach_epoch_perceive',
+    name: '意识之火',
+    description: '进入感知期',
+    hint: '数字开始意识到自身',
+    icon: '👁️',
+    conditionType: 'epoch_reach',
+    conditionValue: 0,
+    conditionTarget: 'perceive',
+    group: 'exploration',
+  },
+  {
+    id: 'ach_epoch_celestial',
+    name: '天界旅者',
+    description: '进入天界期',
+    hint: '你见过的星星不及你制造的多',
+    icon: '🌟',
+    conditionType: 'epoch_reach',
+    conditionValue: 0,
+    conditionTarget: 'celestial',
+    group: 'exploration',
+  },
+  // —— 传说成就 ——
+  {
+    id: 'ach_stardust_100',
+    name: '星尘收藏家',
+    description: '累计获得 100 星尘',
+    hint: '星辰的碎片渐渐积累',
+    icon: '⭐',
+    conditionType: 'stardust_total',
+    conditionValue: 100,
+    group: 'legend',
+  },
+];
+
+// ============================================================
+// 叙事文本库（坍缩 / 膨胀 / 超越 / 生产者解锁 / 数字里程碑）
+// ============================================================
+
+/** 坍缩叙事随机池 */
+export const PRESTIGE_NARRATIVES: string[] = [
+  '宇宙在一声叹息中坍缩——而后，从灰烬里重生。',
+  '一切归零，但记忆不会。星尘是你穿越轮回的代价。',
+  '坍缩不是终结，是更高维度的翻页。',
+  '数字的宇宙折叠起来，凝成一粒星尘。新的循环开始了。',
+  '虚空回响：你曾经历此刻。但这一次，你更强了。',
+];
+
+/** 膨胀叙事随机池 */
+export const EXPANSION_NARRATIVES: string[] = [
+  '暗能量从宇宙的褶皱中渗出，一切开始加速膨胀。',
+  '你触碰了宇宙常数之外的力量。它没有名字，只有方向——向外。',
+  '膨胀是宇宙的本能，你只是顺应了它的意志。',
+  '在足够黑暗的地方，暗能量是唯一的光。',
+];
+
+/** 超越叙事随机池 */
+export const TRANSCEND_NARRATIVES: string[] = [
+  '奇点在你手中爆发。宇宙的规则被你重写了一行。',
+  '超越不是速度，是维度的改变。你已不再是原来的你。',
+  '你离开了这个宇宙——又回来了，带着一切它无法给予你的东西。',
+  '有些数字大到宇宙本身无法容纳。你创造了一个新的宇宙来盛放它。',
+  '奇点之后，时间失去意义。只有增长，永恒的增长。',
+];
+
+/** 生产者首次解锁叙事（key = producerId） */
+export const PRODUCER_UNLOCK_NARRATIVES: Record<string, string> = {
+  producer2: '衍化开始了——数字不再孤单，它们开始繁殖。',
+  producer3: '汇聚之力涌现。单独的数字汇成洪流。',
+  producer4: '凝练之道。粗粝的数字被压缩为精纯的力量。',
+  producer5: '铸造台亮起。这是数字的冶炼，也是宇宙的意志。',
+  producer6: '经纬交织，数字的维度在增加。',
+  producer7: '边界出现了。但边界从不是终点，只是下一段旅程的起点。',
+  producer8: '元初之力——一切数字的源头在颤抖。',
+  producer9: '超数降临。语言已无法描述这里的规模。',
+};
+
+/** 数字里程碑叙事（key = 指数，如 '6' 代表 1e6） */
+export const NUMBER_MILESTONE_NARRATIVES: Record<string, string> = {
+  '6':  '你的数字超越了地球上每一粒沙。',
+  '12': '万亿。曾经只有神才能数清的数字。',
+  '20': '你超越了可观测宇宙中的原子数量。',
+  '30': '量子泡沫中的数字也显得渺小了。',
+  '50': '这个数字没有物理意义——只有数学意义。',
+  '100': 'Googol。一个只存在于数学梦境中的数字，如今在你手中。',
+};
+
+// ============================================================
+// 因子系统配置（数字分解 / Factor System）
+// ============================================================
+
+export const FACTOR_DEFS: FactorDef[] = [
+  // —— 素数类 ——
+  {
+    id: 'factor_prime_twin',
+    name: '双生素数邻近',
+    description: '你的数字靠近一对双生素数——它们像宇宙中互相牵引的双星。',
+    category: 'prime',
+    detector: 'checkTwinPrime',
+    effectType: 'click_multiplier',
+    baseEffect: 1.5,
+    effectPerLevel: 0.25,
+    maxLevel: 5,
+    magnitudeThreshold: 2,
+    icon: '🌟',
+  },
+  {
+    id: 'factor_prime_germain',
+    name: '热尔曼素数共振',
+    description: '2p+1 也是素数。安全素数的隐秘结构赋予你力量。',
+    category: 'prime',
+    detector: 'checkGermainPrime',
+    effectType: 'global_multiplier',
+    baseEffect: 1.2,
+    effectPerLevel: 0.15,
+    maxLevel: 5,
+    magnitudeThreshold: 2,
+    icon: '🔐',
+  },
+  // —— 完全幂类 ——
+  {
+    id: 'factor_perfect_square',
+    name: '完全平方结构',
+    description: 'n² —— 数字自身的完美对称。秩序即力量。',
+    category: 'perfect',
+    detector: 'checkPerfectSquare',
+    effectType: 'producer_multiplier',
+    baseEffect: 1.3,
+    effectPerLevel: 0.2,
+    maxLevel: 5,
+    magnitudeThreshold: 1,
+    icon: '⬛',
+  },
+  {
+    id: 'factor_perfect_cube',
+    name: '完全立方晶格',
+    description: 'n³ —— 三维空间的完美填充。立方体的每个面都映照着无限。',
+    category: 'perfect',
+    detector: 'checkPerfectCube',
+    effectType: 'global_multiplier',
+    baseEffect: 1.4,
+    effectPerLevel: 0.2,
+    maxLevel: 5,
+    magnitudeThreshold: 2,
+    icon: '🧊',
+  },
+  // —— 斐波那契类 ——
+  {
+    id: 'factor_fibonacci',
+    name: '斐波那契共鸣',
+    description: '黄金分割的足迹。自然界的密码在你的数字中回响。',
+    category: 'fibonacci',
+    detector: 'checkFibonacci',
+    effectType: 'cost_discount',
+    baseEffect: 0.05,
+    effectPerLevel: 0.02,
+    maxLevel: 5,
+    magnitudeThreshold: 2,
+    icon: '🐚',
+  },
+  // —— 整幂类 ——
+  {
+    id: 'factor_power_of_2',
+    name: '二进制奇点',
+    description: '2^n —— 万物归零或归一的底层逻辑。计算机宇宙的原点。',
+    category: 'power',
+    detector: 'checkPowerOf2',
+    effectType: 'click_multiplier',
+    baseEffect: 1.3,
+    effectPerLevel: 0.15,
+    maxLevel: 7,
+    magnitudeThreshold: 1,
+    icon: '💾',
+  },
+  {
+    id: 'factor_power_of_10',
+    name: '十进制界碑',
+    description: '10^n —— 数学的里程碑。每跨过一座，世界便宽阔一分。',
+    category: 'power',
+    detector: 'checkPowerOf10',
+    effectType: 'global_multiplier',
+    baseEffect: 1.25,
+    effectPerLevel: 0.15,
+    maxLevel: 10,
+    magnitudeThreshold: 1,
+    icon: '🔢',
+  },
+  // —— 整十/整百类 ——
+  {
+    id: 'factor_repdigit',
+    name: '重复数字回响',
+    description: '111...、222... —— 同一数字的重复如同宇宙的呼吸节律。',
+    category: 'repdigit',
+    detector: 'checkRepDigit',
+    effectType: 'producer_multiplier',
+    baseEffect: 1.2,
+    effectPerLevel: 0.1,
+    maxLevel: 5,
+    magnitudeThreshold: 2,
+    icon: '🔄',
+  },
+  // —— 特殊常数类 ——
+  {
+    id: 'factor_near_pi',
+    name: 'π 邻近扰动',
+    description: '你的数字在圆周率附近徘徊。圆形宇宙的引力波影响了产出。',
+    category: 'special',
+    detector: 'checkNearPi',
+    effectType: 'global_multiplier',
+    baseEffect: 1.15,
+    effectPerLevel: 0.1,
+    maxLevel: 3,
+    magnitudeThreshold: 1,
+    icon: '🥧',
+  },
+  {
+    id: 'factor_near_e',
+    name: 'e 邻近增长',
+    description: '自然对数的底数就在近旁。增长的极限速度被临时提升。',
+    category: 'special',
+    detector: 'checkNearE',
+    effectType: 'global_multiplier',
+    baseEffect: 1.15,
+    effectPerLevel: 0.1,
+    maxLevel: 3,
+    magnitudeThreshold: 1,
+    icon: '📈',
+  },
+];
+
+// ============================================================
+// 挑战系统配置（Challenge System）
+// ============================================================
+
+export const CHALLENGE_DEFS: ChallengeDef[] = [
+  // —— 每日挑战 ——
+  {
+    id: 'ch_daily_clicks',
+    name: '脉冲练习',
+    description: '今天点击 200 次',
+    category: 'daily',
+    progressType: 'click_count',
+    targetValue: 200,
+    timeLimit: 0,
+    stardustReward: 3,
+    resetSchedule: 'daily',
+    icon: '👆',
+  },
+  {
+    id: 'ch_daily_number',
+    name: '数字冲刺',
+    description: '让数字达到 1e6',
+    category: 'daily',
+    progressType: 'number_reach',
+    targetValue: 1e6,
+    timeLimit: 0,
+    stardustReward: 5,
+    resetSchedule: 'daily',
+    icon: '🎯',
+  },
+  {
+    id: 'ch_daily_prestige',
+    name: '日常坍缩',
+    description: '完成一次坍缩',
+    category: 'daily',
+    progressType: 'prestige_once',
+    targetValue: 1,
+    timeLimit: 0,
+    stardustReward: 8,
+    resetSchedule: 'daily',
+    icon: '💫',
+  },
+  // —— 限时挑战 ——
+  {
+    id: 'ch_timed_speed',
+    name: '光速竞赛',
+    description: '在 120 秒内让数字达到 10000',
+    category: 'timed',
+    progressType: 'number_reach',
+    targetValue: 10000,
+    timeLimit: 120,
+    stardustReward: 10,
+    resetSchedule: '',
+    icon: '⚡',
+  },
+  {
+    id: 'ch_timed_idle',
+    name: '静谧生长',
+    description: '在线挂机 300 秒，不执行 prestige',
+    category: 'timed',
+    progressType: 'idle_seconds',
+    targetValue: 300,
+    timeLimit: 360,
+    stardustReward: 7,
+    resetSchedule: '',
+    icon: '🌱',
+  },
+  {
+    id: 'ch_timed_clicks',
+    name: '指尖风暴',
+    description: '在 60 秒内点击 100 次',
+    category: 'timed',
+    progressType: 'click_count',
+    targetValue: 100,
+    timeLimit: 60,
+    stardustReward: 6,
+    resetSchedule: '',
+    icon: '🔥',
+  },
+  // —— 里程碑挑战 ——
+  {
+    id: 'ch_milestone_expansion',
+    name: '膨胀入门',
+    description: '完成一次膨胀',
+    category: 'milestone',
+    progressType: 'expansion_once',
+    targetValue: 1,
+    timeLimit: 0,
+    stardustReward: 15,
+    deReward: 1,
+    resetSchedule: '',
+    icon: '🌑',
+  },
+  {
+    id: 'ch_milestone_produce',
+    name: '产出大师',
+    description: '生产者累计产出达到 1e8',
+    category: 'milestone',
+    progressType: 'produce_amount',
+    targetValue: 1e8,
+    timeLimit: 0,
+    stardustReward: 20,
+    deReward: 2,
+    resetSchedule: '',
+    icon: '🏭',
+  },
+  {
+    id: 'ch_milestone_transcend',
+    name: '超越之门',
+    description: '完成一次超越',
+    category: 'milestone',
+    progressType: 'expansion_once', // 用 expansion_once 占位，实际由特殊逻辑判定
+    targetValue: 1,
+    timeLimit: 0,
+    stardustReward: 50,
+    deReward: 5,
+    resetSchedule: '',
+    icon: '✨',
+  },
+];
+
+// ============================================================
+// 事件系统配置（宇宙异变 / Event System）
+// ============================================================
+
+export const EVENT_DEFS: EventDef[] = [
+  {
+    id: 'event_cosmic_ray',
+    name: '宇宙射线暴',
+    description: '一道高能宇宙射线穿透了你的数域空间。你可以选择吸收它或偏转它。',
+    minMagnitude: 4,
+    baseProbability: 0.008,
+    cooldown: 180,
+    options: [
+      {
+        text: '吸收射线能量',
+        effects: [
+          { type: 'global_multiplier', value: 0.5, duration: 60 },
+          { type: 'stardust_gain', value: 5, duration: 0, target: '' },
+        ],
+        narrative: '你张开双臂接纳了宇宙射线的狂暴能量。产出暂时暴涨，但空间开始不稳定……',
+      },
+      {
+        text: '偏转到生产者',
+        effects: [
+          { type: 'producer_boost', value: 1, duration: 90, target: 'producer1' },
+          { type: 'cost_change', value: 0.1, duration: 45, target: '' },
+        ],
+        narrative: '你将射线引导至量数阵列。基础生产者获得短暂的超级加成。',
+      },
+    ],
+    icon: '☄️',
+    isMajor: true,
+  },
+  {
+    id: 'event_void_tremor',
+    name: '虚空震颤',
+    description: '数域边界的虚空传来一阵低沉的震颤。有什么东西正在苏醒……',
+    minMagnitude: 6,
+    baseProbability: 0.005,
+    cooldown: 300,
+    options: [
+      {
+        text: '深入虚空探查',
+        effects: [
+          { type: 'stardust_gain', value: 12, duration: 0, target: '' },
+          { type: 'number_drain', value: 0.3, duration: 0, target: '' },
+          { type: 'speed_change', value: 0.8, duration: 30, target: '' },
+        ],
+        narrative: '你踏入虚空的裂隙。星尘如暴雨般落下，但部分数字被虚空吞噬。时间变得粘稠。',
+      },
+      {
+        text: '加固边界',
+        effects: [
+          { type: 'global_multiplier', value: -0.2, duration: 30, target: '' },
+          { type: 'stardust_gain', value: 3, duration: 0, target: '' },
+        ],
+        narrative: '你选择收缩防线。产出短暂下降，但你获得了少量安全的星尘。',
+      },
+    ],
+    icon: '🌋',
+    isMajor: true,
+  },
+  {
+    id: 'event_stardust_storm',
+    name: '星尘风暴',
+    description: '一场罕见的星尘风暴掠过你的领域！是丰收还是灾难？',
+    minMagnitude: 3,
+    baseProbability: 0.012,
+    cooldown: 240,
+    options: [
+      {
+        text: '全敞开收集',
+        effects: [
+          { type: 'stardust_gain', value: 20, duration: 0, target: '' },
+          { type: 'cost_change', value: 0.15, duration: 60, target: '' },
+          { type: 'global_multiplier', value: -0.15, duration: 40, target: '' },
+        ],
+        narrative: '你打开了所有收集阵列。星尘如雪般涌入，但设备过载导致成本上升、产出波动。',
+      },
+      {
+        text: '选择性过滤',
+        effects: [
+          { type: 'stardust_gain', value: 8, duration: 0, target: '' },
+          { type: 'cost_change', value: -0.08, duration: 90, target: '' },
+        ],
+        narrative: '你只收集最纯净的高密度星尘。收获较少，但获得了持久的成本折扣。',
+      },
+    ],
+    icon: '🌪️',
+    isMajor: false,
+  },
+  {
+    id: 'event_quantum_fluctuation',
+    name: '量子涨落',
+    description: '量子层面的随机涨落让你的数域出现了概率云。观测方式决定了结果。',
+    minMagnitude: 5,
+    baseProbability: 0.006,
+    cooldown: 200,
+    options: [
+      {
+        text: '强化观测（赌高收益）',
+        effects: [
+          { type: 'global_multiplier', value: Math.random() > 0.5 ? 1 : -0.3, duration: 45, target: '' },
+        ],
+        narrative: '波函数坍缩了！宇宙掷出了它的骰子——你要么大赚一笔，要么损失惨重。',
+      },
+      {
+        text: '弱观测（稳健路线）',
+        effects: [
+          { type: 'producer_boost', value: 0.3, duration: 60, target: 'producer1' },
+          { type: 'speed_change', value: 1.2, duration: 30, target: '' },
+        ],
+        narrative: '你选择不干扰量子态。系统自动演化出温和的正向变化。',
+      },
+    ],
+    icon: '🔮',
+    isMajor: false,
+  },
+  {
+    id: 'event_time_crack',
+    name: '时间裂缝',
+    description: '数域的时间连续性出现了裂缝。时间的流速不再均匀……',
+    minMagnitude: 8,
+    baseProbability: 0.003,
+    cooldown: 480,
+    options: [
+      {
+        text: '跳入加速区',
+        effects: [
+          { type: 'speed_change', value: 2, duration: 45, target: '' },
+          { type: 'number_drain', value: 0.15, duration: 0, target: '' },
+        ],
+        narrative: '你冲进时间加速带。一切快得惊人——产出飞涨，但也消耗了一部分当前数字作为入场费。',
+      },
+      {
+        text: '躲入慢速区恢复',
+        effects: [
+          { type: 'speed_change', value: 0.5, duration: 60, target: '' },
+          { type: 'cost_change', value: -0.2, duration: 90, target: '' },
+        ],
+        narrative: '你蜷缩在时间缓慢流动的角落。一切变慢了，但成本大幅降低，适合囤积升级。',
+      },
+    ],
+    icon: '⏳',
+    isMajor: true,
+  },
+  {
+    id: 'event_resonance_cascade',
+    name: '级联共振',
+    description: '多个因子同时发生共振！这是一次罕见的数域和谐事件。',
+    minMagnitude: 7,
+    baseProbability: 0.004,
+    cooldown: 360,
+    options: [
+      {
+        text: '放大共振',
+        effects: [
+          { type: 'global_multiplier', value: 0.8, duration: 90, target: '' },
+          { type: 'stardust_loss', value: 6, duration: 0, target: '' },
+        ],
+        narrative: '你将共振放大到极限。产出飙升，但不稳定的能量吞噬了你一部分星尘储备。',
+      },
+      {
+        text: '引导为稳定增益',
+        effects: [
+          { type: 'producer_boost', value: 0.5, duration: 120, target: '' },
+          { type: 'global_multiplier', value: 0.3, duration: 120, target: '' },
+        ],
+        narrative: '你将共振能量均匀分配到所有渠道。没有爆发式增长，但全方位稳步提升。',
+      },
+    ],
+    icon: '🎵',
+    isMajor: true,
+  },
+];
+
+// ============================================================
+// 因子发现叙事文本库
+// ============================================================
+
+/** 因子首次发现叙事（key = factorId） */
+export const FACTOR_DISCOVER_NARRATIVES: Record<string, string> = {
+  factor_prime_twin: '你的数字靠近一对双生素数。它们像两颗互相牵引的恒星，在无限的黑暗中彼此呼应。',
+  factor_prime_germain: '热尔曼素数——2p+1 仍是素数。安全的结构带来稳定的力量。',
+  factor_perfect_square: '一个完全平方数。每一面都相等，每一角都对称。秩序本身就是武器。',
+  factor_perfect_cube: '立方体——三维空间的最优填充。数字找到了自己的形状。',
+  factor_fibonacci: '斐波那契数列。向日葵的花盘、鹦鹉螺的壳——宇宙用同一种语言书写。',
+  factor_power_of_2: '2 的幂——二进制世界的界碑。0 和 1 构筑的一切都在这里交汇。',
+  factor_power_of_10: '10 的幂——人类最喜欢的里程碑。又一个零，又一段旅程。',
+  factor_repdigit: '重复数字。宇宙在单调中找到了韵律。',
+  factor_near_pi: 'π 在附近徘徊。圆形宇宙的引力波扫过你的数域。',
+  factor_near_e: 'e——自然增长的极限速度。你的数字触碰到了这个神秘的常数。',
+};
+
+/** 因子升级叙事 */
+export const FACTOR_LEVEL_UP_NARRATIVES: string[] = [
+  '因子的共鸣增强了。数字的结构更加清晰。',
+  '你对这个因子的理解加深了一层。',
+  '数学之美再次显现——这次比上次更加耀眼。',
+  '因子链路升级。新的连接被建立起来。',
+  '共振频率改变。更强的信号从数字深处传出。',
+];
+
+// ============================================================
+// 事件选择后果叙事补充
+// ============================================================
+
+export const EVENT_POST_NARRATIVES: Record<string, string> = {
+  event_cosmic_ray: '宇宙射线的余晖渐渐消散。数域恢复了平静，但有些东西已经改变了。',
+  event_void_tremor: '虚空的震颤平息了。你不知道下次它何时再来——但你知道自己准备好了。',
+  event_stardust_storm: '星尘风暴过去了。空气中还残留着闪烁的尘埃颗粒。',
+  event_quantum_fluctuation: '量子涨落回归基态。观测者效应留下的痕迹还在闪烁。',
+  event_time_crack: '时间自行愈合了。裂缝消失得无影无踪，仿佛从未存在过。',
+  event_resonance_cascade: '级联共振的余音绕梁。数域中仍能听到微弱的和谐泛音。',
+};
+
+// ============================================================
+// 熵崩系统配置（v2.0 核心机制）
+// ============================================================
+
+/** 熵值阈值配置 */
+export const ENTROPY_CONFIG = {
+  /** 不稳定区间起始（%） */
+  UNSTABLE_THRESHOLD: 50,
+  /** 临界区间起始（%） */
+  CRITICAL_THRESHOLD: 80,
+  /** 崩溃阈值（%），达到100时触发大崩塌事件 */
+  COLLAPSE_THRESHOLD: 100,
+
+  /** 基础熵值增长速率（每秒，基于数字增长） */
+  BASE_GROWTH_RATE: 0.02,       // 每秒基础 +0.2%
+  /** 数字产出加速系数：每秒产出占number的比例越大，熵增越快 */
+  OUTPUT_ENTROPY_FACTOR: 5e-6,   // (outputPerSec / number) * 此值 = 额外熵/秒
+  /** 大倍率购买惩罚：使用×10以上倍率时的额外熵增量 */
+  HIGH_BULK_PENALTY: 3,          // ×10 = +3%, MAX = +8%
+
+  /** 自然衰减速率（%/秒）— 当不活跃增长时熵值缓慢下降 */
+  NATURAL_DECAY_RATE: 0.05,      // 每 -0.05%（很慢）
+  /** Prestige 重置后残留的熵值（%）— 不是完全归零，而是保留少量 */
+  PRESTIGE_RESIDUAL: 0,           // Prestige 完全清零
+  /** 膨胀重置后残留的熵值（%） */
+  EXPANSION_RESIDUAL: 0,          // Expansion 也完全清零
+
+  // ---- 各等级的产出惩罚 ----
+  /** 不稳定等级：全局产出乘数（<1=减益） */
+  UNSTABLE_MULTIPLIER: 0.80,     // -20%
+  /** 临界等级：全局产出乘数 */
+  CRITICAL_MULTIPLIER: 0.50,     // -50%
+  /** 崩塌时扣除数字比例（当前number的百分比） */
+  COLLAPSE_DRAIN_PERCENT: 15,    // 扣除当前数字15%
+} as const;
+
+/** 熵崩道具定义 */
+export const ENTROPY_ITEM_DEFS: EntropyItemDef[] = [
+  {
+    id: 'stabilizer',
+    name: '熵稳定剂',
+    description: '立即降低20点熵值。宇宙的镇定剂。',
+    type: 'stabilizer',
+    stardustCost: 50,
+    icon: '🧊',
+    maxStack: 99,
+  },
+  {
+    id: 'rewind',
+    name: '时间回溯',
+    description: '回退最近5秒积累的熵值。让宇宙倒带。',
+    type: 'rewind',
+    stardustCost: 120,
+    icon: '⏪',
+    maxStack: 9,
+  },
+];
+
+/** 熵崩叙事文本池 — 大崩塌触发时 */
+export const ENTROPY_COLLAPSE_NARRATIVES: string[] = [
+  '熵的极限被突破了。宇宙发出一声低沉的叹息——然后是撕裂声。',
+  '秩序崩塌了。你的数字在混乱中剧烈波动，一部分永远消失了。',
+  '热力学定律从不妥协。你推得太猛，宇宙就推回来。',
+  '临界点已过。大崩塌降临——这是增长的代价。',
+  '熵在尖叫。它告诉你：没有什么是免费的，包括无限。',
+];
+
+/** 熵值预警叙事文本池 — 进入不稳定/临界区域时 */
+export const ENTROPY_WARNING_NARRATIVES: Record<string, string> = {
+  unstable: '宇宙开始疲倦了。无休止的增长需要付出代价。熵值正在上升……',
+  critical: '感受到那股颤抖了吗？这不是地震——是熵，在推门而入。',
+};
+
+/** 熵值恢复叙事（使用稳定剂或Prestige后） */
+export const ENTROPY_RECOVERY_NARRATIVES: string[] = [
+  '熵值回落。宇宙重新找到了平衡——至少暂时是这样。',
+  '混乱退去。数字的脉动恢复了稳定的节奏。',
+  '一次喘息的机会。但你知道，熵从未真正消失。',
+];
+
+// ============================================================
+// 维度系统配置（v2.0 核心机制）
+// ============================================================
+
+/** 维度静态定义（5个平行维度） */
+export const DIMENSION_DEFS: DimensionDef[] = [
+  {
+    id: 0,
+    name: '基础维度',
+    description: '标准规则，星尘为通用资源。一切的起点。',
+    type: 'base',
+    resourceName: '星尘',
+    resourceIcon: '✨',
+    unlockCost: 0,      // 起始维度，无需解锁
+    baseMultiplier: 1.0,
+    maxMastery: 100,
+    narratives: [
+      '基础维度稳定如初。数字在这里找到最初的秩序。',
+      '标准规则下，每一个增长都按部就班。',
+    ],
+  },
+  {
+    id: 1,
+    name: '质数维度',
+    description: '当数字为质数时，所有生产者产出 ×3。专属资源「质核」。',
+    type: 'prime',
+    resourceName: '质核',
+    resourceIcon: '🔢',
+    unlockCost: 1,      // 需1个奇点核心
+    baseMultiplier: 1.0,
+    maxMastery: 100,
+    narratives: [
+      '质数维度开启。你感受到数字的"不可分解性"了吗？',
+      '质核在手中脉动。只有质数才能激发真正的力量。',
+      '2, 3, 5, 7, 11……质数的旋律在数域中回响。',
+    ],
+  },
+  {
+    id: 2,
+    name: '混沌维度',
+    description: '产出倍率每60秒随机重投（0.5x ~ 5x）。高风险高回报。专属资源「混沌碎片」。',
+    type: 'chaos',
+    resourceName: '混沌碎片',
+    resourceIcon: '🎲',
+    unlockCost: 2,
+    baseMultiplier: 1.0,
+    maxMastery: 100,
+    narratives: [
+      '混沌维度开启。秩序崩塌了——但混乱中藏着机遇。',
+      '骰子已经掷出。你敢赌这一把吗？',
+      '混沌碎片闪烁着不确定的光芒。每一次都是新的开始。',
+    ],
+  },
+  {
+    id: 3,
+    name: '反熵维度',
+    description: '每次Prestige后，本维度临时产出倍率 +20%（可叠加）。专属资源「熵晶」。',
+    type: 'anti_entropy',
+    resourceName: '熵晶',
+    resourceIcon: '🧊',
+    unlockCost: 3,
+    baseMultiplier: 1.0,
+    maxMastery: 100,
+    narratives: [
+      '反熵维度开启。你逆着热力学第二定律而行。',
+      '熵晶冰凉刺骨。每一次重置，都是对混乱的反叛。',
+      '越多次飞升，越强的回报——这是给坚持者的奖励。',
+    ],
+  },
+  {
+    id: 4,
+    name: '奇点维度',
+    description: '数字接近奇点（e308+）时触发"临界爆发"——5秒内产出 ×100。专属资源「奇点核心」。',
+    type: 'singularity',
+    resourceName: '奇点核心',
+    resourceIcon: '🌑',
+    unlockCost: 5,
+    baseMultiplier: 1.0,
+    maxMastery: 100,
+    narratives: [
+      '奇点维度开启。你凝视着深渊——深渊也在凝视你。',
+      '奇点核心散发着不祥的紫光。太接近了……数字即将失控。',
+      '临界点。再往前一步，就是永恒的寂静——或者爆发。',
+    ],
+  },
+];
+
+/** 维度切换叙事文本池 */
+export const DIMENSION_SWITCH_NARRATIVES: Record<number, string[]> = {
+  0: ['返回基础维度。一切归于平静。'],
+  1: ['进入质数维度。质数的力量在你指尖跃动。'],
+  2: ['进入混沌维度。骰子的声音在远处回响……'],
+  3: ['进入反熵维度。你逆流向而行。'],
+  4: ['进入奇点维度。深渊在你脚下张开。'],
+};
+
+/** 维度精通奖励（每20点精通解锁一个被动） */
+export const DIMENSION_MASTERY_REWARDS: Record<number, string[]> = {
+  0: ['星尘获取 +10%', '生产者成本 -5%', '点击基础值 +20%', '离线效率 +15%', '全局倍率 +5%'],
+  1: ['质数触发概率 +15%', '质数倍率提升至 ×4', '质核获取 +20%', '因子发现速度 +10%', '质数时自动Prestige建议'],
+  2: ['混沌上限提升至 8x', '混沌持续时间 +30s', '混沌保底机制（最低 1.0x）', '碎片合成效率 +25%', '随机事件触发率 +10%'],
+  3: ['反熵叠加上限 +5层', 'Prestige后保留 10% 数字', '熵晶获取 +30%', '熵值增长 -15%', 'Transcend后额外奇点核心'],
+  4: ['临界爆发倍率提升至 ×200', '爆发持续时间 +5s', '奇点核心可兑换维度晶体', '数字 e300+ 时自动触发爆发', '超越后可保留奇点印记'],
+};
