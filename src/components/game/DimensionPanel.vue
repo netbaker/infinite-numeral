@@ -103,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { computed } from 'vue';
 import Decimal from 'break_eternity.js';
 import { useGameStore } from '@/stores/gameStore';
 import type { DimensionPanelData, DimensionId } from '@/types/game';
@@ -116,7 +116,6 @@ const emit = defineEmits<{
 }>();
 
 const store = useGameStore();
-const state = computed(() => store.gameState);
 
 const panelData = computed<DimensionPanelData[]>(() =>
   store.getDimensionPanelData()

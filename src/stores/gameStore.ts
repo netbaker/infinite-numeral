@@ -462,7 +462,7 @@ export const useGameStore = defineStore('game', () => {
     }
 
     // 0.3 维度系统 tick（精通度增长 + 混沌倍率重投 + 临界爆发检测）
-    dimensionSystem.tickMastery(state, deltaTime, rawOutputPerSec);
+    dimensionSystem.tickMastery(state, deltaTime, rawOutputPerSec.toDecimal());
     dimensionSystem.checkChaosMultiplier(state);
     dimensionSystem.checkSingularityBurst(state);
 
@@ -570,7 +570,7 @@ export const useGameStore = defineStore('game', () => {
     dimensionCrystals.value = state.dimensionCrystals;
     const dimState = state.dimensionStates.get(state.currentDimension);
     if (dimState) {
-      currentDimensionMastery.value = dimState.mastery;
+      currentDimensionMastery.value = dimState.master;
       currentDimensionResource.value = format(dimState.resource);
     }
     chaosMultiplier.value = dimensionSystem.getChaosMultiplier(state);

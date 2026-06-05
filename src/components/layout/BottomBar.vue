@@ -76,6 +76,7 @@ const saveStore = useSaveStore();
 
 defineEmits<{
   openSettings: []; openHelp: []; openStats: []; openAchievements: []; openChallenge: [];
+  openDimension: [];
   useStabilizer: []; useRewind: [];
 }>();
 
@@ -132,7 +133,7 @@ const stabilizers = computed(() => gameStore.gameState.entropyStabilizers);
 const rewinds = computed(() => gameStore.gameState.entropyRewinds);
 
 // ---- 维度系统数据 ----
-const dimensionCrystals = computed(() => {
+const dimensionCrystals = computed<number>(() => {
   void gameStore.stateVersion;
   return gameStore.gameState.dimensionCrystals || 0;
 });

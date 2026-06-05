@@ -13,7 +13,6 @@ import type {
   EventDef,
   EntropyItemDef,
   DimensionDef,
-  DimensionState,
 } from '@/types/game';
 
 // ============================================================

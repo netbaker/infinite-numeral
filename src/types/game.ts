@@ -440,6 +440,26 @@ export interface DimensionState {
   maxNumber: Decimal;
 }
 
+/** 维度面板单条数据（给 UI 渲染用） */
+export interface DimensionPanelData {
+  id: DimensionId;
+  name: string;
+  type: string;
+  description: string;
+  unlocked: boolean;
+  isActive: boolean;
+  master: number;
+  masterLevel: number;
+  masterReward: string | null;
+  resource: Decimal;
+  resourceName: string;
+  resourceIcon: string;
+  crystals: number;
+  unlockCost: number;
+  canUnlock: boolean;
+  multiplier: number;
+}
+
 // ============================================================
 // 挑战 / 任务系统
 // ============================================================
