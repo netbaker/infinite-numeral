@@ -142,7 +142,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, watch } from 'vue';
 import { useGameStore } from '@/stores/gameStore';
 import type { ChallengeCategory } from '@/types/game';
 

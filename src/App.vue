@@ -228,7 +228,7 @@ async function installPWA() {
 
 function restartTutorial() {
   gameStore.gameState.tutorialStep = 0;
-  gameStore.stateVersion.value++;
+  gameStore.stateVersion++;
   showSettings.value = false;
 }
 </script>

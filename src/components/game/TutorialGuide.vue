@@ -130,14 +130,14 @@ function nextStep() {
     completeTutorial();
   } else {
     gameStore.gameState.tutorialStep++;
-    gameStore.stateVersion.value++;
+    gameStore.stateVersion++;
   }
 }
 
 function prevStep() {
   if (currentStep.value > 0) {
     gameStore.gameState.tutorialStep--;
-    gameStore.stateVersion.value++;
+    gameStore.stateVersion++;
   }
 }
 
@@ -147,7 +147,7 @@ function skipTutorial() {
 
 function completeTutorial() {
   gameStore.gameState.tutorialStep = -1;
-  gameStore.stateVersion.value++;
+  gameStore.stateVersion++;
 }
 
 function handleOverlayClick() {
