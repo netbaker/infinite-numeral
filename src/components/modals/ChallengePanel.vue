@@ -35,7 +35,7 @@
           <template v-if="activeTab === 'daily'">
             <div
               v-for="item in dailyChallenges"
-              :key="item.def.id"
+              :key="item.def.id + '-' + dataVersion"
               class="ch-item"
               :class="{ 'ch-item--done': item.state.completed, 'ch-item--claimed': item.state.claimed }"
             >
@@ -65,7 +65,7 @@
           <template v-if="activeTab === 'timed'">
             <div
               v-for="item in timedChallenges"
-              :key="item.def.id"
+              :key="item.def.id + '-' + dataVersion"
               class="ch-item ch-item--timed"
               :class="{
                 'ch-item--done': item.state.completed,
@@ -107,7 +107,7 @@
           <template v-if="activeTab === 'milestone'">
             <div
               v-for="item in milestoneChallenges"
-              :key="item.def.id"
+              :key="item.def.id + '-' + dataVersion"
               class="ch-item ch-item--milestone"
               :class="{ 'ch-item--done': item.state.completed, 'ch-item--claimed': item.state.claimed }"
             >
@@ -142,8 +142,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { useGameStore } from '@/stores/gameStore';
 import type { ChallengeCategory } from '@/types/game';
+
+const gameStore = useGameStore();
 
 defineProps<{
   visible: boolean;
@@ -183,6 +186,10 @@ const tabs = [
   { key: 'timed' as const, label: '挑战', icon: '⚡' },
   { key: 'milestone' as const, label: '里程碑', icon: '🏆' },
 ];
+
+/* 强制刷新：stateVersion 变化时递增，驱动 v-for 重新渲染 */
+const dataVersion = ref(0);
+watch(() => gameStore.stateVersion, () => { dataVersion.value++; });
 
 function formatProgress(item: { def: { targetValue: number; progressType?: string }; state: { progress: number } }): string {
   const pt = item.def.progressType || 'number_reach';
