@@ -1,7 +1,7 @@
 import { ACHIEVEMENT_DEFS } from '@/core/Constants';
 import type { AchievementDef } from '@/types/game';
 import type { GameState } from '@/types/game';
-import { BigNumber } from '@/core/BigNumber';
+import Decimal from 'break_eternity.js';
 
 /**
  * 成就系统
@@ -51,10 +51,10 @@ export class AchievementSystem {
   private evaluate(def: AchievementDef, state: GameState): boolean {
     switch (def.conditionType) {
       case 'number_reach':
-        return BigNumber.from(state.number).gte(BigNumber.from(def.conditionValue));
+        return new Decimal(state.number).gte(new Decimal(def.conditionValue));
 
       case 'total_number_reach':
-        return BigNumber.from(state.totalNumber).gte(BigNumber.from(def.conditionValue));
+        return new Decimal(state.totalNumber).gte(new Decimal(def.conditionValue));
 
       case 'prestige_count':
         return state.prestigeCount >= def.conditionValue;

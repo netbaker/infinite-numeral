@@ -174,13 +174,14 @@ export const useGameStore = defineStore('game', () => {
       return;
     }
     currentAchievement.value = achievementQueue.value.shift()!;
-    setTimeout(() => {
+    // 使用包装函数确保 this 绑定正确
+    const hideAndNext = () => {
       currentAchievement.value = null;
-      // 延迟一点确保 DOM 更新后再处理下一个
       setTimeout(() => {
         drainAchievementQueue();
       }, 50);
-    }, 3500);
+    };
+    setTimeout(hideAndNext, 3500);
   }
 
   /** 已触发过的数字里程碑（防止重复弹出） */
