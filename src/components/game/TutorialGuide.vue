@@ -118,12 +118,32 @@ const steps: TutorialStep[] = [
 
 const totalSteps = steps.length;
 
-const currentStep = computed(() => gameStore.gameState.tutorialStep);
-const isActive = computed(() => currentStep.value >= 0 && currentStep.value < totalSteps);
-const isLastStep = computed(() => currentStep.value === totalSteps - 1);
-const step = computed(() => steps[currentStep.value] ?? steps[0]);
-const progressPercent = computed(() => ((currentStep.value + 1) / totalSteps) * 100);
-const position = computed(() => step.value.position ?? 'center');
+/* 强制追踪 stateVersion，否则 markRaw 的 gameState 变化无法被 Vue 感知 */
+const currentStep = computed(() => {
+  void gameStore.stateVersion;
+  return gameStore.gameState.tutorialStep;
+});
+const isActive = computed(() => {
+  void gameStore.stateVersion;
+  return gameStore.gameState.tutorialStep >= 0 && gameStore.gameState.tutorialStep < totalSteps;
+});
+const isLastStep = computed(() => {
+  void gameStore.stateVersion;
+  return gameStore.gameState.tutorialStep === totalSteps - 1;
+});
+const step = computed(() => {
+  void gameStore.stateVersion;
+  return steps[gameStore.gameState.tutorialStep] ?? steps[0];
+});
+const progressPercent = computed(() => {
+  void gameStore.stateVersion;
+  return ((gameStore.gameState.tutorialStep + 1) / totalSteps) * 100;
+});
+const position = computed(() => {
+  void gameStore.stateVersion;
+  const s = steps[gameStore.gameState.tutorialStep] ?? steps[0];
+  return s.position ?? 'center';
+});
 
 function nextStep() {
   if (isLastStep.value) {
