@@ -1,11 +1,11 @@
 <template>
   <Teleport to="body">
-    <div v-if="visible" class="ch-overlay" @click.self="$emit('close')">
+    <div v-if="visible" class="ch-overlay" @click.self="emit('close')">
       <div class="ch-panel">
         <!-- 标题栏 -->
         <div class="ch-panel__header">
           <h2 class="ch-panel__title">⚔️ 挑战任务</h2>
-          <button class="ch-panel__close" @click="$emit('close')">✕</button>
+          <button class="ch-panel__close" @click="emit('close')">✕</button>
         </div>
 
         <!-- 每日统计 -->
@@ -54,7 +54,7 @@
               <button
                 v-if="item.state.completed && !item.state.claimed"
                 class="ch-item__claim"
-                @click="$emit('claim', item.def.id)"
+                @click="emit('claim', item.def.id)"
               >领取奖励</button>
               <span v-else-if="item.state.claimed" class="ch-item__claimed-tag">已领取 ✓</span>
             </div>
@@ -90,14 +90,14 @@
               <button
                 v-if="item.canStart && !item.state.completed"
                 class="ch-item__start"
-                @click="$emit('startTimed', item.def.id)"
+                @click="emit('startTimed', item.def.id)"
               >⚡ 开始挑战</button>
               <span v-else-if="item.isExpired" class="ch-item__expired-tag">已超时</span>
               <span v-else-if="item.state.completed" class="ch-item__claimed-tag">完成! ✓</span>
               <button
                 v-if="item.state.completed && !item.state.claimed"
                 class="ch-item__claim"
-                @click="$emit('claim', item.def.id)"
+                @click="emit('claim', item.def.id)"
               >领取 +{{ item.def.stardustReward }} ✨</button>
             </div>
             <div v-if="timedChallenges.length === 0" class="ch-empty">暂无可用挑战</div>
@@ -129,7 +129,7 @@
               <button
                 v-if="item.state.completed && !item.state.claimed"
                 class="ch-item__claim ch-item__claim--ms"
-                @click="$emit('claim', item.def.id)"
+                @click="emit('claim', item.def.id)"
               >领取里程碑奖励</button>
               <span v-else-if="item.state.claimed" class="ch-item__claimed-tag">🏆 已达成</span>
             </div>
@@ -170,7 +170,7 @@ defineProps<{
   unclaimedCount: number;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   close: [];
   claim: [id: string];
   startTimed: [id: string];

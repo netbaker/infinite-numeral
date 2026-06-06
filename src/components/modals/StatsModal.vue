@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <div v-if="visible" class="stats-overlay" @click.self="$emit('close')">
+    <div v-if="visible" class="stats-overlay" @click.self="emit('close')">
       <div class="stats-card">
         <h2>数据统计</h2>
         <div class="stats-grid">
@@ -56,7 +56,7 @@
             <span class="prod-lv">Lv.{{ p.level }}</span>
           </div>
         </div>
-        <button class="stats-close" @click="$emit('close')">关闭</button>
+        <button class="stats-close" @click="emit('close')">关闭</button>
       </div>
     </div>
   </Teleport>
@@ -69,8 +69,8 @@ import { PRODUCER_CONFIGS, EPOCH_CONFIGS } from '@/core/Constants';
 import { format } from '@/core/Formatter';
 import { BigNumber } from '@/core/BigNumber';
 
-defineProps<{ visible: boolean }>();
-defineEmits<{ close: [] }>();
+const { visible } = defineProps<{ visible: boolean }>();
+const emit = defineEmits<{ close: [] }>();
 
 const gameStore = useGameStore();
 

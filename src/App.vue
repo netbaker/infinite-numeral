@@ -170,6 +170,7 @@ const showDimension = ref(false);
 
 // 挑战面板数据
 const challengeData = computed(() => {
+  void gameStore.stateVersion; // 强制追踪 stateVersion 变化
   const data = gameStore.getChallengePanelData();
   return {
     daily: data.filter(c => c.def.category === 'daily').map(c => ({

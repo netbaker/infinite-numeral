@@ -2,7 +2,7 @@
   <div
     class="task-badge"
     :class="{ 'task-badge--pulse': unclaimedCount > 0, 'task-badge--hidden': unclaimedCount === 0 }"
-    @click="$emit('open')"
+    @click="emit('open')"
   >
     <span class="task-badge__icon">⚔️</span>
     <span v-if="unclaimedCount > 0" class="task-badge__count">{{ unclaimedCount }}</span>
@@ -10,11 +10,11 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+const { unclaimedCount } = defineProps<{
   unclaimedCount: number;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   open: [];
 }>();
 </script>

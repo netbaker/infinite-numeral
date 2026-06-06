@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <div v-if="visible" class="help-overlay" @click.self="$emit('close')">
+    <div v-if="visible" class="help-overlay" @click.self="emit('close')">
       <div class="help-card">
         <h2>游戏指引</h2>
         <div class="help-section">
@@ -20,15 +20,15 @@
           <div class="help-row">自动存档每30秒，手动存档点底栏 ⚙ → 保存</div>
           <div class="help-row">手机端用底部标签切换生产者和升级面板</div>
         </div>
-        <button class="help-close" @click="$emit('close')">知道了</button>
+        <button class="help-close" @click="emit('close')">知道了</button>
       </div>
     </div>
   </Teleport>
 </template>
 
 <script setup lang="ts">
-defineProps<{ visible: boolean }>();
-defineEmits<{ close: [] }>();
+const { visible } = defineProps<{ visible: boolean }>();
+const emit = defineEmits<{ close: [] }>();
 </script>
 
 <style scoped>

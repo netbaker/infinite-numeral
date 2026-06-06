@@ -8,7 +8,7 @@
     <div
       class="entropy-bar__track"
       :title="tooltipText"
-      @click="$emit('open-details')"
+      @click="emit('open-details')"
     >
       <div
         class="entropy-bar__fill"
@@ -32,7 +32,7 @@
       v-if="stabilizers > 0 && displayPercent > 15"
       class="entropy-bar__action btn-stabilizer"
       title="使用熵稳定剂 (-20)"
-      @click.stop="$emit('use-stabilizer')"
+      @click.stop="emit('use-stabilizer')"
     >
       🧊{{ stabilizers }}
     </button>
@@ -40,7 +40,7 @@
       v-if="rewinds > 0 && displayPercent > 25"
       class="entropy-bar__action btn-rewind"
       title="使用时间回溯"
-      @click.stop="$emit('use-rewind')"
+      @click.stop="emit('use-rewind')"
     >
       ⏪{{ rewinds }}
     </button>
@@ -59,7 +59,7 @@ const props = defineProps<{
   rewinds: number;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   'open-details': [];
   'use-stabilizer': [];
   'use-rewind': [];

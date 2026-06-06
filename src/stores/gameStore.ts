@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, markRaw, shallowRef } from 'vue';
+import { ref, markRaw, shallowRef, nextTick } from 'vue';
 import { BigNumber } from '@/core/BigNumber';
 import { format } from '@/core/Formatter';
 import { deserialize } from '@/core/Serializer';
@@ -176,7 +176,9 @@ export const useGameStore = defineStore('game', () => {
     currentAchievement.value = achievementQueue.value.shift()!;
     setTimeout(() => {
       currentAchievement.value = null;
-      drainAchievementQueue();
+      nextTick(() => {
+        drainAchievementQueue();
+      });
     }, 3500);
   }
 
@@ -537,11 +539,13 @@ export const useGameStore = defineStore('game', () => {
     // 7. 检查成就
     const newAchievements = achievementSystem.checkAchievements(state);
     for (const def of newAchievements) {
-      const achState = state.achievements.get(def.id);
-      if (achState) {
-        achState.unlocked = true;
-        achState.unlockedAt = Date.now();
+      // 确保成就状态已初始化
+      if (!state.achievements.has(def.id)) {
+        state.achievements.set(def.id, { id: def.id, unlocked: false });
       }
+      const achState = state.achievements.get(def.id)!;
+      achState.unlocked = true;
+      achState.unlockedAt = Date.now();
       pushAchievement({ id: def.id, name: def.name, description: def.description, icon: def.icon });
     }
 

@@ -1,12 +1,12 @@
 <template>
   <Teleport to="body">
     <transition name="modal-fade">
-      <div v-if="visible" class="modal-overlay" @click.self="$emit('close')">
+      <div v-if="visible" class="modal-overlay" @click.self="emit('close')">
         <div class="ach-modal">
           <div class="ach-modal__header">
             <span class="ach-modal__title">🏆 成就</span>
             <span class="ach-modal__progress">{{ unlockedCount }} / {{ total }}</span>
-            <button class="ach-modal__close" @click="$emit('close')">✕</button>
+            <button class="ach-modal__close" @click="emit('close')">✕</button>
           </div>
 
           <!-- 分组展示 -->
@@ -46,7 +46,7 @@ import { useGameStore } from '@/stores/gameStore';
 import { ACHIEVEMENT_DEFS } from '@/core/Constants';
 
 defineProps<{ visible: boolean }>();
-defineEmits<{ (e: 'close'): void }>();
+const emit = defineEmits<{ (e: 'close'): void }>();
 
 const gameStore = useGameStore();
 
