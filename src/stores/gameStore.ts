@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, markRaw, shallowRef, nextTick } from 'vue';
+import { ref, markRaw, shallowRef } from 'vue';
 import { BigNumber } from '@/core/BigNumber';
 import { format } from '@/core/Formatter';
 import { deserialize } from '@/core/Serializer';
@@ -176,9 +176,10 @@ export const useGameStore = defineStore('game', () => {
     currentAchievement.value = achievementQueue.value.shift()!;
     setTimeout(() => {
       currentAchievement.value = null;
-      nextTick(() => {
+      // 延迟一点确保 DOM 更新后再处理下一个
+      setTimeout(() => {
         drainAchievementQueue();
-      });
+      }, 50);
     }, 3500);
   }
 

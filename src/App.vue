@@ -94,6 +94,7 @@
 
     <!-- 挑战任务面板 -->
     <ChallengePanel
+      :key="gameStore.stateVersion"
       :visible="showChallenge"
       :daily-challenges="challengeData.daily"
       :timed-challenges="challengeData.timed"
