@@ -62,6 +62,8 @@ export interface SerializedState {
   eventCooldown: number;
   /** 时间速度倍率 */
   timeSpeedMultiplier: number;
+  /** 新手引导步骤（0=未开始，-1=已完成） */
+  tutorialStep?: number;
 }
 
 /**

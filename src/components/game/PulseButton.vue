@@ -60,6 +60,10 @@ function handleClick(event: MouseEvent): void {
   display: flex;
   align-items: center;
   justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .pulse-button:hover {
@@ -97,5 +101,9 @@ function handleClick(event: MouseEvent): void {
   color: var(--color-current);
   letter-spacing: 4px;
   text-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 </style>

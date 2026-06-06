@@ -47,20 +47,20 @@
       :entropy="entropy"
       :stabilizers="stabilizers"
       :rewinds="rewinds"
-      @open-details="$emit('openStats')"
-      @use-stabilizer="$emit('useStabilizer')"
-      @use-rewind="$emit('useRewind')"
+      @open-details="emit('openStats')"
+      @use-stabilizer="emit('useStabilizer')"
+      @use-rewind="emit('useRewind')"
     />
     <div class="bottom-bar__divider" />
-    <button class="bottom-bar__settings-btn bottom-bar__settings-btn--dimension" @click="$emit('openDimension')" title="维度系统">
+    <button class="bottom-bar__settings-btn bottom-bar__settings-btn--dimension" @click="emit('openDimension')" title="维度系统">
       🗺️
       <span v-if="dimensionCrystals > 0" class="dimension-badge">{{ dimensionCrystals }}</span>
     </button>
-    <button class="bottom-bar__settings-btn" @click="$emit('openStats')" title="统计">📊</button>
-    <button class="bottom-bar__settings-btn" @click="$emit('openAchievements')" title="成就">🏆</button>
-    <button class="bottom-bar__settings-btn bottom-bar__settings-btn--challenge" @click="$emit('openChallenge')" title="挑战任务">⚔️</button>
-    <button class="bottom-bar__settings-btn" @click="$emit('openHelp')" title="帮助">?</button>
-    <button class="bottom-bar__settings-btn" @click="$emit('openSettings')" title="设置">⚙</button>
+    <button class="bottom-bar__settings-btn" @click="emit('openStats')" title="统计">📊</button>
+    <button class="bottom-bar__settings-btn" @click="emit('openAchievements')" title="成就">🏆</button>
+    <button class="bottom-bar__settings-btn bottom-bar__settings-btn--challenge" @click="emit('openChallenge')" title="挑战任务">⚔️</button>
+    <button class="bottom-bar__settings-btn" @click="emit('openHelp')" title="帮助">?</button>
+    <button class="bottom-bar__settings-btn" @click="emit('openSettings')" title="设置">⚙</button>
   </footer>
 </template>
 
@@ -74,7 +74,7 @@ import EntropyBar from '@/components/game/EntropyBar.vue';
 const gameStore = useGameStore();
 const saveStore = useSaveStore();
 
-defineEmits<{
+const emit = defineEmits<{
   openSettings: []; openHelp: []; openStats: []; openAchievements: []; openChallenge: [];
   openDimension: [];
   useStabilizer: []; useRewind: [];

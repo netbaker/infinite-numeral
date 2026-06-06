@@ -81,7 +81,11 @@
     <SettingsModal
       :visible="showSettings"
       @close="showSettings = false"
+      @restart-tutorial="restartTutorial"
     />
+
+    <!-- 新手指引 -->
+    <TutorialGuide />
 
     <!-- 事件弹窗 -->
     <EventModal
@@ -141,6 +145,7 @@ import EffectIndicator from '@/components/game/EffectIndicator.vue';
 import ChallengePanel from '@/components/modals/ChallengePanel.vue';
 import TaskBadge from '@/components/game/TaskBadge.vue';
 import DimensionPanel from '@/components/game/DimensionPanel.vue';
+import TutorialGuide from '@/components/game/TutorialGuide.vue';
 
 const gameStore = useGameStore();
 useOffline();
@@ -220,6 +225,12 @@ async function installPWA() {
   console.log('[PWA] 安装结果:', result.outcome);
   deferredPrompt = null;
   showInstallBanner.value = false;
+}
+
+function restartTutorial() {
+  gameStore.gameState.tutorialStep = 0;
+  gameStore.stateVersion.value++;
+  showSettings.value = false;
 }
 </script>
 

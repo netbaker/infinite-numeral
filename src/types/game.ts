@@ -750,4 +750,7 @@ export class GameState {
   _singularityBurstActive: boolean = false;
   /** 奇点维度临界爆发结束时间戳(ms) */
   _singularityBurstEndsAt: number = 0;
+  // ---- 新手引导 ----
+  /** 新手引导当前步骤（0=未开始，-1=已完成） */
+  tutorialStep: number = 0;
 }

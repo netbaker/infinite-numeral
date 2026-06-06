@@ -50,6 +50,7 @@ export function serialize(state: GameState): SaveData {
     lastTimedChallengeTime: state.lastTimedChallengeTime,
     eventCooldown: state.eventCooldown,
     timeSpeedMultiplier: state.timeSpeedMultiplier,
+    tutorialStep: state.tutorialStep,
   };
 
   return {
@@ -132,6 +133,7 @@ export function deserialize(data: SaveData): GameState {
   state.lastTimedChallengeTime = s.lastTimedChallengeTime ?? 0;
   state.eventCooldown = s.eventCooldown ?? 0;
   state.timeSpeedMultiplier = s.timeSpeedMultiplier ?? 1;
+  state.tutorialStep = s.tutorialStep ?? -1;
 
   return state;
 }

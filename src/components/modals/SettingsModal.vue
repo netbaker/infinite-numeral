@@ -72,6 +72,16 @@
           </div>
         </div>
 
+        <!-- 帮助 -->
+        <div class="settings-card__section">
+          <h3 class="settings-card__section-title">帮助</h3>
+          <div class="settings-card__btn-group">
+            <button class="settings-card__btn settings-card__btn--save" @click="emit('restart-tutorial')">
+              重新开始新手引导
+            </button>
+          </div>
+        </div>
+
         <!-- 关闭按钮 -->
         <button class="settings-card__close" @click="onClose">关闭</button>
       </div>
@@ -92,6 +102,7 @@ defineProps<{
 
 const emit = defineEmits<{
   close: [];
+  'restart-tutorial': [];
 }>();
 
 const saveStore = useSaveStore();
