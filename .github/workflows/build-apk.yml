@@ -35,7 +35,6 @@ jobs:
                     "build-tools;34.0.0" \
                     "platform-tools"
 
-      # 跳过 electron 二进制下载（APK 构建不需要 electron）
       - name: Install npm dependencies
         run: npm ci --prefer-offline --no-audit --no-fund
         env:
@@ -47,15 +46,22 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      # 使用仓库中固定的 debug.keystore，确保每次构建签名一致
       - name: Build Debug APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace --info 2>&1 | tee ../build.log
         timeout-minutes: 10
 
+      - name: Upload build log (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+
       - name: Upload Debug APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: infinite-numeral-debug-apk
