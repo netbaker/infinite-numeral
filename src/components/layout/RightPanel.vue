@@ -1,124 +1,130 @@
 <template>
   <div class="right-panel">
-    <h2 class="right-panel__title">升级</h2>
+    <!-- 标题根据模式变化 -->
+    <h2 class="right-panel__title">{{ panelTitle }}</h2>
 
-    <!-- 常规升级 -->
-    <div class="right-panel__section">
-      <h3 class="right-panel__section-title">常规升级</h3>
-      <div class="right-panel__list">
-        <UpgradeCard
-          v-for="id in upgradeIds"
-          :key="id"
-          :upgrade-id="id"
-        />
-      </div>
-    </div>
-
-    <!-- 科技树 -->
-    <div class="right-panel__section right-panel__section--tech">
-      <h3 class="right-panel__section-title right-panel__section-title--tech">
-        科技树
-      </h3>
-      <TechTreeGraph />
-    </div>
-
-    <!-- 数字分解因子 -->
-    <div v-if="activeFactors.length > 0 || discoveredFactors.length > 0" class="right-panel__section">
-      <h3 class="right-panel__section-title right-panel__section-title--factor">
-        数字分解
-        <span class="right-panel__res-count">{{ activeFactors.length }}/{{ FACTOR_DEFS.length }}</span>
-      </h3>
-      <div class="right-panel__list right-panel__list--compact">
-        <!-- 已发现因子优先展示 -->
-        <FactorCard
-          v-for="f in sortedFactors"
-          :key="f.def.id"
-          :def="f.def"
-          :level="f.level"
-          :active="f.active"
-        />
-        <!-- 未发现的只显示暗影占位 -->
-        <div
-          v-for="f in undiscoveredFactors"
-          :key="'unk-' + f.id"
-          class="factor-unknown"
-        >
-          <span class="factor-unknown__icon">?</span>
-          <span class="factor-unknown__name">{{ f.category }} 因子</span>
-          <span class="factor-unknown__hint">需要 10^{{ f.magnitudeThreshold }}+</span>
+    <!-- 升级模式：常规升级、数字分解、星尘/暗能量/元升级 -->
+    <template v-if="showUpgrades">
+      <!-- 常规升级 -->
+      <div class="right-panel__section">
+        <h3 class="right-panel__section-title">常规升级</h3>
+        <div class="right-panel__list">
+          <UpgradeCard
+            v-for="id in upgradeIds"
+            :key="id"
+            :upgrade-id="id"
+          />
         </div>
       </div>
-    </div>
 
-    <!-- 星尘升级 -->
-    <div v-if="prestigeCount > 0" class="right-panel__section">
-      <h3 class="right-panel__section-title right-panel__section-title--stardust">
-        星尘升级
-        <span class="right-panel__res-count">✦ {{ stardustAmount }}</span>
-      </h3>
-      <div class="right-panel__list">
-        <UpgradeCard
-          v-for="id in stardustUpgradeIds"
-          :key="'sd-' + id"
-          :upgrade-id="id"
-          :is-stardust="true"
-        />
-      </div>
-    </div>
-
-    <!-- 暗能量升级 -->
-    <div v-if="expansionCount > 0" class="right-panel__section">
-      <h3 class="right-panel__section-title right-panel__section-title--expansion">
-        暗能量升级
-        <span class="right-panel__res-count">◉ {{ darkEnergyAmount }}</span>
-      </h3>
-      <div class="right-panel__list right-panel__list--compact">
-        <div
-          v-for="def in expansionDefs"
-          :key="'ex-' + def.id"
-          class="upgrade-mini"
-        >
-          <div class="upgrade-mini__name">{{ def.name }}</div>
-          <div class="upgrade-mini__desc">{{ def.description }}</div>
-          <div class="upgrade-mini__footer">
-            <span class="upgrade-mini__cost">◉ {{ getExCost(def.id) }}</span>
-            <span class="upgrade-mini__level">{{ getExLevel(def.id) }}/{{ def.maxLevel }}</span>
-            <button
-              class="upgrade-mini__btn"
-              :disabled="!canBuyEx(def.id)"
-              @click="handleBuyEx(def.id)"
-            >买</button>
+      <!-- 数字分解因子 -->
+      <div v-if="activeFactors.length > 0 || discoveredFactors.length > 0" class="right-panel__section">
+        <h3 class="right-panel__section-title right-panel__section-title--factor">
+          数字分解
+          <span class="right-panel__res-count">{{ activeFactors.length }}/{{ FACTOR_DEFS.length }}</span>
+        </h3>
+        <div class="right-panel__list right-panel__list--compact">
+          <!-- 已发现因子优先展示 -->
+          <FactorCard
+            v-for="f in sortedFactors"
+            :key="f.def.id"
+            :def="f.def"
+            :level="f.level"
+            :active="f.active"
+          />
+          <!-- 未发现的只显示暗影占位 -->
+          <div
+            v-for="f in undiscoveredFactors"
+            :key="'unk-' + f.id"
+            class="factor-unknown"
+          >
+            <span class="factor-unknown__icon">?</span>
+            <span class="factor-unknown__name">{{ f.category }} 因子</span>
+            <span class="factor-unknown__hint">需要 10^{{ f.magnitudeThreshold }}+</span>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- 超越升级（元升级） -->
-    <div v-if="transcendCount > 0" class="right-panel__section">
-      <h3 class="right-panel__section-title right-panel__section-title--transcend">
-        元升级
-        <span class="right-panel__res-count">◆ {{ singularityAmount }}</span>
-      </h3>
-      <div class="right-panel__list right-panel__list--compact">
-        <div
-          v-for="def in transcendDefs"
-          :key="'tc-' + def.id"
-          class="upgrade-mini upgrade-mini--gold"
-        >
-          <div class="upgrade-mini__name">{{ def.name }}</div>
-          <div class="upgrade-mini__desc">{{ def.description }}</div>
-          <div class="upgrade-mini__footer">
-            <span class="upgrade-mini__cost">◆ {{ getTcCost(def.id) }}</span>
-            <span class="upgrade-mini__level">{{ getTcLevel(def.id) }}/{{ def.maxLevel }}</span>
-            <button
-              class="upgrade-mini__btn upgrade-mini__btn--gold"
-              :disabled="!canBuyTc(def.id)"
-              @click="handleBuyTc(def.id)"
-            >买</button>
+      <!-- 星尘升级 -->
+      <div v-if="prestigeCount > 0" class="right-panel__section">
+        <h3 class="right-panel__section-title right-panel__section-title--stardust">
+          星尘升级
+          <span class="right-panel__res-count">✦ {{ stardustAmount }}</span>
+        </h3>
+        <div class="right-panel__list">
+          <UpgradeCard
+            v-for="id in stardustUpgradeIds"
+            :key="'sd-' + id"
+            :upgrade-id="id"
+            :is-stardust="true"
+          />
+        </div>
+      </div>
+
+      <!-- 暗能量升级 -->
+      <div v-if="expansionCount > 0" class="right-panel__section">
+        <h3 class="right-panel__section-title right-panel__section-title--expansion">
+          暗能量升级
+          <span class="right-panel__res-count">◉ {{ darkEnergyAmount }}</span>
+        </h3>
+        <div class="right-panel__list right-panel__list--compact">
+          <div
+            v-for="def in expansionDefs"
+            :key="'ex-' + def.id"
+            class="upgrade-mini"
+          >
+            <div class="upgrade-mini__name">{{ def.name }}</div>
+            <div class="upgrade-mini__desc">{{ def.description }}</div>
+            <div class="upgrade-mini__footer">
+              <span class="upgrade-mini__cost">◉ {{ getExCost(def.id) }}</span>
+              <span class="upgrade-mini__level">{{ getExLevel(def.id) }}/{{ def.maxLevel }}</span>
+              <button
+                class="upgrade-mini__btn"
+                :disabled="!canBuyEx(def.id)"
+                @click="handleBuyEx(def.id)"
+              >买</button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      <!-- 超越升级（元升级） -->
+      <div v-if="transcendCount > 0" class="right-panel__section">
+        <h3 class="right-panel__section-title right-panel__section-title--transcend">
+          元升级
+          <span class="right-panel__res-count">◆ {{ singularityAmount }}</span>
+        </h3>
+        <div class="right-panel__list right-panel__list--compact">
+          <div
+            v-for="def in transcendDefs"
+            :key="'tc-' + def.id"
+            class="upgrade-mini upgrade-mini--gold"
+          >
+            <div class="upgrade-mini__name">{{ def.name }}</div>
+            <div class="upgrade-mini__desc">{{ def.description }}</div>
+            <div class="upgrade-mini__footer">
+              <span class="upgrade-mini__cost">◆ {{ getTcCost(def.id) }}</span>
+              <span class="upgrade-mini__level">{{ getTcLevel(def.id) }}/{{ def.maxLevel }}</span>
+              <button
+                class="upgrade-mini__btn upgrade-mini__btn--gold"
+                :disabled="!canBuyTc(def.id)"
+                @click="handleBuyTc(def.id)"
+              >买</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- 科技模式：只显示科技树 -->
+    <template v-if="showTech">
+      <div class="right-panel__section right-panel__section--tech">
+        <h3 class="right-panel__section-title right-panel__section-title--tech">
+          科技树
+        </h3>
+        <TechTreeGraph />
+      </div>
+    </template>
   </div>
 </template>
 
@@ -130,7 +136,20 @@ import UpgradeCard from '@/components/game/UpgradeCard.vue';
 import TechTreeGraph from '@/components/game/TechTreeGraph.vue';
 import FactorCard from '@/components/game/FactorCard.vue';
 
+const props = defineProps<{
+  mode?: 'all' | 'upgrades' | 'tech';
+}>();
+
 const gameStore = useGameStore();
+
+const mode = computed(() => props.mode ?? 'all');
+const showUpgrades = computed(() => mode.value === 'all' || mode.value === 'upgrades');
+const showTech = computed(() => mode.value === 'all' || mode.value === 'tech');
+const panelTitle = computed(() => {
+  if (mode.value === 'tech') return '科技';
+  if (mode.value === 'upgrades') return '升级';
+  return '升级';
+});
 
 const upgradeIds = computed(() => {
   void gameStore.stateVersion;

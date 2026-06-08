@@ -77,13 +77,17 @@ export class ExpansionSystem {
     // 保留暗能量升级
     newState.expansionUpgrades = new Map(state.expansionUpgrades);
 
-    // 保留超越升级 + 奇点
+    // 保留超越升级 + 奇点 + 新手引导进度
     newState.singularity = state.singularity;
     newState.transcendCount = state.transcendCount;
+    newState.tutorialStep = state.tutorialStep;
     newState.transcendUpgrades = new Map(state.transcendUpgrades);
 
     // 保留科技树
     newState.techTree = new Map(state.techTree);
+
+    // 保留成就进度
+    newState.achievements = new Map(state.achievements);
 
     // 保留已解锁生产者
     newState.unlockedProducers = new Set(state.unlockedProducers);

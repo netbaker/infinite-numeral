@@ -84,6 +84,7 @@ export class PrestigeSystem {
     newState.expansionCount = state.expansionCount;
     newState.singularity = state.singularity;
     newState.transcendCount = state.transcendCount;
+    newState.tutorialStep = state.tutorialStep;
 
     // 保留星尘升级
     newState.stardustUpgrades = new Map(state.stardustUpgrades);
@@ -96,6 +97,9 @@ export class PrestigeSystem {
 
     // 保留科技树
     newState.techTree = new Map(state.techTree);
+
+    // 保留成就进度
+    newState.achievements = new Map(state.achievements);
 
     // 保留已解锁生产者
     newState.unlockedProducers = new Set(state.unlockedProducers);

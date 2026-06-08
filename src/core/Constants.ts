@@ -332,7 +332,7 @@ export const TECH_TREE_DEFS: TechNodeDef[] = [
   {
     id: 'tech_auto',
     name: '自动化初探',
-    description: '购买建议优化',
+    description: '全局产出×1.5',
     stardustCost: 20,
     requires: 'tech_boost',
     effectType: 'global_multiplier',

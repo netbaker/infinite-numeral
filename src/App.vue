@@ -40,10 +40,10 @@
         <LeftPanel />
       </div>
       <div v-show="mobileTab === 'upgrades'" class="mobile-panel">
-        <RightPanel />
+        <RightPanel mode="upgrades" />
       </div>
       <div v-show="mobileTab === 'tech'" class="mobile-panel mobile-panel--tech">
-        <RightPanel />
+        <RightPanel mode="tech" />
       </div>
     </main>
 
