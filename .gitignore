@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-package-lock.json
+# package-lock.json 已纳入版本控制，确保 CI 构建依赖版本一致
 pnpm-lock.yaml
 yarn.lock
 
