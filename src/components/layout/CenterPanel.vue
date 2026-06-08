@@ -15,7 +15,7 @@
     </div>
     <div class="center-panel__prestige">
       <PrestigeButton v-if="canPrestige" />
-      <button v-if="canExpand" class="expand-button" @click="showExpandConfirm = true">
+      <button v-if="hasTechExpand" class="expand-button" @click="showExpandConfirm = true">
         <div class="expand-button__title">膨胀</div>
         <div class="expand-button__gain">获得 ◉ {{ expandGain }} 暗能量</div>
       </button>
@@ -31,9 +31,12 @@
         <p>将重置数字、生产者、升级、星尘和星尘升级。</p>
         <p>保留：暗能量升级、科技树、已解锁生产者。</p>
         <p class="modal-gain">获得 ◉ {{ expandGain }} 暗能量</p>
+        <p v-if="!canExpand" class="modal-hint" style="color: #ff6b6b; margin-top: 8px;">
+          累计星尘不足（{{ gameStore.gameState.cumulativeStardust }}/100）
+        </p>
         <div class="modal-actions">
           <button class="btn-cancel" @click="showExpandConfirm = false">取消</button>
-          <button class="btn-confirm" @click="handleExpand">确认膨胀</button>
+          <button class="btn-confirm" :disabled="!canExpand" @click="handleExpand">确认膨胀</button>
         </div>
       </div>
     </div>
@@ -70,6 +73,14 @@ const canPrestige = computed(() => {
   return gameStore.canPrestige();
 });
 
+/* 膨胀按钮显示条件：科技树 tech_expand 已解锁（不检查星尘，让用户能看到按钮） */
+const hasTechExpand = computed(() => {
+  void gameStore.stateVersion;
+  const node = gameStore.gameState.techTree.get('tech_expand');
+  return !!node && node.unlocked;
+});
+
+/* 是否可以执行膨胀（点击时校验） */
 const canExpand = computed(() => {
   void gameStore.stateVersion;
   return gameStore.expansionSystem.canExpand(gameStore.gameState);
@@ -84,6 +95,10 @@ const showExpandConfirm = ref(false);
 const showTranscendConfirm = ref(false);
 
 function handleExpand(): void {
+  if (!canExpand.value) {
+    showExpandConfirm.value = false;
+    return;
+  }
   gameStore.executeExpansion();
   showExpandConfirm.value = false;
 }
@@ -156,6 +171,7 @@ function onPulseClickValue(payload: { value: BigNumber; isCrit: boolean; x: numb
   border-radius: 4px; cursor: pointer; font-size: 13px;
 }
 .btn-confirm { padding: 8px 24px; border: none; background: #00bcd4; color: #000; font-weight: 700; border-radius: 4px; cursor: pointer; font-size: 13px; }
+.btn-confirm:disabled { background: #555; color: #999; cursor: not-allowed; }
 .btn-transcend { background: #ffd700; }
 .transcend-button {
   display: flex; flex-direction: column; align-items: center; gap: var(--spacing-xs);
