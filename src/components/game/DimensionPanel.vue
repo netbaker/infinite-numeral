@@ -99,6 +99,30 @@
         <span v-else>数字接近 e308 时将触发临界爆发。</span>
       </div>
     </div>
+
+    <!-- 维度晶体商店（晶体消费出口） -->
+    <div v-if="crystalShop.length > 0" class="crystal-shop">
+      <h4>💎 维度晶体商店</h4>
+      <div
+        v-for="item in crystalShop"
+        :key="item.id"
+        class="shop-item"
+        :class="{ 'shop-item--owned': purchasedCrystalUpgrades.has(item.id) }"
+      >
+        <div class="shop-info">
+          <span class="shop-name">{{ item.name }}</span>
+          <span class="shop-desc">{{ item.description }}</span>
+        </div>
+        <button
+          class="btn-buy-crystal"
+          :disabled="!canBuyCrystal(item)"
+          @click="onBuyCrystal(item.id)"
+        >
+          <template v-if="purchasedCrystalUpgrades.has(item.id)">已拥有</template>
+          <template v-else>💎 {{ item.cost }}</template>
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -106,6 +130,8 @@
 import { computed } from 'vue';
 import Decimal from 'break_eternity.js';
 import { useGameStore } from '@/stores/gameStore';
+import { DIMENSION_CRYSTAL_SHOP } from '@/core/Constants';
+import type { DimensionCrystalShopItem } from '@/core/Constants';
 import type { DimensionPanelData, DimensionId } from '@/types/game';
 
 const { visible } = defineProps<{
@@ -117,6 +143,7 @@ const emit = defineEmits<{
   (e: 'switch', dimId: DimensionId): void;
   (e: 'unlock', dimId: DimensionId): void;
   (e: 'synthesize'): void;
+  (e: 'buy-crystal', itemId: string): void;
 }>();
 
 const store = useGameStore();
@@ -135,6 +162,18 @@ const chaosTimer = computed(() => Math.ceil(store.chaosTimer));
 
 // 奇点维度：临界爆发状态
 const isBursting = computed(() => store.isSingularityBursting);
+
+// 维度晶体商店
+const crystalShop = DIMENSION_CRYSTAL_SHOP;
+const purchasedCrystalUpgrades = computed<Set<string>>(() => {
+  void store.stateVersion;
+  return store.gameState.purchasedCrystalUpgrades;
+});
+function canBuyCrystal(item: DimensionCrystalShopItem): boolean {
+  void store.stateVersion;
+  if (purchasedCrystalUpgrades.value.has(item.id)) return false;
+  return store.gameState.dimensionCrystals.gte(item.cost);
+}
 
 const canSynthesize = computed(() => {
   if (!activeDim.value) return false;
@@ -164,6 +203,10 @@ function onUnlock(dimId: DimensionId) {
 
 function onSynthesize() {
   emit('synthesize');
+}
+
+function onBuyCrystal(itemId: string) {
+  emit('buy-crystal', itemId);
 }
 </script>
 
@@ -444,5 +487,65 @@ function onSynthesize() {
 .chaos-timer {
   color: #888;
   font-size: 0.85em;
+}
+
+.crystal-shop {
+  background: #141428;
+  border: 1px solid #4444aa;
+  border-radius: 10px;
+  padding: 16px;
+}
+.crystal-shop h4 {
+  margin: 0 0 12px 0;
+  color: #88ddff;
+}
+.shop-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #1a1a2a;
+  border: 1px solid #333366;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+.shop-item:last-child {
+  margin-bottom: 0;
+}
+.shop-item--owned {
+  border-color: #44aa66;
+  opacity: 0.7;
+}
+.shop-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.shop-name {
+  color: #ccccee;
+  font-weight: 600;
+}
+.shop-desc {
+  color: #8888aa;
+  font-size: 0.82em;
+}
+.btn-buy-crystal {
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #2a4a6a, #3a6a8a);
+  border: 1px solid #55aacc;
+  color: #cceeff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.btn-buy-crystal:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.btn-buy-crystal:not(:disabled):hover {
+  background: linear-gradient(135deg, #3a6a8a, #4a8aaa);
 }
 </style>

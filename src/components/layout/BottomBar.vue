@@ -47,15 +47,20 @@
       :entropy="entropy"
       :stabilizers="stabilizers"
       :rewinds="rewinds"
+      :barriers="barriers"
+      :barrier-active-until="barrierActiveUntil"
       @open-details="emit('openStats')"
       @use-stabilizer="emit('useStabilizer')"
       @use-rewind="emit('useRewind')"
+      @use-barrier="emit('useBarrier')"
     />
     <div class="bottom-bar__divider" />
     <button class="bottom-bar__settings-btn bottom-bar__settings-btn--dimension" @click="emit('openDimension')" title="维度系统">
       🗺️
       <span v-if="dimensionCrystals > 0" class="dimension-badge">{{ dimensionCrystals }}</span>
     </button>
+    <button class="bottom-bar__settings-btn bottom-bar__settings-btn--gene" @click="emit('openGene')" title="基因链">🧬</button>
+    <button class="bottom-bar__settings-btn bottom-bar__settings-btn--archive" @click="emit('openArchive')" title="宇宙档案馆">🏛️</button>
     <button class="bottom-bar__settings-btn" @click="emit('openStats')" title="统计">📊</button>
     <button class="bottom-bar__settings-btn" @click="emit('openAchievements')" title="成就">🏆</button>
     <button class="bottom-bar__settings-btn bottom-bar__settings-btn--challenge" @click="emit('openChallenge')" title="挑战任务">⚔️</button>
@@ -76,8 +81,8 @@ const saveStore = useSaveStore();
 
 const emit = defineEmits<{
   openSettings: []; openHelp: []; openStats: []; openAchievements: []; openChallenge: [];
-  openDimension: [];
-  useStabilizer: []; useRewind: [];
+  openDimension: []; openGene: []; openArchive: [];
+  useStabilizer: []; useRewind: []; useBarrier: [];
 }>();
 
 const prestigeCount = computed(() => {
@@ -131,6 +136,8 @@ const saveStatusText = computed(() => {
 const entropy = computed(() => gameStore.entropyDisplayPercent || gameStore.gameState.entropy);
 const stabilizers = computed(() => gameStore.gameState.entropyStabilizers);
 const rewinds = computed(() => gameStore.gameState.entropyRewinds);
+const barriers = computed(() => gameStore.gameState.entropyBarriers);
+const barrierActiveUntil = computed(() => gameStore.gameState._barrierActiveUntil);
 
 // ---- 维度系统数据 ----
 const dimensionCrystals = computed<number>(() => {

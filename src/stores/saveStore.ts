@@ -2,7 +2,8 @@ import { defineStore } from 'pinia';
 import { markRaw, shallowRef } from 'vue';
 import { useGameStore } from './gameStore';
 import { serialize } from '@/core/Serializer';
-import { saveGame as dbSave, loadGame as dbLoad, deleteSave as dbDelete } from '@/db/database';
+import { saveGame as dbSave, loadGame as dbLoad, deleteSave as dbDelete, getArchiveRecords as dbGetArchives } from '@/db/database';
+import type { ArchiveRecordDB } from '@/db/database';
 import { OfflineSystem } from '@/systems/OfflineSystem';
 import type { OfflineResult } from '@/types/game';
 import { BigNumber } from '@/core/BigNumber';
@@ -228,6 +229,15 @@ export const useSaveStore = defineStore('save', () => {
     return format(result.gainedNumber);
   }
 
+  /**
+   * 读取全部档案馆快照（委托 db，异步；UI 以 loading→loaded 状态呈现）
+   *
+   * @returns ArchiveRecordDB[]（按时间倒序）
+   */
+  async function getArchiveRecords(): Promise<ArchiveRecordDB[]> {
+    return dbGetArchives();
+  }
+
   return {
     // State
     lastSaveTime,
@@ -246,5 +256,6 @@ export const useSaveStore = defineStore('save', () => {
     stopAutoSave,
     formatOfflineDuration,
     formatOfflineGain,
+    getArchiveRecords,
   };
 });

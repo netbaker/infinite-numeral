@@ -25,6 +25,10 @@ export class AchievementSystem {
       const existing = state.achievements.get(def.id);
       if (existing?.unlocked) continue;
 
+      // 宇宙档案馆特殊成就（group: 'archive'）由 ArchiveSystem.evaluateSpecialAchievements
+      // 在超越时统一判定解锁，普通逐 tick 检查不参与，避免条件被误触发
+      if (def.group === 'archive') continue;
+
       if (this.evaluate(def, state)) {
         newlyUnlocked.push(def);
       }

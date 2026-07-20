@@ -17,6 +17,8 @@ export class EntropySystem {
   private _collapsedThisTick: boolean = false;
   private _collapseNarration: string | null = null;
   private _warningLevel: EntropyCollapseLevel | null = null;
+  /** 熵值历史环形缓冲（每 tick 记录一次，供时间回溯回退 5 秒净增量） */
+  private _entropyHistory: { t: number; e: number }[] = [];
 
   // ---- 只读访问器 ----
   get collapsedThisTick(): boolean {
@@ -39,7 +41,9 @@ export class EntropySystem {
     state.entropy = Math.max(0, Math.min(100, state.entropy));
     state.entropyStabilizers = Math.max(0, state.entropyStabilizers);
     state.entropyRewinds = Math.max(0, state.entropyRewinds);
+    state.entropyBarriers = Math.max(0, state.entropyBarriers);
     state.totalCollapses = Math.max(0, state.totalCollapses);
+    state.collapseStreak = Math.max(0, state.collapseStreak);
   }
 
   /**
@@ -58,17 +62,25 @@ export class EntropySystem {
     this._collapseNarration = null;
     this._warningLevel = null;
 
+    const now = Date.now();
     const dtSeconds = deltaTime / 1000;
     const prevLevel = this.getCollapseLevel(state.entropy);
 
-    // 1. 计算熵值增长
-    const growth = this.calculateGrowth(state, outputPerSec, dtSeconds);
+    // 0. 记录熵值历史（5秒滑动窗口，供时间回溯使用；不持久化）
+    this._entropyHistory.push({ t: now, e: state.entropy });
+    while (this._entropyHistory.length > 0 && now - this._entropyHistory[0].t > 5000) {
+      this._entropyHistory.shift();
+    }
+
+    // 1. 计算熵值增长（维度屏障激活时跳过增长计算，熵值不上升）
+    const barrierActive = now < state._barrierActiveUntil;
+    const growth = barrierActive ? 0 : this.calculateGrowth(state, outputPerSec, dtSeconds);
     // 2. 自然衰减（当产出很低时熵值缓慢下降）
     const decay = ENTROPY_CONFIG.NATURAL_DECAY_RATE * dtSeconds;
     const netChange = growth - decay;
 
     state.entropy = Math.max(0, Math.min(100, state.entropy + netChange));
-    state._lastEntropyDecayTick = Date.now();
+    state._lastEntropyDecayTick = now;
 
     // 3. 检测等级变化 → 触发预警叙事
     const newLevel = this.getCollapseLevel(state.entropy);
@@ -76,7 +88,14 @@ export class EntropySystem {
       this._warningLevel = newLevel;
     }
 
-    // 4. 检测大崩塌（熵值达到 100）
+    // 4. 进入临界等级 → 随机令一个已拥有生产者停机 30 秒（不叠加）
+    if (newLevel === 'critical' && prevLevel !== 'critical') {
+      this.triggerCriticalDowntime(state, now);
+    }
+    // 清理已过期的停机生产者
+    this.cleanupDownedProducers(state, now);
+
+    // 5. 检测大崩塌（熵值达到 100）
     let majorEvent = false;
     if (state.entropy >= ENTROPY_CONFIG.COLLAPSE_THRESHOLD) {
       this.triggerCollapse(state);
@@ -106,17 +125,34 @@ export class EntropySystem {
   }
 
   /**
-   * 使用时间回溯 — 回退5秒的熵值积累（估算约减少1-3点）
+   * 使用维度屏障 — 激活后 60 秒内熵值不上升（tick 中跳过增长计算）
+   * @returns 是否成功激活
+   */
+  applyBarrier(state: GameState): boolean {
+    if (state.entropyBarriers <= 0) return false;
+    state.entropyBarriers--;
+    state._barrierActiveUntil = Date.now() + 60000;
+    return true;
+  }
+
+  /**
+   * 使用时间回溯 — 回退最近 5 秒内积累的熵值（窗口内净增量，非当前百分比）
    * @returns 是否成功使用
    */
   applyRewind(state: GameState): boolean {
     if (state.entropyRewinds <= 0) return false;
     state.entropyRewinds--;
-    const estimatedRecovery = Math.max(1, Math.min(
-      15,
-      state.entropy * 0.03 + 2
-    ));
-    state.entropy = Math.max(0, state.entropy - estimatedRecovery);
+    const now = Date.now();
+    const windowStart = now - 5000;
+    // 取窗口内（>= windowStart）的历史样本
+    const relevant = this._entropyHistory.filter((h) => h.t >= windowStart);
+    if (relevant.length >= 2) {
+      const oldest = relevant[0].e;
+      // 窗口内净增量（仅当熵值确实上升时回退，下降不反向加熵）
+      const increment = Math.max(0, state.entropy - oldest);
+      state.entropy = Math.max(0, state.entropy - increment);
+    }
+    // 窗口为空（刚加载/首次回溯）：回退 0，无效果
     return true;
   }
 
@@ -125,6 +161,7 @@ export class EntropySystem {
    */
   resetOnPrestige(state: GameState): void {
     state.entropy = ENTROPY_CONFIG.PRESTIGE_RESIDUAL;
+    state.collapseStreak = 0;
   }
 
   /**
@@ -132,6 +169,7 @@ export class EntropySystem {
    */
   resetOnExpansion(state: GameState): void {
     state.entropy = ENTROPY_CONFIG.EXPANSION_RESIDUAL;
+    state.collapseStreak = 0;
   }
 
   // ============================================================
@@ -142,6 +180,7 @@ export class EntropySystem {
    * 获取当前熵值崩溃等级
    */
   getCollapseLevel(entropy: number): EntropyCollapseLevel {
+    if (entropy >= 100) return 'collapsed';
     if (entropy >= ENTROPY_CONFIG.CRITICAL_THRESHOLD) return 'critical';
     if (entropy >= ENTROPY_CONFIG.UNSTABLE_THRESHOLD) return 'unstable';
     return 'stable';
@@ -223,8 +262,12 @@ export class EntropySystem {
    * 执行大崩塌事件效果
    */
   private triggerCollapse(state: GameState): void {
-    // 1. 扣除当前数字的一部分
-    const drainPercent = ENTROPY_CONFIG.COLLAPSE_DRAIN_PERCENT / 100;
+    // 1. 扣除当前数字的一部分（阶梯式：连续崩塌递增，封顶 COLLAPSE_DRAIN_MAX）
+    const drainPercent =
+      Math.min(
+        ENTROPY_CONFIG.COLLAPSE_DRAIN_PERCENT + state.collapseStreak * ENTROPY_CONFIG.COLLAPSE_DRAIN_STEP,
+        ENTROPY_CONFIG.COLLAPSE_DRAIN_MAX,
+      ) / 100;
     const drainAmount = state.number.times(drainPercent);
     state.number = state.number.minus(drainAmount);
     // 安全兜底：Decimal 用 .lt() 比较，用 .minus() 做减法
@@ -235,13 +278,37 @@ export class EntropySystem {
     // 2. 熵值回落到临界线以下（给玩家喘息空间）
     state.entropy = ENTROPY_CONFIG.CRITICAL_THRESHOLD - 10;
 
-    // 3. 更新统计
+    // 3. 更新统计与连续崩塌计数
     state.totalCollapses++;
+    state.collapseStreak += 1;
     state.lastCollapseAt = Date.now();
 
     // 4. 随机选择一条崩塌叙事
     const idx = Math.floor(Math.random() * ENTROPY_COLLAPSE_NARRATIVES.length);
     this._collapseNarration = ENTROPY_COLLAPSE_NARRATIVES[idx];
+  }
+
+  /**
+   * 进入临界等级时随机选择一个已拥有生产者停机 30 秒。
+   * 同一时间最多 1 个生产者停机（不叠加）。
+   */
+  private triggerCriticalDowntime(state: GameState, now: number): void {
+    if (state.downedProducers.size > 0) return; // 已有停机，不叠加
+    const owned = Array.from(state.unlockedProducers);
+    if (owned.length === 0) return;
+    const pick = owned[Math.floor(Math.random() * owned.length)];
+    state.downedProducers.set(pick, now + 30000);
+  }
+
+  /**
+   * 清理已过期的停机生产者（停机结束时间戳 <= now 即恢复）
+   */
+  private cleanupDownedProducers(state: GameState, now: number): void {
+    for (const [id, until] of state.downedProducers) {
+      if (until <= now) {
+        state.downedProducers.delete(id);
+      }
+    }
   }
 }
 

@@ -2,6 +2,7 @@ import { BigNumber } from '@/core/BigNumber';
 import { PRESTIGE_THRESHOLD, STARDUST_UPGRADE_DEFS } from '@/core/Constants';
 import { GameState } from '@/types/game';
 import Decimal from 'break_eternity.js';
+import { geneSystem } from '@/systems/GeneSystem';
 
 /**
  * 重置（星尘）系统
@@ -72,8 +73,13 @@ export class PrestigeSystem {
     }
 
     // 保留+重置字段
-    newState.number = new Decimal(startBonus);
-    newState.totalNumber = new Decimal(startBonus);
+    // 基因链跨 Prestige 继承（不被清空），对齐 GDD §2.3.1
+    newState.geneChain = geneSystem.cloneChain(state.geneChain);
+    // 韧性基因：Prestige 后起始数字 = 10^Lv（对齐 GDD §2.1 / Story 1.3.3）
+    const resilienceStart = geneSystem.getResilienceStart(state);
+    const prestigeStartNumber = startBonus + resilienceStart;
+    newState.number = new Decimal(prestigeStartNumber);
+    newState.totalNumber = new Decimal(prestigeStartNumber);
     newState.stardust = state.stardust + gainedStardust;
     newState.cumulativeStardust = state.cumulativeStardust + gainedStardust;
     newState.prestigeCount = state.prestigeCount + 1;
@@ -152,6 +158,20 @@ export class PrestigeSystem {
 
     // 重置 lastTickTime 为当前时间
     newState.lastTickTime = Date.now();
+
+    // ---- 宇宙档案馆：本轮 Run 计数器跨 Prestige 保留（Prestige 不结束 Run，Story 2.1.2）----
+    newState.archiveUnlocked = state.archiveUnlocked;
+    newState._runStartTime = state._runStartTime;
+    newState._runMaxNumber = state._runMaxNumber;
+    newState._runDimensionDwell = { ...state._runDimensionDwell };
+    newState._runDimensionsVisited = new Set(state._runDimensionsVisited);
+    newState._runEventCount = state._runEventCount;
+    newState._runMaxEntropy = state._runMaxEntropy;
+    newState._runCollapses = state._runCollapses;
+    newState._runSingularityBurst = state._runSingularityBurst;
+    newState._runDarkEnergyEarned = state._runDarkEnergyEarned;
+    // 本轮星尘累计（含本次重置获得）
+    newState._runStardustEarned = state._runStardustEarned + gainedStardust;
 
     return newState;
   }

@@ -67,8 +67,11 @@
       @open-achievements="showAchievements = true"
       @open-challenge="showChallenge = true"
       @open-dimension="showDimension = true"
+      @open-gene="showGene = true"
+      @open-archive="showArchive = true"
       @use-stabilizer="gameStore.useEntropyStabilizer()"
       @use-rewind="gameStore.useEntropyRewind()"
+      @use-barrier="gameStore.useEntropyBarrier()"
     />
 
     <!-- 弹窗 -->
@@ -116,6 +119,19 @@
       @switch="(id) => gameStore.switchDimension(id)"
       @unlock="(id) => gameStore.unlockDimension(id)"
       @synthesize="gameStore.synthesizeCrystal()"
+      @buy-crystal="(id) => gameStore.buyCrystalUpgrade(id)"
+    />
+
+    <!-- 基因链面板 -->
+    <GeneChain
+      :visible="showGene"
+      @close="showGene = false"
+    />
+
+    <!-- 宇宙档案馆 -->
+    <ArchiveModal
+      :visible="showArchive"
+      @close="showArchive = false"
     />
   </div>
 </template>
@@ -144,7 +160,9 @@ import EffectIndicator from '@/components/game/EffectIndicator.vue';
 import ChallengePanel from '@/components/modals/ChallengePanel.vue';
 import TaskBadge from '@/components/game/TaskBadge.vue';
 import DimensionPanel from '@/components/game/DimensionPanel.vue';
+import GeneChain from '@/components/game/GeneChain.vue';
 import TutorialGuide from '@/components/game/TutorialGuide.vue';
+import ArchiveModal from '@/components/modals/ArchiveModal.vue';
 
 const gameStore = useGameStore();
 useOffline();
@@ -172,6 +190,8 @@ const showStats = ref(false);
 const showAchievements = ref(false);
 const showChallenge = ref(false);
 const showDimension = ref(false);
+const showGene = ref(false);
+const showArchive = ref(false);
 
 // 挑战面板数据
 const challengeData = computed(() => {

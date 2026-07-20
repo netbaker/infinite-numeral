@@ -1,5 +1,6 @@
 import Decimal from 'break_eternity.js';
 import { GameState } from '@/types/game';
+import { geneSystem } from '@/systems/GeneSystem';
 
 /**
  * 超越叙事文本
@@ -56,6 +57,9 @@ export class TranscendSystem {
     const gainedSingularity = this.calculateSingularity(state.cumulativeDarkEnergy);
     const newState = new GameState();
 
+    // 基因链跨 Transcend 继承（GDD §2.3.3）
+    newState.geneChain = geneSystem.cloneChain(state.geneChain);
+
     // 元升级起步加成
     let startMult = 1;
     const metaStart = state.transcendUpgrades.get('meta_start');
@@ -79,6 +83,10 @@ export class TranscendSystem {
 
     // 保留科技树
     newState.techTree = new Map(state.techTree);
+
+    // 保留成就进度（重要：档案馆特殊成就仅由 ArchiveSystem 解锁，
+    // 若不在此复制，超越会清空成就导致下一轮重复发放奇点奖励）
+    newState.achievements = new Map(state.achievements);
 
     // 保留已解锁生产者
     newState.unlockedProducers = new Set(state.unlockedProducers);
@@ -128,6 +136,22 @@ export class TranscendSystem {
     newState.eventCooldown = 0;
     newState.ongoingEffects = [];
     newState.timeSpeedMultiplier = 1;
+
+    // 基因进化：首次 Transcend 获取初始基因（2-3 条）；否则额外获取 1 条新基因（5% exotic）
+    // 重组由玩家在 UI 中选择（Story 1.2.3），此处仅做自动获取
+    if (newState.geneChain.chain.length === 0) {
+      geneSystem.generateInitialChain(newState);
+    } else {
+      geneSystem.acquireNewGene(newState);
+    }
+
+    // ---- 宇宙档案馆（Story 2.1.2 / 2.1.3）----
+    // 档案馆解锁：累计超越 >= 5 时永久解锁（ADR-002 A5 / GDD §2.3）
+    newState.archiveUnlocked = state.archiveUnlocked || newState.transcendCount >= 5;
+    // 新 Run 计时起点（本轮采集以此为准；runDuration 从该时刻算起）
+    newState._runStartTime = Date.now();
+    // 新 Run 起始最高数字（避免 Transcend 后首帧 _runMaxNumber 失真）
+    newState._runMaxNumber = newState.number;
 
     return newState;
   }

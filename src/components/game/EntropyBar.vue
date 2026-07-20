@@ -1,5 +1,5 @@
 <template>
-  <div class="entropy-bar" :class="levelClass">
+  <div class="entropy-bar" :class="[levelClass, { 'entropy-bar--barrier': barrierActive }]">
     <!-- 图标 + 标签 -->
     <span class="entropy-bar__icon">🌡️</span>
     <span class="entropy-bar__label">熵</span>
@@ -44,6 +44,14 @@
     >
       ⏪{{ rewinds }}
     </button>
+    <button
+      v-if="barriers > 0 && displayPercent > 15"
+      class="entropy-bar__action btn-barrier"
+      :title="barrierActive ? `维度屏障激活中（剩余 ${barrierRemaining}s）` : '使用维度屏障（60秒内熵值不上升）'"
+      @click.stop="emit('use-barrier')"
+    >
+      🛡️{{ barriers }}
+    </button>
   </div>
 </template>
 
@@ -57,13 +65,28 @@ const props = defineProps<{
   stabilizers: number;
   /** 回溯持有数 */
   rewinds: number;
+  /** 维度屏障持有数 */
+  barriers: number;
+  /** 维度屏障激活截止时间戳(ms)，0=未激活 */
+  barrierActiveUntil: number;
 }>();
 
 const emit = defineEmits<{
   'open-details': [];
   'use-stabilizer': [];
   'use-rewind': [];
+  'use-barrier': [];
 }>();
+
+/** 维度屏障是否激活中 */
+const barrierActive = computed(() => (props.barrierActiveUntil ?? 0) > Date.now());
+
+/** 维度屏障剩余秒数 */
+const barrierRemaining = computed(() => {
+  const until = props.barrierActiveUntil ?? 0;
+  if (until <= Date.now()) return 0;
+  return Math.ceil((until - Date.now()) / 1000);
+});
 
 /** 显示用百分比（取整 0-100） */
 const displayPercent = computed(() =>
@@ -128,6 +151,12 @@ const tooltipText = computed(() => {
 .entropy-level--collapsed {
   background: rgba(220, 38, 38, 0.25);
   animation: collapse-flash 0.5s ease-in-out 3;
+}
+
+/* 维度屏障激活：蓝色护盾边框 */
+.entropy-bar--barrier .entropy-bar__track {
+  border: 2px solid #3b82f6;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
 }
 
 @keyframes critical-pulse {
@@ -272,5 +301,9 @@ const tooltipText = computed(() => {
 .btn-rewind:hover {
   border-color: #a78bfa;
   background: #f5f3ff;
+}
+.btn-barrier:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
 }
 </style>

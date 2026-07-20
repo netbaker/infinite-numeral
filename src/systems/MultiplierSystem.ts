@@ -1,5 +1,6 @@
 import { BigNumber } from '@/core/BigNumber';
-import { UPGRADE_DEFS, STARDUST_UPGRADE_DEFS, TECH_TREE_DEFS, EXPANSION_UPGRADE_DEFS, TRANSCEND_UPGRADE_DEFS, TRANSCEND_MILESTONE_DEFS, FACTOR_DEFS } from '@/core/Constants';
+import { UPGRADE_DEFS, STARDUST_UPGRADE_DEFS, TECH_TREE_DEFS, EXPANSION_UPGRADE_DEFS, TRANSCEND_UPGRADE_DEFS, TRANSCEND_MILESTONE_DEFS, FACTOR_DEFS, DIMENSION_CRYSTAL_SHOP, GENE_DEFS } from '@/core/Constants';
+import { dimensionSystem } from '@/systems/DimensionSystem';
 import type { MultiplierEntry, GameState } from '@/types/game';
 
 /**
@@ -280,6 +281,47 @@ export class MultiplierSystem {
         });
       }
     }
+
+    // 维度产出倍率（方案A：通过 MultiplierSystem 注册为全局倍率，接入产出链）
+    this.registerDimensionMultiplier(state);
+
+    // 基因倍率（'gene' 来源，G6 公式，对齐 GDD §2.5 / 架构评估 §1.4）
+    this.registerGeneMultipliers(state);
+
+    // 维度晶体商店购买的永久全局加成（源 'crystal'）
+    for (const item of DIMENSION_CRYSTAL_SHOP) {
+      if (state.purchasedCrystalUpgrades.has(item.id)) {
+        this.register({
+          id: `crystal_${item.id}`,
+          source: 'crystal',
+          target: '',
+          value: 1 + item.value,
+        });
+      }
+    }
+  }
+
+  /**
+   * 注册/刷新维度产出倍率（全局）。
+   *
+   * 维度系统计算出的当前维度倍率（质数 ×3、混沌随机倍率、反熵叠加、
+   * 奇点临界爆发等）通过 MultiplierSystem 注册为 'dimension' 来源的全局倍率，
+   * 从而真正接入 gameTick 的产出计算链路（此前维度系统仅为纯视觉装饰）。
+   *
+   * 该方法可独立于 recalculateFromState 每 tick 单独调用，仅更新这一条
+   * 倍率条目，避免整体重算所有升级倍率带来的开销。
+   *
+   * @param state 当前游戏状态
+   */
+  registerDimensionMultiplier(state: GameState): void {
+    this.unregister('dimension_global');
+    const dimMult = dimensionSystem.calculateDimensionMultiplier(state);
+    this.register({
+      id: 'dimension_global',
+      source: 'dimension',
+      target: '',
+      value: dimMult,
+    });
   }
 
   /**
@@ -289,6 +331,86 @@ export class MultiplierSystem {
    */
   getEntries(): readonly MultiplierEntry[] {
     return this._entries;
+  }
+
+  /**
+   * 注册基因倍率（'gene' 来源，G6 公式）
+   *
+   * 统一公式（G6 / 架构评估 §1.4）：
+   *   value = 1 + (baseEffect + effectPerLevel × (level - 1)) × expression
+   *   expression ∈ [0, 1]（G3）
+   *
+   * 注册策略（对齐 GDD §2.5）：
+   * - gene_growth / gene_memory / gene_exotic(Lv≥3) → 全局（target=''）
+   * - gene_entangle → 逐生产者（target=producerId）
+   * - gene_catalyst / gene_resilience / gene_resonance / gene_mutation →
+   *   非倍率型，由对应系统（Factor/Event/Prestige）读取，此处不注册
+   */
+  registerGeneMultipliers(state: GameState): void {
+    const chain = state.geneChain;
+    if (!chain || chain.chain.length === 0) return;
+
+    const recordLog10 = Number(chain.historicalMaxNumber) || 0;
+
+    for (const gene of chain.chain) {
+      const def = GENE_DEFS.find((d) => d.id === gene.type);
+      if (!def) continue;
+
+      // 记忆基因：特殊公式（使用 chain 级 historicalMaxNumber，G4）
+      if (gene.type === 'gene_memory') {
+        const value = 1 + def.baseEffect * recordLog10 * gene.expression;
+        this.register({
+          id: `gene_memory_${gene.instanceId}`,
+          source: 'gene',
+          target: '',
+          value,
+        });
+        continue;
+      }
+
+      // 奇异基因：仅 Lv 3+ 注册全局倍率
+      if (gene.type === 'gene_exotic') {
+        if (gene.level < 3) continue;
+        const value = 1 + (def.baseEffect + def.effectPerLevel * (gene.level - 1)) * gene.expression;
+        this.register({
+          id: `gene_exotic_${gene.instanceId}`,
+          source: 'gene',
+          target: '',
+          value,
+        });
+        continue;
+      }
+
+      // 纠缠基因：逐生产者注册协同倍率
+      if (gene.type === 'gene_entangle') {
+        const value = 1 + (def.baseEffect + def.effectPerLevel * (gene.level - 1)) * gene.expression;
+        const producers = gene.entangledProducers && gene.entangledProducers.length > 0
+          ? gene.entangledProducers
+          : ['producer1'];
+        for (const pid of producers) {
+          this.register({
+            id: `gene_entangle_${gene.instanceId}_${pid}`,
+            source: 'gene',
+            target: pid,
+            value,
+          });
+        }
+        continue;
+      }
+
+      // 通用全局倍率型（gene_growth 等）
+      if (def.effectType === 'output_multiplier') {
+        const value = 1 + (def.baseEffect + def.effectPerLevel * (gene.level - 1)) * gene.expression;
+        this.register({
+          id: `${gene.type}_${gene.instanceId}`,
+          source: 'gene',
+          target: '',
+          value,
+        });
+      }
+      // gene_catalyst / gene_resilience / gene_resonance / gene_mutation：
+      // 非倍率型，不在此注册（由 FactorSystem / EventSystem / PrestigeSystem 读取）
+    }
   }
 
   /**

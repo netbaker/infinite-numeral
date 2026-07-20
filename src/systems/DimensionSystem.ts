@@ -4,6 +4,7 @@ import {
   DIMENSION_DEFS,
   DIMENSION_SWITCH_NARRATIVES,
   DIMENSION_MASTERY_REWARDS,
+  DIMENSION_CRYSTAL_SHOP,
 } from '@/core/Constants';
 
 /**
@@ -96,9 +97,12 @@ export class DimensionSystem {
     const dimState = state.dimensionStates.get(dimId);
     if (!dimState || !dimState.unlocked) return;
 
-    // 精通度增长速度：与当前产出和在线时间相关
-    const growthRate = outputPerSec
-      .toNumber() * deltaTime * 0.0001;
+    // 精通度增长速度：与产出对数（log10）相关。
+    // 使用 log10 而非原始 toNumber()，避免 outputPerSec 超过 Number.MAX_VALUE
+    // 时 toNumber() 返回 Infinity 导致精通度瞬间拉满。
+    // 增长因子 = log10(outputPerSec + 1) × deltaTime × 系数，对任意量级均有限、单调递增。
+    const logOutput = outputPerSec.add(1).log(10).toNumber();
+    const growthRate = logOutput * deltaTime * 0.0005;
     const newMastery = Math.min(
       dimState.master + growthRate,
       DIMENSION_DEFS[dimId].maxMastery
@@ -156,8 +160,7 @@ export class DimensionSystem {
         break;
 
       case 1: { // 质数维度
-        const num = state.number.toNumber();
-        if (this.isPrime(num)) {
+        if (this.isPrimeDimensionTrigger(state.number)) {
           multiplier *= 3;
         }
         break;
@@ -170,8 +173,8 @@ export class DimensionSystem {
       }
 
       case 3: { // 反熵维度
-        // 每次 Prestige 叠加 20%
-        const bonus = 1 + state.prestigeCount * 0.2;
+        // 每次超越（Transcend）叠加 20% — 使用 transcendCount（不随膨胀清零）
+        const bonus = 1 + state.transcendCount * 0.2;
         multiplier *= bonus;
         break;
       }
@@ -275,6 +278,36 @@ export class DimensionSystem {
   }
 
   /**
+   * 质数维度触发判定（确定性，覆盖大数字阶段）。
+   *
+   * - 数字 < 1e15：使用现有 `isPrime(number.toNumber())` 逻辑（与设计原意一致）。
+   * - 数字 >= 1e15：JavaScript 的 Number 安全整数上限仅 ~9e15，
+   *   `toNumber()` 会丢失精度导致质数检测失效。改用 `log10(number)` 的
+   *   整数部分作为检测目标（保留「数字特征」语义，确定性强、可测试）。
+   *   利用 Decimal 归一化后 `e` 字段即等于 `floor(log10(n))`，避免浮点误差。
+   *
+   * @param n 当前数字（Decimal）
+   * @returns 是否触发质数维度 ×3 倍率
+   */
+  private isPrimeDimensionTrigger(n: Decimal): boolean {
+    const SMALL_THRESHOLD = 1e15;
+    if (n.lt(SMALL_THRESHOLD)) {
+      return this.isPrime(n.toNumber());
+    }
+    // 大数字：取 log10 整数部分作为检测目标
+    const exp = (n as unknown as { e?: number }).e;
+    let target: number;
+    if (typeof exp === 'number' && Number.isFinite(exp)) {
+      // Decimal 归一化：n = mantissa × 10^e，mantissa ∈ [1,10)
+      // → floor(log10(n)) = e（确定性，无浮点误差）
+      target = exp;
+    } else {
+      target = Math.floor(n.log(10).toNumber());
+    }
+    return this.isPrime(target);
+  }
+
+  /**
    * 获取维度面板数据（给 UI 用）
    */
   getDimensionPanelData(state: GameState): DimensionPanelData[] {
@@ -322,19 +355,40 @@ export class DimensionSystem {
   }
 
   /**
+   * 购买维度晶体商店的永久全局加成（消耗维度晶体）
+   *
+   * 购买后写入 `state.purchasedCrystalUpgrades`，由 MultiplierSystem 在
+   * recalculateFromState 时注册为 'crystal' 来源的全局倍率（1 + value）。
+   * 购买为一次性（不可重复购买同一商品）。
+   *
+   * @param state 游戏状态
+   * @param itemId 商品ID
+   * @returns 是否购买成功
+   */
+  buyCrystalUpgrade(state: GameState, itemId: string): boolean {
+    const item = DIMENSION_CRYSTAL_SHOP.find((i) => i.id === itemId);
+    if (!item) return false;
+    if (state.purchasedCrystalUpgrades.has(itemId)) return false; // 一次性，不可重复
+    if (state.dimensionCrystals.lt(item.cost)) return false;
+    state.dimensionCrystals = state.dimensionCrystals.sub(item.cost);
+    state.purchasedCrystalUpgrades.add(itemId);
+    return true;
+  }
+
+  /**
    * 检查并更新混沌倍率（每60秒重投）
    */
   checkChaosMultiplier(state: GameState): void {
-    if (state.currentDimension !== 1) return;  // Dim-1 是混沌维度
+    if (state.currentDimension !== 2) return;  // Dim-2 是混沌维度
     
     const now = Date.now();
     if (!state._chaosMultiplier || state._chaosMultiplier < 1) {
-      // 首次初始化
-      state._chaosMultiplier = 1 + Math.random() * 4;  // 1-5x
+      // 首次初始化（0.5 ~ 5.0）
+      state._chaosMultiplier = 0.5 + Math.random() * 4.5;
       state._lastDimensionSwitch = now;
     } else if (now - state._lastDimensionSwitch > 60000) {
-      // 每60秒重投
-      state._chaosMultiplier = 1 + Math.random() * 4;
+      // 每60秒重投（0.5 ~ 5.0）
+      state._chaosMultiplier = 0.5 + Math.random() * 4.5;
       state._lastDimensionSwitch = now;
     }
   }
@@ -343,7 +397,7 @@ export class DimensionSystem {
    * 获取当前混沌倍率
    */
   getChaosMultiplier(state: GameState): number {
-    if (state.currentDimension !== 1) return 1;
+    if (state.currentDimension !== 2) return 1;
     return state._chaosMultiplier || 1;
   }
 
@@ -351,7 +405,7 @@ export class DimensionSystem {
    * 获取混沌倍率剩余时间（秒）
    */
   getChaosTimer(state: GameState): number {
-    if (state.currentDimension !== 1) return 0;
+    if (state.currentDimension !== 2) return 0;
     const elapsed = (Date.now() - state._lastDimensionSwitch) / 1000;
     return Math.max(0, 60 - elapsed);
   }

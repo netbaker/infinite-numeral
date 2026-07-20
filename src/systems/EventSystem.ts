@@ -7,6 +7,7 @@ import type {
 } from '@/types/game';
 import Decimal from 'break_eternity.js';
 import { EVENT_DEFS } from '@/core/Constants';
+import { geneSystem } from '@/systems/GeneSystem';
 
 /**
  * EventSystem — 随机宇宙事件引擎
@@ -98,10 +99,12 @@ export class EventSystem {
     if (candidates.length === 0) return false;
 
     // 对每个候选做概率检定
+    // 共振基因（gene_resonance）：事件发生率 ×(1 + 0.15×Lv)，Story 1.3.3 / GDD §2.1
+    const resonance = geneSystem.getResonance(state);
     for (const def of candidates) {
       // 概率随量级略微提升（对数衰减）
       const magBonus = Math.min(0.003, (currentMag - def.minMagnitude) * 0.0005);
-      const probability = def.baseProbability + magBonus;
+      const probability = (def.baseProbability + magBonus) * resonance.rateMult;
 
       if (Math.random() < probability) {
         // 命中！设置活跃事件
@@ -164,12 +167,14 @@ export class EventSystem {
 
     // 2. 注册持续效果（如果有）
     if (durationEffects.length > 0) {
+      // 共振基因（gene_resonance）：事件持续时间 ×(1 + 0.10×Lv)，Story 1.3.3 / GDD §2.1
+      const resonance = geneSystem.getResonance(state);
       const ongoing: OngoingEffect = {
         id: `${def.id}_opt${optionIndex}_${currentTimestamp}`,
         sourceEventId: def.id,
         effects: durationEffects,
         startedAt: currentTimestamp,
-        expiresAt: currentTimestamp + durationEffects[0].duration * 1000,
+        expiresAt: currentTimestamp + durationEffects[0].duration * 1000 * resonance.durationMult,
         summary: option.text,
       };
       state.ongoingEffects.push(ongoing);

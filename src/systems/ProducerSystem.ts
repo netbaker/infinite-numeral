@@ -143,10 +143,17 @@ export class ProducerSystem {
     multiplierSystem: MultiplierSystem,
   ): BigNumber {
     let totalOutput = BigNumber.zero();
+    const now = Date.now();
 
     for (const config of PRODUCER_CONFIGS) {
       const producerState = state.producers.get(config.id);
       if (!producerState || producerState.level === 0) {
+        continue;
+      }
+
+      // 临界随机停机：停机中的生产者（停机结束时间戳 > now）不计入产出
+      const downedUntil = state.downedProducers.get(config.id);
+      if (downedUntil !== undefined && downedUntil > now) {
         continue;
       }
 

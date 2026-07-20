@@ -1,5 +1,5 @@
 <template>
-  <div class="producer-card" :class="{ 'producer-card--locked': !canAfford }">
+  <div class="producer-card" :class="{ 'producer-card--locked': !canAfford, 'producer-card--downed': isDowned }">
     <div class="producer-card__header">
       <span class="producer-card__name">{{ config.name }}</span>
       <span class="producer-card__level">Lv.{{ level }}</span>
@@ -25,6 +25,7 @@
         @click="handleBuy"
       >购买</button>
     </div>
+    <div v-if="isDowned" class="producer-card__downed">⚠ 临界停机中 {{ downRemaining }}s</div>
   </div>
 </template>
 
@@ -83,6 +84,19 @@ const canAfford = computed(() => {
   return BigNumber.from(gameStore.gameState.number).gte(bulkCost.value);
 });
 
+const isDowned = computed(() => {
+  void gameStore.stateVersion;
+  const until = gameStore.gameState.downedProducers.get(props.producerId);
+  return until !== undefined && until > Date.now();
+});
+
+const downRemaining = computed(() => {
+  void gameStore.stateVersion;
+  const until = gameStore.gameState.downedProducers.get(props.producerId);
+  if (until === undefined || until <= Date.now()) return 0;
+  return Math.ceil((until - Date.now()) / 1000);
+});
+
 function handleBuy(): void {
   const qty = bulkMode.value;
   if (qty === 0) {
@@ -109,6 +123,14 @@ function handleBuy(): void {
 }
 .producer-card:hover { border-color: rgba(76,175,80,0.3); background-color: var(--color-surface-hover); }
 .producer-card--locked { opacity: 0.5; }
+.producer-card--downed { opacity: 0.45; filter: grayscale(0.85); }
+.producer-card__downed {
+  font-size: 10px;
+  color: var(--color-danger, #ff6b6b);
+  font-weight: 600;
+  text-align: center;
+  margin-top: 2px;
+}
 .producer-card__header { display: flex; justify-content: space-between; align-items: center; }
 .producer-card__name { font-size: 12px; font-weight: 600; color: var(--color-text); }
 .producer-card__level { font-size: 10px; color: var(--color-narrative); font-weight: 500; }

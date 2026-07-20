@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia';
-import { ref, markRaw, shallowRef } from 'vue';
+import { ref, computed, markRaw, shallowRef } from 'vue';
 import { BigNumber } from '@/core/BigNumber';
 import { format } from '@/core/Formatter';
 import { deserialize } from '@/core/Serializer';
-import { GameState, type EpochConfig, type DimensionId } from '@/types/game';
+import { GameState, type EpochConfig, type DimensionId, type ArchiveRecord, type ArchiveSummary } from '@/types/game';
 import type { SaveData } from '@/types/save';
 import Decimal from 'break_eternity.js';
 import { ProducerSystem } from '@/systems/ProducerSystem';
@@ -20,6 +20,7 @@ import { EventSystem } from '@/systems/EventSystem';
 import { ChallengeSystem } from '@/systems/ChallengeSystem';
 import { EntropySystem } from '@/systems/EntropySystem';
 import { DimensionSystem } from '@/systems/DimensionSystem';
+import { geneSystem } from '@/systems/GeneSystem';
 import {
   PRODUCER_CONFIGS,
   UPGRADE_DEFS,
@@ -39,9 +40,24 @@ import {
   EVENT_POST_NARRATIVES,
   ENTROPY_WARNING_NARRATIVES,
   ENTROPY_RECOVERY_NARRATIVES,
+  ENTROPY_ITEM_DEFS,
+  ENTROPY_CONFIG,
   DIMENSION_DEFS,
   DIMENSION_SWITCH_NARRATIVES,
+  ACHIEVEMENT_DEFS,
 } from '@/core/Constants';
+import {
+  captureRun,
+  enforceCapacity,
+  evaluateSpecialAchievements,
+  computeSummary,
+} from '@/systems/ArchiveSystem';
+import {
+  addArchiveRecord,
+  getArchiveRecords as dbGetArchiveRecords,
+  deleteArchiveRecord,
+  type ArchiveRecordDB,
+} from '@/db/database';
 
 /**
  * 游戏核心 Store
@@ -99,6 +115,78 @@ export const useGameStore = defineStore('game', () => {
 
   /** 游戏是否运行中 */
   const isRunning = ref<boolean>(false);
+
+  // ---- 宇宙档案馆 UI 状态（Story 2.3：loading→loaded / locked placeholder）----
+  /** 快照列表（来自 `archives` 独立表，含 Dexie id） */
+  const archiveRecords = ref<ArchiveRecordDB[]>([]);
+  /** 异步加载中标记 */
+  const archiveLoading = ref<boolean>(false);
+
+  /** 档案馆是否已解锁（响应式，依赖 gameState 引用变化） */
+  const archiveUnlocked = computed<boolean>(() => {
+    void gameState.value;
+    void stateVersion.value;
+    return gameState.value.archiveUnlocked;
+  });
+
+  /** 统计摘要（由 ArchiveSystem.computeSummary 计算） */
+  const archiveSummary = computed<ArchiveSummary>(() => {
+    return computeSummary(archiveRecords.value);
+  });
+
+  /** 异步加载全部快照（打开档案馆时调用） */
+  async function loadArchives(): Promise<void> {
+    if (!gameState.value.archiveUnlocked) {
+      archiveRecords.value = [];
+      return;
+    }
+    archiveLoading.value = true;
+    try {
+      archiveRecords.value = await dbGetArchiveRecords();
+    } catch (e) {
+      console.error('[archive] load failed', e);
+      archiveRecords.value = [];
+    } finally {
+      archiveLoading.value = false;
+    }
+  }
+
+  /** 删除一条快照（非里程碑才能删；由 UI 在调用前校验） */
+  async function removeArchive(id: number): Promise<void> {
+    try {
+      await deleteArchiveRecord(id);
+      archiveRecords.value = archiveRecords.value.filter((r) => r.id !== id);
+    } catch (e) {
+      console.error('[archive] delete failed', e);
+    }
+  }
+
+  /**
+   * 将本次快照写入 `archives` 独立表，并在写入后执行容量控制（Story 2.2.1）。
+   * 超出 MAX_ARCHIVE_RECORDS 时删除最早的非里程碑快照；里程碑永远保留。
+   */
+  async function persistArchiveRecord(record: ArchiveRecord): Promise<void> {
+    try {
+      const existing = await dbGetArchiveRecords();
+      const merged = [record, ...existing];
+      const trimmed = enforceCapacity(merged);
+      const keepRunIds = new Set(trimmed.map((r) => r.runId));
+      // 删除被容量控制淘汰的已有快照（按 runId 定位 Dexie id）
+      for (const r of existing) {
+        if (!keepRunIds.has(r.runId)) {
+          await deleteArchiveRecord(r.id);
+        }
+      }
+      // 写入本次快照（里程碑永远保留；非里程碑若被淘汰则不写）
+      if (keepRunIds.has(record.runId)) {
+        await addArchiveRecord(record);
+      }
+      // 刷新内存缓存（供 UI 实时更新）
+      archiveRecords.value = await dbGetArchiveRecords();
+    } catch (e) {
+      console.error('[archive] persist failed', e);
+    }
+  }
 
   // ---- 事件系统 UI 状态 ----
   /** 当前需要弹窗显示的事件定义 */
@@ -414,6 +502,11 @@ export const useGameStore = defineStore('game', () => {
     // 重新计算倍增器
     multiplierSystem.recalculateFromState(state);
 
+    // 宇宙档案馆：高超越次数存档自动解锁（Story 2.1.3 兼容旧存档）
+    if (state.transcendCount >= 5) {
+      state.archiveUnlocked = true;
+    }
+
     gameState.value = markRaw(state);
     updateDisplayStrings(state);
     isRunning.value = true;
@@ -436,9 +529,16 @@ export const useGameStore = defineStore('game', () => {
     const state = gameState.value;
     const now = Date.now();
 
+    // 本轮 Run 计时起点：全新游戏（_runStartTime 默认 0）首次 tick 时建立
+    if (state._runStartTime === 0) {
+      state._runStartTime = now;
+    }
+
     // 0. 事件系统 tick（清理过期效果 + 尝试触发新事件）
     const hasNewEvent = eventSystem.tick(state, now);
     if (hasNewEvent && eventSystem.newEvent) {
+      // 本轮事件触发计数器 +1（Story 2.1.2）
+      state._runEventCount++;
       // 有新事件需要弹窗 → 设置 UI 状态
       const def = eventSystem.newEvent;
       activeEventDef.value = { def, triggeredAt: now };
@@ -450,6 +550,10 @@ export const useGameStore = defineStore('game', () => {
         eventCountdown.value = 0;
       }
     }
+
+    // 0.2 维度倍率接入产出链（方案A）：每 tick 刷新维度全局倍率，
+    // 确保质数×3 / 混沌随机倍率 / 反熵叠乘 / 奇点临界爆发真正生效
+    multiplierSystem.registerDimensionMultiplier(state);
 
     // ---- 预计算产出（用于熵值增长计算）----
     const rawOutputPerSec = producerSystem.calculateTotalOutput(state, multiplierSystem);
@@ -471,10 +575,20 @@ export const useGameStore = defineStore('game', () => {
     // 0.3 维度系统 tick（精通度增长 + 混沌倍率重投 + 临界爆发检测）
     dimensionSystem.tickMastery(state, deltaTime, rawOutputPerSec.toDecimal());
     dimensionSystem.checkChaosMultiplier(state);
-    dimensionSystem.checkSingularityBurst(state);
+    // 奇点维度临界爆发标记（用于特殊成就 arch_singularity_burst，Story 2.1.2）
+    if (dimensionSystem.checkSingularityBurst(state)) {
+      state._runSingularityBurst = true;
+    }
+    // 0.5 维度专属资源产出（依赖 Story 0.1 的维度资源序列化）
+    dimensionSystem.tickDimensionResources(state, deltaTime, rawOutputPerSec.toDecimal());
+
+    // 0.9 不稳定等级时间因子减弱：熵值处于 unstable 时，timeSpeedMultiplier 效果按 0.7 折减
+    const timeFactorPenalty = entropySystem.getCollapseLevel(state.entropy) === 'unstable'
+      ? ENTROPY_CONFIG.UNSTABLE_TIME_FACTOR_PENALTY
+      : 1.0;
 
     // 0.5 挑战系统 tick（每日重置 + 限时挑战计时 + 进度检测）
-    const effectiveDeltaSec = (deltaTime * (state.timeSpeedMultiplier || 1)) / 1000;
+    const effectiveDeltaSec = (deltaTime * (state.timeSpeedMultiplier || 1) * timeFactorPenalty) / 1000;
     challengeSystem.tick(state, now, effectiveDeltaSec);
     if (challengeSystem.newlyCompleted.length > 0) {
       for (const cid of challengeSystem.newlyCompleted) {
@@ -482,8 +596,8 @@ export const useGameStore = defineStore('game', () => {
       }
     }
 
-    // 应用时间加速（事件系统 speed_change 效果）
-    const effectiveDelta = deltaTime * (state.timeSpeedMultiplier || 1);
+    // 应用时间加速（事件系统 speed_change 效果），含不稳定时间因子折减
+    const effectiveDelta = deltaTime * (state.timeSpeedMultiplier || 1) * timeFactorPenalty;
 
     // 1. 计算总产出/秒（应用熵值惩罚）
     const entropyMult = entropySystem.getProductionMultiplier(state.entropy);
@@ -496,6 +610,23 @@ export const useGameStore = defineStore('game', () => {
     // 3. 更新 number 和 totalNumber
     state.number = BigNumber.from(state.number).add(increment).toDecimal();
     state.totalNumber = BigNumber.from(state.totalNumber).add(increment).toDecimal();
+
+    // 基因系统：记录历史最高数字的 log10（记忆基因真值源，GDD §2.1 / ADR-001 G4）
+    geneSystem.recordMaxNumber(state);
+
+    // ---- 宇宙档案馆：本轮 Run 数据采集（Story 2.1.2）----
+    // 本轮最高数字（用于 maxNumber / maxLog10），用 Decimal.gt 比较避免超大数 toNumber 失真
+    if (state.number.gt(state._runMaxNumber)) {
+      state._runMaxNumber = state.number;
+    }
+    // 本轮访问维度 + 各维度停留时长累计（用于 primaryDimension 计算）
+    state._runDimensionsVisited.add(state.currentDimension);
+    state._runDimensionDwell[state.currentDimension] =
+      (state._runDimensionDwell[state.currentDimension] ?? 0) + deltaSec;
+    // 本轮最高熵值
+    if (state.entropy > state._runMaxEntropy) {
+      state._runMaxEntropy = state.entropy;
+    }
 
     // 4. 检查生产者解锁
     const newUnlocks = producerSystem.checkUnlocks(state);
@@ -795,6 +926,13 @@ export const useGameStore = defineStore('game', () => {
 
     const newState = prestigeSystem.executePrestige(gameState.value);
 
+    // 基因系统：Prestige 后触发突变（Story 1.2.1，每条 30% 概率，同次最多 1 条）
+    // 突变发生在倍增器重算之前，使突变后的基因倍率正确注册
+    const mutationResult = geneSystem.mutate(newState);
+    if (mutationResult.mutated && mutationResult.narrative) {
+      showNarration([mutationResult.narrative], 3000);
+    }
+
     // 熵崩系统：Prestige 完全重置熵值
     if (newState.entropy > 0) {
       entropySystem.resetOnPrestige(newState);
@@ -870,18 +1008,54 @@ export const useGameStore = defineStore('game', () => {
     updateDisplayStrings(newState);
     // 膨胀叙事
     showNarration(EXPANSION_NARRATIVES);
+    // 基因系统：膨胀后授予一次筛选窗口（Story 1.2.2，GDD §2.3.2）
+    if (newState.geneChain.pendingScreen) {
+      showNarration(['🧬 基因筛选窗口已开启：你可选择删除 0-1 条基因（记忆基因不可删）。'], 3500);
+    }
     bumpVersion();
   }
 
   /**
    * 执行超越（第3层Prestige）
    */
-  function executeTranscend(): void {
-    if (!transcendSystem.canTranscend(gameState.value)) {
+  async function executeTranscend(): Promise<void> {
+    const preState = gameState.value;
+    if (!transcendSystem.canTranscend(preState)) {
       return;
     }
+    const wasUnlocked = preState.archiveUnlocked;
 
-    const newState = transcendSystem.executeTranscend(gameState.value);
+    // 1. 采集本轮快照（必须在重置前，读取 pre-reset 状态）—— Story 2.1.2 / 2.2.1 / 2.2.2
+    //    仅当档案馆已解锁，或本次超越后将达到解锁阈值（transcendCount >= 5）。
+    let record: ArchiveRecord | null = null;
+    let newlyUnlocked: string[] = [];
+    if (preState.transcendCount >= 4 || preState.archiveUnlocked) {
+      try {
+        const existing = await dbGetArchiveRecords();
+        const singularityEarned = transcendSystem.calculateSingularity(preState.cumulativeDarkEnergy);
+        record = captureRun(preState, { existingRecords: existing, singularityEarned });
+        const merged = [record, ...existing];
+        // 特殊成就判定（返回新解锁 id；已解锁的不会重复返回）
+        newlyUnlocked = evaluateSpecialAchievements(preState, record, merged);
+      } catch (e) {
+        console.error('[archive] capture failed', e);
+      }
+    }
+
+    // 2. 执行超越重置
+    const newState = transcendSystem.executeTranscend(preState);
+
+    // 基因系统：超越后获取新基因 / 授予重组机会（Story 1.2.3 / 1.2.4）
+    // TranscendSystem 已在内部执行 generateInitialChain / acquireNewGene，
+    // 此处仅根据结果播放叙事 + 检测可重组对供 UI 高亮。
+    const beforeGenes = preState.geneChain.chain.length + preState.geneChain.pendingStash.length;
+    const afterGenes = newState.geneChain.chain.length + newState.geneChain.pendingStash.length;
+    if (afterGenes > beforeGenes) {
+      showNarration(['🧬 超越留下了新的基因序列，已加入你的数字 DNA。'], 3500);
+    }
+    if (geneSystem.findRecombinablePairs(newState).length > 0) {
+      showNarration(['🧬 检测到可重组的同类基因对：前往基因链面板可将其合并强化。'], 3500);
+    }
 
     // 挑战：记录超越
     challengeSystem.recordTranscend(newState);
@@ -892,14 +1066,38 @@ export const useGameStore = defineStore('game', () => {
       newState.unlockedMilestones.add(m.id);
     }
 
+    // 应用特殊成就奖励（奇点核心）到新状态 —— Story 2.2.2
+    for (const id of newlyUnlocked) {
+      const def = ACHIEVEMENT_DEFS.find((d) => d.id === id);
+      if (def?.rewardSingularity) {
+        newState.singularity += def.rewardSingularity;
+      }
+      const st = newState.achievements.get(id) ?? { id, unlocked: false };
+      st.unlocked = true;
+      st.unlockedAt = Date.now();
+      newState.achievements.set(id, st);
+      if (def) {
+        pushAchievement({ id: def.id, name: def.name, description: def.description, icon: def.icon });
+      }
+    }
+
     // 重新计算里程碑加成后的倍增器
     multiplierSystem.recalculateFromState(newState);
 
     gameState.value = markRaw(newState);
     updateDisplayStrings(newState);
 
-    // 超越叙事（随机池）
-    showNarration(TRANSCEND_NARRATIVES, 5000);
+    // 档案馆解锁叙事 —— Story 2.1.3（首次解锁展示专属叙事，否则常规超越叙事）
+    if (newState.archiveUnlocked && !wasUnlocked) {
+      showNarration(['🏛️ 宇宙档案馆已解锁！你的每一次超越都将被永久记录。'], 5000);
+    } else {
+      showNarration(TRANSCEND_NARRATIVES, 5000);
+    }
+
+    // 3. 异步持久化快照（不阻塞 UI；容量控制在内部完成）—— Story 2.2.1
+    if (record) {
+      void persistArchiveRecord(record);
+    }
 
     bumpVersion();
   }
@@ -1012,6 +1210,50 @@ export const useGameStore = defineStore('game', () => {
     const ok = entropySystem.applyRewind(state);
     if (ok) showNarration(ENTROPY_RECOVERY_NARRATIVES, 2500);
     bumpVersion();
+    return ok;
+  }
+
+  /**
+   * 购买维度屏障（消耗星尘，加入持有数）
+   * @returns 是否购买成功
+   */
+  function buyEntropyBarrier(): boolean {
+    const state = gameState.value;
+    const def = ENTROPY_ITEM_DEFS.find((d) => d.id === 'barrier');
+    if (!def) return false;
+    if (state.stardust < def.stardustCost) return false;
+    if (state.entropyBarriers >= def.maxStack) return false;
+    state.stardust -= def.stardustCost;
+    state.entropyBarriers++;
+    bumpVersion();
+    return true;
+  }
+
+  /**
+   * 使用维度屏障 — 激活后 60 秒内熵值不上升
+   * @returns 是否成功使用
+   */
+  function useEntropyBarrier(): boolean {
+    const state = gameState.value;
+    const ok = entropySystem.applyBarrier(state);
+    if (ok) showNarration(ENTROPY_RECOVERY_NARRATIVES, 2500);
+    bumpVersion();
+    return ok;
+  }
+
+  /**
+   * 购买维度晶体商店的永久全局加成（消耗维度晶体）
+   * 购买成功后通过 MultiplierSystem 重新注册倍率使其生效。
+   * @returns 是否购买成功
+   */
+  function buyCrystalUpgrade(itemId: string): boolean {
+    const state = gameState.value;
+    const ok = dimensionSystem.buyCrystalUpgrade(state, itemId);
+    if (ok) {
+      multiplierSystem.recalculateFromState(state);
+      showNarration(['💎 已购买维度增益，永久生效！'], 2500);
+      bumpVersion();
+    }
     return ok;
   }
 
@@ -1174,7 +1416,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   /** 获取挑战面板数据 */
-  function getChallengePanelData() {
+  function getChallengePanelData(): ReturnType<typeof challengeSystem.getAllChallenges> {
     const state = gameState.value;
     return challengeSystem.getAllChallenges(state, Date.now());
   }
@@ -1280,32 +1522,25 @@ export const useGameStore = defineStore('game', () => {
   }
 
   /**
-   * 合成维度晶体
+   * 合成维度晶体（委托 DimensionSystem 实现，避免重复逻辑）
    * @returns 是否合成成功
    */
   function synthesizeCrystal(): boolean {
     const state = gameState.value;
-    const currentDim = state.currentDimension;
-    const dimState = state.dimensionStates.get(currentDim);
-    
-    if (!dimState || !dimState.unlocked) return false;
-    
-    // 检查是否有足够资源（1000 当前维度资源）
-    const cost = new Decimal(1000);
-    if (dimState.resource.lt(cost)) return false;
-    
-    // 扣除资源并合成晶体
-    dimState.resource = dimState.resource.sub(cost);
-    state.dimensionCrystals = state.dimensionCrystals.add(1);
-    
-    showNarration([`💎 合成成功！获得 1 个维度晶体`], 3000);
-    
-    // 更新 UI 状态
-    dimensionCrystals.value = state.dimensionCrystals.toNumber();
-    currentDimensionResource.value = format(BigNumber.from(dimState.resource));
-    
-    bumpVersion();
-    return true;
+    const ok = dimensionSystem.synthesizeCrystal(state);
+    if (ok) {
+      showNarration([`💎 合成成功！获得 1 个维度晶体`], 3000);
+
+      // 更新 UI 状态
+      dimensionCrystals.value = state.dimensionCrystals.toNumber();
+      const dimState = state.dimensionStates.get(state.currentDimension);
+      if (dimState) {
+        currentDimensionResource.value = format(BigNumber.from(dimState.resource));
+      }
+
+      bumpVersion();
+    }
+    return ok;
   }
 
   /**
@@ -1324,6 +1559,67 @@ export const useGameStore = defineStore('game', () => {
     return dimensionSystem.applyDimensionBonus(state, new Decimal(1));
   }
 
+  // ============================================================
+  // 基因系统 Actions（Story 1.2.x / 1.3.2）
+  // ============================================================
+
+  /** 筛选删除一条基因（仅 pendingScreen 窗口内、非 gene_memory 可删，Story 1.2.2） */
+  function pruneGene(instanceId: string): boolean {
+    const state = gameState.value;
+    const ok = geneSystem.prune(state, instanceId);
+    if (ok) {
+      multiplierSystem.recalculateFromState(state);
+      bumpVersion();
+    }
+    return ok;
+  }
+
+  /** 放弃本次筛选窗口（Story 1.2.2） */
+  function skipScreen(): void {
+    geneSystem.skipScreen(gameState.value);
+    bumpVersion();
+  }
+
+  /** 重组两条同类基因（Story 1.2.3） */
+  function recombineGenes(instanceIdA: string, instanceIdB: string): boolean {
+    const state = gameState.value;
+    const ok = geneSystem.recombine(state, instanceIdA, instanceIdB);
+    if (ok) {
+      multiplierSystem.recalculateFromState(state);
+      bumpVersion();
+    }
+    return ok;
+  }
+
+  /** 扩容基因槽（Story 1.3.2） */
+  function expandGeneSlot(): boolean {
+    const state = gameState.value;
+    const ok = geneSystem.expandSlot(state);
+    if (ok) {
+      multiplierSystem.recalculateFromState(state);
+      bumpVersion();
+    }
+    return ok;
+  }
+
+  /** 将暂存区基因移入链（槽位有空时，Story 1.2.4） */
+  function stashToChain(instanceId: string): boolean {
+    const state = gameState.value;
+    const ok = geneSystem.stashToChain(state, instanceId);
+    if (ok) bumpVersion();
+    return ok;
+  }
+
+  /** 当前可重组的同类基因对（供 UI 高亮，Story 1.2.3） */
+  function getRecombinablePairs() {
+    return geneSystem.findRecombinablePairs(gameState.value);
+  }
+
+  /** 槽位扩容可行性信息（Story 1.3.2） */
+  function getGeneExpandInfo() {
+    return geneSystem.canExpandSlot(gameState.value);
+  }
+
   return {
     // State
     gameState,
@@ -1335,6 +1631,14 @@ export const useGameStore = defineStore('game', () => {
     achievementQueue,
     currentAchievement,
     isRunning,
+
+    // 宇宙档案馆（Story 2.3）
+    archiveRecords,
+    archiveLoading,
+    archiveUnlocked,
+    archiveSummary,
+    loadArchives,
+    removeArchive,
 
     // Getters
     formattedNumber,
@@ -1403,6 +1707,9 @@ export const useGameStore = defineStore('game', () => {
     suggestPrestige,
     useEntropyStabilizer,
     useEntropyRewind,
+    buyEntropyBarrier,
+    useEntropyBarrier,
+    buyCrystalUpgrade,
 
     // 维度系统 State
     currentDimensionId,
@@ -1420,5 +1727,17 @@ export const useGameStore = defineStore('game', () => {
     synthesizeCrystal,
     getDimensionPanelData,
     getDimensionBoost,
+
+    // 基因系统 Actions（Story 1.2.x / 1.3.2）
+    pruneGene,
+    skipScreen,
+    recombineGenes,
+    expandGeneSlot,
+    stashToChain,
+    getRecombinablePairs,
+    getGeneExpandInfo,
+
+    // 基因系统暴露（供 GeneChain.vue 直接查询）
+    geneSystem,
   };
 });

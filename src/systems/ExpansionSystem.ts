@@ -1,5 +1,6 @@
 import { GameState } from '@/types/game';
 import Decimal from 'break_eternity.js';
+import { geneSystem } from '@/systems/GeneSystem';
 
 /**
  * 膨胀系统（第2层Prestige）
@@ -65,6 +66,9 @@ export class ExpansionSystem {
     const newState = new GameState();
 
     // 保留+重置字段
+    // 基因链跨 Expansion 继承；并授予一次筛选窗口（GDD §2.3.2）
+    newState.geneChain = geneSystem.cloneChain(state.geneChain);
+    newState.geneChain.pendingScreen = true;
     newState.number = new Decimal(0);
     newState.totalNumber = new Decimal(0);
     newState.stardust = 0;
@@ -140,6 +144,20 @@ export class ExpansionSystem {
     newState.eventCooldown = 0;
     newState.ongoingEffects = [];
     newState.timeSpeedMultiplier = 1;
+
+    // ---- 宇宙档案馆：本轮 Run 计数器跨 Expansion 保留（Expansion 不结束 Run，Story 2.1.2）----
+    newState.archiveUnlocked = state.archiveUnlocked;
+    newState._runStartTime = state._runStartTime;
+    newState._runMaxNumber = state._runMaxNumber;
+    newState._runDimensionDwell = { ...state._runDimensionDwell };
+    newState._runDimensionsVisited = new Set(state._runDimensionsVisited);
+    newState._runEventCount = state._runEventCount;
+    newState._runMaxEntropy = state._runMaxEntropy;
+    newState._runCollapses = state._runCollapses;
+    newState._runSingularityBurst = state._runSingularityBurst;
+    newState._runStardustEarned = state._runStardustEarned;
+    // 本轮暗能量累计（含本次重置获得）
+    newState._runDarkEnergyEarned = state._runDarkEnergyEarned + gainedDarkEnergy;
 
     return newState;
   }

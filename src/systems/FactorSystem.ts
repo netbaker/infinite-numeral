@@ -5,6 +5,7 @@ import type {
 } from '@/types/game';
 import type { GameState } from '@/types/game';
 import Decimal from 'break_eternity.js';
+import { geneSystem } from '@/systems/GeneSystem';
 
 /**
  * 因子系统（数字分解 / Factor System）
@@ -167,9 +168,15 @@ export class FactorSystem {
     // 将数字转为整数部分用于数学检测（取前几位有效数字）
     const intPart = this.getMantissa(num, currentMag);
 
+    // 催化基因（gene_catalyst）：降低因子发现的数量级门槛（Story 1.3.3 / GDD §2.1）
+    // 将「因子发现概率 ×(1 + 0.10×Lv)」映射为确定性的门槛降低：
+    // 有效数量级 = currentMag + 降低幅度，门槛检查变为 (currentMag + reduction) >= threshold
+    const catalystReduction = geneSystem.getCatalystMagnitudeReduction(state);
+    const effectiveMag = currentMag + catalystReduction;
+
     for (const def of FACTOR_DEFS) {
-      // 数量级门槛检查
-      if (currentMag < def.magnitudeThreshold) continue;
+      // 数量级门槛检查（含催化基因降低）
+      if (effectiveMag < def.magnitudeThreshold) continue;
 
       // 获取或创建状态
       let fState = state.factors.get(def.id);

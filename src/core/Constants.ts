@@ -13,6 +13,8 @@ import type {
   EventDef,
   EntropyItemDef,
   DimensionDef,
+  GeneDef,
+  GeneType,
 } from '@/types/game';
 
 // ============================================================
@@ -725,6 +727,106 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
     conditionValue: 100,
     group: 'legend',
   },
+  // —— 宇宙档案馆特殊成就（group: 'archive'，仅由 ArchiveSystem.evaluateSpecialAchievements 解锁，普通 checkAchievements 跳过）——
+  {
+    id: 'arch_prime_e100',
+    name: '质数探索者',
+    description: '在质数维度（Dim-1）完成一次超越，且本轮 maxLog₁₀ ≥ 100',
+    hint: '踏入质数维度的边界……',
+    icon: '🔢',
+    conditionType: 'number_reach',
+    conditionValue: 1e100,
+    group: 'archive',
+    rewardSingularity: 1,
+  },
+  {
+    id: 'arch_chaos_survivor',
+    name: '混沌行者',
+    description: '在混沌维度（Dim-2）完成超越，且本轮 maxLog₁₀ ≥ 80',
+    hint: '在混沌中寻找秩序',
+    icon: '🌀',
+    conditionType: 'number_reach',
+    conditionValue: 1e80,
+    group: 'archive',
+    rewardSingularity: 1,
+  },
+  {
+    id: 'arch_anti_entropy_master',
+    name: '逆熵者',
+    description: '在反熵维度（Dim-3）完成超越，且本轮 0 次熵崩',
+    hint: '熵减的世界里没有崩塌',
+    icon: '❄️',
+    conditionType: 'number_reach',
+    conditionValue: 1,
+    group: 'archive',
+    rewardSingularity: 2,
+  },
+  {
+    id: 'arch_singularity_burst',
+    name: '临界爆发者',
+    description: '在奇点维度（Dim-4）触发过临界爆发（maxLog₁₀ ≥ 300）',
+    hint: '当数字逼近奇点的边缘',
+    icon: '💥',
+    conditionType: 'number_reach',
+    conditionValue: 1e300,
+    group: 'archive',
+    rewardSingularity: 3,
+  },
+  {
+    id: 'arch_speedrun',
+    name: '闪电轮回',
+    description: '单轮 Run < 300 秒且 maxLog₁₀ ≥ 50',
+    hint: '快到超越本身追不上你',
+    icon: '⚡',
+    conditionType: 'number_reach',
+    conditionValue: 1e50,
+    group: 'archive',
+    rewardSingularity: 1,
+  },
+  {
+    id: 'arch_marathon',
+    name: '漫长旅途',
+    description: '单轮 Run > 86400 秒（24 小时）',
+    hint: '时间在这里失去了意义',
+    icon: '🕰️',
+    conditionType: 'number_reach',
+    conditionValue: 1,
+    group: 'archive',
+    rewardSingularity: 1,
+  },
+  {
+    id: 'arch_no_collapse',
+    name: '完美轮回',
+    description: '单轮 0 次熵崩且 maxLog₁₀ ≥ 100',
+    hint: '一轮纯净的超越',
+    icon: '💎',
+    conditionType: 'number_reach',
+    conditionValue: 1e100,
+    group: 'archive',
+    rewardSingularity: 2,
+  },
+  {
+    id: 'arch_gene_collector',
+    name: '基因收藏家',
+    description: '跨多轮累积集齐全部 8 种基因类型',
+    hint: '每一种基因都是一段数字记忆',
+    icon: '🧬',
+    conditionType: 'number_reach',
+    conditionValue: 1,
+    group: 'archive',
+    rewardSingularity: 5,
+  },
+  {
+    id: 'arch_centurion',
+    name: '百次超越',
+    description: '累计超越次数达到 100',
+    hint: '一百次轮回之后，你已是传奇',
+    icon: '🏛️',
+    conditionType: 'transcend_count',
+    conditionValue: 100,
+    group: 'archive',
+    rewardSingularity: 10,
+  },
 ];
 
 // ============================================================
@@ -1291,8 +1393,14 @@ export const ENTROPY_CONFIG = {
   UNSTABLE_MULTIPLIER: 0.80,     // -20%
   /** 临界等级：全局产出乘数 */
   CRITICAL_MULTIPLIER: 0.50,     // -50%
-  /** 崩塌时扣除数字比例（当前number的百分比） */
-  COLLAPSE_DRAIN_PERCENT: 15,    // 扣除当前数字15%
+  /** 崩塌时扣除数字基础比例（当前number的百分比） */
+  COLLAPSE_DRAIN_PERCENT: 25,    // 基础扣除当前数字25%（原15%，威慑不足已上调）
+  /** 不稳定等级时间因子折减系数（timeSpeedMultiplier 在 unstable 时 × 该值） */
+  UNSTABLE_TIME_FACTOR_PENALTY: 0.7,
+  /** 连续大崩塌阶梯递增量（每次 +5%，与 COLLAPSE_DRAIN_PERCENT 叠加） */
+  COLLAPSE_DRAIN_STEP: 5,
+  /** 连续大崩塌扣除比例上限（%） */
+  COLLAPSE_DRAIN_MAX: 40,
 } as const;
 
 /** 熵崩道具定义 */
@@ -1313,6 +1421,15 @@ export const ENTROPY_ITEM_DEFS: EntropyItemDef[] = [
     type: 'rewind',
     stardustCost: 120,
     icon: '⏪',
+    maxStack: 9,
+  },
+  {
+    id: 'barrier',
+    name: '维度屏障',
+    description: '激活后60秒内熵值不再上升，为你争取喘息的拖延战术空间。',
+    type: 'barrier',
+    stardustCost: 80,
+    icon: '🛡️',
     maxStack: 9,
   },
 ];
@@ -1337,6 +1454,49 @@ export const ENTROPY_RECOVERY_NARRATIVES: string[] = [
   '熵值回落。宇宙重新找到了平衡——至少暂时是这样。',
   '混乱退去。数字的脉动恢复了稳定的节奏。',
   '一次喘息的机会。但你知道，熵从未真正消失。',
+];
+
+// ============================================================
+// 维度晶体商店（v2.0 — 晶体消费出口）
+// ============================================================
+
+/** 维度晶体商店单条商品 */
+export interface DimensionCrystalShopItem {
+  /** 唯一ID（购买后写入 GameState.purchasedCrystalUpgrades） */
+  id: string;
+  /** 显示名称 */
+  name: string;
+  /** 描述文本 */
+  description: string;
+  /** 晶体消耗 */
+  cost: number;
+  /** 全局产出加成数值（注册为 1 + value，即 value=0.1 → ×1.10） */
+  value: number;
+}
+
+/** 维度晶体商店商品定义（消耗维度晶体购买永久全局加成） */
+export const DIMENSION_CRYSTAL_SHOP: DimensionCrystalShopItem[] = [
+  {
+    id: 'crystal_global_1',
+    name: '维度共鸣 I',
+    description: '永久 +10% 全局产出。',
+    cost: 10,
+    value: 0.10,
+  },
+  {
+    id: 'crystal_global_2',
+    name: '维度共鸣 II',
+    description: '永久 +25% 全局产出。',
+    cost: 25,
+    value: 0.25,
+  },
+  {
+    id: 'crystal_global_3',
+    name: '维度共鸣 III',
+    description: '永久 +50% 全局产出。',
+    cost: 60,
+    value: 0.50,
+  },
 ];
 
 // ============================================================
@@ -1443,3 +1603,152 @@ export const DIMENSION_MASTERY_REWARDS: Record<number, string[]> = {
   3: ['反熵叠加上限 +5层', 'Prestige后保留 10% 数字', '熵晶获取 +30%', '熵值增长 -15%', 'Transcend后额外奇点核心'],
   4: ['临界爆发倍率提升至 ×200', '爆发持续时间 +5s', '奇点核心可兑换维度晶体', '数字 e300+ 时自动触发爆发', '超越后可保留奇点印记'],
 };
+
+// ============================================================
+// 基因进化系统配置（v2.0 — GeneEvo）
+// 数值对齐 GDD §2.1 + G6 公式（v2-epic-stories.md §9 G5/G6）
+//   value = 1 + (baseEffect + effectPerLevel * (level - 1)) * expression
+// ============================================================
+
+/** 基因静态定义池（8 类，对齐 GDD §3.1） */
+export const GENE_DEFS: GeneDef[] = [
+  {
+    id: 'gene_growth',
+    name: '增殖基因',
+    description: '生产者基础产出 ×(1 + 0.05×Lv)',
+    icon: '🌱',
+    effectType: 'output_multiplier',
+    effectPerLevel: 0.05,
+    baseEffect: 0,
+    maxLevel: 5,
+    initialLevelRange: [1, 3],
+    canBePruned: true,
+  },
+  {
+    id: 'gene_catalyst',
+    name: '催化基因',
+    description: '因子发现概率 ×(1 + 0.10×Lv)',
+    icon: '⚗️',
+    effectType: 'factor_boost',
+    effectPerLevel: 0.10,
+    baseEffect: 0,
+    maxLevel: 5,
+    initialLevelRange: [1, 2],
+    canBePruned: true,
+  },
+  {
+    id: 'gene_resilience',
+    name: '韧性基因',
+    description: '飞升后起点数字 ×(10^Lv)',
+    icon: '🛡️',
+    effectType: 'prestige_start',
+    effectPerLevel: 0.10,
+    baseEffect: 0,
+    maxLevel: 5,
+    initialLevelRange: [1, 3],
+    canBePruned: true,
+  },
+  {
+    id: 'gene_resonance',
+    name: '共振基因',
+    description: '事件发生率 ×(1 + 0.15×Lv)，事件持续时间 ×(1 + 0.10×Lv)',
+    icon: '📡',
+    effectType: 'event_boost',
+    effectPerLevel: 0.15,
+    baseEffect: 0,
+    maxLevel: 5,
+    initialLevelRange: [1, 2],
+    canBePruned: true,
+  },
+  {
+    id: 'gene_mutation',
+    name: '突变基因',
+    description: '每轮 Prestige 随机化为其他基因类型，强度随机（高风险高收益）',
+    icon: '🎲',
+    effectType: 'random',
+    effectPerLevel: 0,
+    baseEffect: 0,
+    maxLevel: 5,
+    initialLevelRange: [1, 5],
+    canBePruned: true,
+  },
+  {
+    id: 'gene_memory',
+    name: '记忆基因',
+    description: '记录历史最高数字 log10 值，提供永久全局倍率 ×(1 + 0.02×记录值)',
+    icon: '🧠',
+    effectType: 'memory',
+    effectPerLevel: 0,
+    baseEffect: 0.02,
+    maxLevel: 5,
+    initialLevelRange: [1, 1],
+    canBePruned: false,
+  },
+  {
+    id: 'gene_entangle',
+    name: '纠缠基因',
+    description: '随机选中 2 个生产者，其协同倍率 ×(1 + 0.20×Lv)',
+    icon: '🔗',
+    effectType: 'producer_synergy',
+    effectPerLevel: 0.20,
+    baseEffect: 0,
+    maxLevel: 5,
+    initialLevelRange: [1, 2],
+    canBePruned: true,
+  },
+  {
+    id: 'gene_exotic',
+    name: '奇异基因',
+    description: '解锁隐藏增益或特殊叙事文本；Lv 3+ 时全局产出 ×(1 + 0.50×Lv)',
+    icon: '✨',
+    effectType: 'hidden',
+    effectPerLevel: 0.50,
+    baseEffect: 0,
+    maxLevel: 5,
+    initialLevelRange: [1, 1],
+    canBePruned: true,
+  },
+];
+
+/** 常规随机池（不含 gene_exotic，exotic 仅 Transcend 5% 概率） */
+export const GENE_COMMON_POOL: GeneType[] = GENE_DEFS
+  .filter((g) => g.id !== 'gene_exotic')
+  .map((g) => g.id);
+
+/** 基因槽扩容规则（对齐 GDD §2.4） */
+export interface GeneSlotExpansion {
+  /** 扩容后目标槽位数 */
+  targetSlots: number;
+  /** 消耗奇点核心 */
+  cost: number;
+  /** 需要的超越次数 */
+  requiredTranscends: number;
+  /** 是否需要奇异基因 Lv 3 */
+  requireExoticLv3: boolean;
+}
+
+export const GENE_SLOT_EXPANSIONS: GeneSlotExpansion[] = [
+  { targetSlots: 4, cost: 3, requiredTranscends: 2, requireExoticLv3: false },
+  { targetSlots: 5, cost: 5, requiredTranscends: 3, requireExoticLv3: false },
+  { targetSlots: 6, cost: 8, requiredTranscends: 5, requireExoticLv3: false },
+  { targetSlots: 7, cost: 12, requiredTranscends: 7, requireExoticLv3: false },
+  { targetSlots: 8, cost: 20, requiredTranscends: 10, requireExoticLv3: true },
+];
+
+/** 突变叙事随机池（Story 1.2.1 验收 #4） */
+export const GENE_MUTATION_NARRATIVES: string[] = [
+  '一段基因序列在坍缩的火花中扭曲、重组——新的可能性诞生了。',
+  '你的数字 DNA 发生了微调。无人知晓这会带来什么，但变化已经发生。',
+  '突变的涟漪掠过基因链。某条基因睁开了新的眼睛。',
+  '在坍缩的临界点上，一条基因记住了另一种形状。',
+  '基因链的某个节点闪烁了一下——它再也不是原来的自己了。',
+];
+
+/** 首次 Transcend 初始基因数量范围（对齐 GDD §2.2） */
+export const GENE_INITIAL_COUNT_RANGE: [number, number] = [2, 3];
+/** Transcend 后新基因获取数量（对齐 GDD §2.3.3） */
+export const GENE_ACQUIRE_PER_TRANSCEND = 1;
+/** 奇异基因 Transcend 获取概率（对齐 GDD §2.3.3） */
+export const GENE_EXOTIC_CHANCE = 0.05;
+/** 暂存区上限（对齐 GDD §6 边缘情况 #1） */
+export const GENE_STASH_MAX = 3;
