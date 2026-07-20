@@ -28,9 +28,9 @@ describe('PrestigeSystem', () => {
   });
 
   describe('canPrestige', () => {
-    it('number < 1e14 不可重置', () => {
+    it('number < 1e12 不可重置', () => {
       const state = createTestState();
-      state.number = new Decimal(1e13);
+      state.number = new Decimal(1e11);
       expect(prestigeSystem.canPrestige(state)).toBe(false);
     });
 
@@ -48,24 +48,24 @@ describe('PrestigeSystem', () => {
   });
 
   describe('calculateStardustGain', () => {
-    it('number < 1e14 获得0星尘', () => {
-      const result = prestigeSystem.calculateStardustGain(BigNumber.from(1e13));
+    it('number < 1e12 获得0星尘', () => {
+      const result = prestigeSystem.calculateStardustGain(BigNumber.from(1e11));
       expect(result).toBe(0);
     });
 
-    it('number = 1e15 获得 ⌊15×0.1⌋ = 1 星尘', () => {
+    it('number = 1e15 获得 ⌊15×0.5⌋ = 7 星尘', () => {
       const result = prestigeSystem.calculateStardustGain(BigNumber.from(1e15));
-      expect(result).toBe(1);
+      expect(result).toBe(7);
     });
 
-    it('number = 1e20 获得 ⌊20×0.1⌋ = 2 星尘', () => {
+    it('number = 1e20 获得 ⌊20×0.5⌋ = 10 星尘', () => {
       const result = prestigeSystem.calculateStardustGain(BigNumber.from('1e20'));
-      expect(result).toBe(2);
+      expect(result).toBe(10);
     });
 
-    it('number = 1e100 获得 ⌊100×0.1⌋ = 10 星尘', () => {
+    it('number = 1e100 获得 ⌊100×0.5⌋ = 50 星尘', () => {
       const result = prestigeSystem.calculateStardustGain(BigNumber.from('1e100'));
-      expect(result).toBe(10);
+      expect(result).toBe(50);
     });
   });
 
@@ -86,7 +86,7 @@ describe('PrestigeSystem', () => {
       state.stardust = 0;
 
       const newState = prestigeSystem.executePrestige(state);
-      expect(newState.stardust).toBe(1); // ⌊15×0.1⌋ = 1
+      expect(newState.stardust).toBe(7); // ⌊15×0.5⌋ = 7
     });
 
     it('重置后星尘累积（已有+新获得）', () => {
@@ -95,7 +95,7 @@ describe('PrestigeSystem', () => {
       state.stardust = 5;
 
       const newState = prestigeSystem.executePrestige(state);
-      expect(newState.stardust).toBe(6); // 5 + 1
+      expect(newState.stardust).toBe(12); // 5 + 7
     });
 
     it('重置后生产者等级归0', () => {

@@ -13,7 +13,7 @@ export class PrestigeSystem {
   /**
    * 判断是否可以重置
    *
-   * 条件：number >= 10^15
+   * 条件：number >= 10^12（PRESTIGE_THRESHOLD）
    *
    * @param state 当前游戏状态
    * @returns 是否可以重置
