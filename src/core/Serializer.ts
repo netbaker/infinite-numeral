@@ -3,8 +3,8 @@ import { GameState } from '@/types/game';
 import type { AchievementState, DimensionId } from '@/types/game';
 import type { SaveData, SerializedState } from '@/types/save';
 
-/** 当前存档版本号（Sprint 2 档案馆：新增 archiveUnlocked + 6 个本轮计数器 + 扩展采集字段 → 2 → 3） */
-const CURRENT_VERSION = 3;
+/** 当前存档版本号（Sprint 3 图鉴：新增 codexEntries + codexInitialized + 8 个跨系统联动追踪字段 → 3 → 4） */
+const CURRENT_VERSION = 4;
 
 /**
  * 序列化 GameState 为可存储的 SaveData
@@ -85,6 +85,21 @@ export function serialize(state: GameState): SaveData {
     _runSingularityBurst: state._runSingularityBurst,
     _runStardustEarned: state._runStardustEarned,
     _runDarkEnergyEarned: state._runDarkEnergyEarned,
+    // ---- v2.0 数字神话图鉴字段（Sprint 3） ----
+    codexEntries: mapToRecord(state.codexEntries, (es) => ({
+      unlocked: es.unlocked,
+      unlockedAt: es.unlockedAt,
+    })),
+    codexInitialized: state.codexInitialized,
+    // ---- 跨系统联动追踪字段（mystery_* 判定用） ----
+    collapsedDimensions: Array.from(state.collapsedDimensions),
+    _chaosStreak4x: state._chaosStreak4x,
+    _prestigeDuringBurst: state._prestigeDuringBurst,
+    _archiveRecordCount: state._archiveRecordCount,
+    _rewindUsedCount: state._rewindUsedCount,
+    _expandedInChaosDim: state._expandedInChaosDim,
+    _singularityBurstEver: state._singularityBurstEver,
+    allGeneTypesEver: Array.from(state._allGeneTypesEver),
   };
 
   return {
@@ -220,6 +235,26 @@ export function deserialize(data: SaveData): GameState {
   state._runSingularityBurst = s._runSingularityBurst ?? false;
   state._runStardustEarned = s._runStardustEarned ?? 0;
   state._runDarkEnergyEarned = s._runDarkEnergyEarned ?? 0;
+
+  // ---- v2.0 数字神话图鉴字段（Sprint 3，兼容旧存档：缺失则默认空 Map / false / 0） ----
+  state.codexEntries = s.codexEntries
+    ? new Map(
+        Object.entries(s.codexEntries).map(([id, es]) => [
+          id,
+          { id, unlocked: es.unlocked, unlockedAt: es.unlockedAt },
+        ]),
+      )
+    : new Map();
+  state.codexInitialized = s.codexInitialized ?? false;
+  // ---- 跨系统联动追踪字段（8 个，缺失则默认空/0/false） ----
+  state.collapsedDimensions = new Set(s.collapsedDimensions ?? []);
+  state._chaosStreak4x = s._chaosStreak4x ?? 0;
+  state._prestigeDuringBurst = s._prestigeDuringBurst ?? false;
+  state._archiveRecordCount = s._archiveRecordCount ?? 0;
+  state._rewindUsedCount = s._rewindUsedCount ?? 0;
+  state._expandedInChaosDim = s._expandedInChaosDim ?? false;
+  state._singularityBurstEver = s._singularityBurstEver ?? false;
+  state._allGeneTypesEver = new Set(s.allGeneTypesEver ?? []);
 
   return state;
 }

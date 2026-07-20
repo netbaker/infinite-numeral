@@ -391,6 +391,14 @@ export class DimensionSystem {
       state._chaosMultiplier = 0.5 + Math.random() * 4.5;
       state._lastDimensionSwitch = now;
     }
+    // Sprint 3：混沌维度连续 ≥4.0x 倍率计数（用于 mystery_02）
+    if (state.currentDimension === 2) {
+      if (state._chaosMultiplier >= 4.0) {
+        state._chaosStreak4x += 1;
+      } else {
+        state._chaosStreak4x = 0;
+      }
+    }
   }
 
   /**

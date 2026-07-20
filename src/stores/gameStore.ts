@@ -21,6 +21,8 @@ import { ChallengeSystem } from '@/systems/ChallengeSystem';
 import { EntropySystem } from '@/systems/EntropySystem';
 import { DimensionSystem } from '@/systems/DimensionSystem';
 import { geneSystem } from '@/systems/GeneSystem';
+import type { CodexCategory, CodexEntryDef } from '@/types/codex';
+import * as codexSystem from '@/systems/CodexSystem';
 import {
   PRODUCER_CONFIGS,
   UPGRADE_DEFS,
@@ -113,6 +115,31 @@ export const useGameStore = defineStore('game', () => {
   /** 当前正在显示的成就 Toast */
   const currentAchievement = ref<{ id: string; name: string; description: string; icon: string } | null>(null);
 
+  // ---- Sprint 3：数字神话图鉴 UI 状态 ----
+  /** 图鉴面板是否显示 */
+  const showCodex = ref<boolean>(false);
+  /** 打开图鉴时定位的词条 ID（点击通知传入） */
+  const codexHighlightId = ref<string | null>(null);
+  /** 图鉴收录通知队列（右上角堆叠，最多 3 条，3s 自动消失） */
+  const codexNotifications = ref<Array<{ key: number; entryId: string; title: string; category: CodexCategory }>>([]);
+  let codexNotifSeq = 0;
+
+  /** 入队一条图鉴收录通知（去重由 CodexSystem 保证，这里只负责 UI 栈管理与自动消失） */
+  function enqueueCodexNotification(def: CodexEntryDef): void {
+    const note = { key: ++codexNotifSeq, entryId: def.id, title: def.title, category: def.category };
+    codexNotifications.value.push(note);
+    if (codexNotifications.value.length > 3) codexNotifications.value.shift(); // 最多堆叠 3 条
+    setTimeout(() => {
+      codexNotifications.value = codexNotifications.value.filter((n) => n.key !== note.key);
+    }, 3000);
+  }
+
+  /** 打开图鉴并定位到指定词条（点击通知时调用） */
+  function openCodex(entryId?: string): void {
+    codexHighlightId.value = entryId ?? null;
+    showCodex.value = true;
+  }
+
   /** 游戏是否运行中 */
   const isRunning = ref<boolean>(false);
 
@@ -180,6 +207,8 @@ export const useGameStore = defineStore('game', () => {
       // 写入本次快照（里程碑永远保留；非里程碑若被淘汰则不写）
       if (keepRunIds.has(record.runId)) {
         await addArchiveRecord(record);
+        // Sprint 3：累计快照数（用于 mystery_06 条件 ③）
+        gameState.value._archiveRecordCount++;
       }
       // 刷新内存缓存（供 UI 实时更新）
       archiveRecords.value = await dbGetArchiveRecords();
@@ -245,6 +274,11 @@ export const useGameStore = defineStore('game', () => {
   function showNarration(pool: string[], duration = 4000): void {
     const text = pool[Math.floor(Math.random() * pool.length)];
     narrationMessage.value = text;
+    // Sprint 3：图鉴自动收录钩子（约束 B：精确文本匹配，覆盖全部叙事触发路径）
+    const collected = codexSystem.onNarrativeTriggered(gameState.value, text);
+    for (const def of collected) {
+      enqueueCodexNotification(def);
+    }
     setTimeout(() => { narrationMessage.value = ''; }, duration);
   }
 
@@ -563,7 +597,12 @@ export const useGameStore = defineStore('game', () => {
     if (entropyChanged) {
       // 熵崩触发 → 全屏叙事
       if (entropySystem.collapsedThisTick && entropySystem.collapseNarration) {
+        // Sprint 3：记录发生熵崩的维度（供 mystery_01 / mystery_07 跨系统判定）
+        state.collapsedDimensions.add(state.currentDimension);
         showNarration([entropySystem.collapseNarration], 5000);
+        // Sprint 3：兜底全量检查未解之谜（GDD §6.3）
+        const unlocked = codexSystem.checkAllMysteries(state);
+        for (const def of unlocked) enqueueCodexNotification(def);
       }
       // 等级变化预警
       if (entropySystem.warningLevel) {
@@ -578,6 +617,8 @@ export const useGameStore = defineStore('game', () => {
     // 奇点维度临界爆发标记（用于特殊成就 arch_singularity_burst，Story 2.1.2）
     if (dimensionSystem.checkSingularityBurst(state)) {
       state._runSingularityBurst = true;
+      // Sprint 3：持久标记（用于 mystery_04 条件 ①）
+      state._singularityBurstEver = true;
     }
     // 0.5 维度专属资源产出（依赖 Story 0.1 的维度资源序列化）
     dimensionSystem.tickDimensionResources(state, deltaTime, rawOutputPerSec.toDecimal());
@@ -926,6 +967,11 @@ export const useGameStore = defineStore('game', () => {
 
     const newState = prestigeSystem.executePrestige(gameState.value);
 
+    // Sprint 3：若在奇点维度临界爆发期间完成坍缩（用于 mystery_04 条件 ②）
+    if (newState._singularityBurstActive) {
+      newState._prestigeDuringBurst = true;
+    }
+
     // 基因系统：Prestige 后触发突变（Story 1.2.1，每条 30% 概率，同次最多 1 条）
     // 突变发生在倍增器重算之前，使突变后的基因倍率正确注册
     const mutationResult = geneSystem.mutate(newState);
@@ -992,6 +1038,11 @@ export const useGameStore = defineStore('game', () => {
     }
 
     const newState = expansionSystem.executeExpansion(gameState.value);
+
+    // Sprint 3：若在混沌维度完成膨胀（用于 mystery_11 条件 ②）
+    if (newState.currentDimension === 2) {
+      newState._expandedInChaosDim = true;
+    }
 
     // 熵崩系统：Expansion 完全重置熵值
     if (newState.entropy > 0) {
@@ -1086,6 +1137,12 @@ export const useGameStore = defineStore('game', () => {
 
     gameState.value = markRaw(newState);
     updateDisplayStrings(newState);
+
+    // Sprint 3：每次 Transcend 后全量兜底检查未解之谜（GDD §6.3，主理解锁时机）
+    {
+      const unlocked = codexSystem.checkAllMysteries(gameState.value);
+      for (const def of unlocked) enqueueCodexNotification(def);
+    }
 
     // 档案馆解锁叙事 —— Story 2.1.3（首次解锁展示专属叙事，否则常规超越叙事）
     if (newState.archiveUnlocked && !wasUnlocked) {
@@ -1207,6 +1264,8 @@ export const useGameStore = defineStore('game', () => {
     const state = gameState.value;
     if (state.stardust < 120) return false;
     state.stardust -= 120;
+    // Sprint 3：累计回溯使用次数（用于 mystery_08）
+    state._rewindUsedCount++;
     const ok = entropySystem.applyRewind(state);
     if (ok) showNarration(ENTROPY_RECOVERY_NARRATIVES, 2500);
     bumpVersion();
@@ -1497,10 +1556,14 @@ export const useGameStore = defineStore('game', () => {
         currentDimensionMastery.value = dimState.master;
         currentDimensionResource.value = format(BigNumber.from(dimState.resource));
       }
-      
+
+      // Sprint 3：维度切换后兜底检查未解之谜（GDD §4.1）
+      const unlocked = codexSystem.checkAllMysteries(state);
+      for (const def of unlocked) enqueueCodexNotification(def);
+
       bumpVersion();
     }
-    
+
     return result;
   }
 
@@ -1631,6 +1694,12 @@ export const useGameStore = defineStore('game', () => {
     achievementQueue,
     currentAchievement,
     isRunning,
+
+    // Sprint 3：数字神话图鉴
+    showCodex,
+    codexHighlightId,
+    codexNotifications,
+    openCodex,
 
     // 宇宙档案馆（Story 2.3）
     archiveRecords,

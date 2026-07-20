@@ -219,6 +219,7 @@ export class GeneSystem {
       const type = this.pickRandomType(Math.random(), 'gene_exotic');
       const gene = this.createGene(type, { state });
       chain.chain.push(gene);
+      state._allGeneTypesEver.add(gene.type);
       added.push(gene);
     }
     return added;
@@ -248,6 +249,7 @@ export class GeneSystem {
     const gene = this.createGene(type, { state });
     if (chain.chain.length < chain.maxSlots) {
       chain.chain.push(gene);
+      state._allGeneTypesEver.add(gene.type);
     } else {
       chain.pendingStash.push(gene);
       if (chain.pendingStash.length > GENE_STASH_MAX) chain.pendingStash.shift();
@@ -265,6 +267,7 @@ export class GeneSystem {
     if (idx < 0) return false;
     const [gene] = chain.pendingStash.splice(idx, 1);
     chain.chain.push(gene);
+    state._allGeneTypesEver.add(gene.type);
     return true;
   }
 
@@ -334,6 +337,7 @@ export class GeneSystem {
   private setGeneType(state: GameState, gene: GeneState, newType: GeneType, newLevel: number): void {
     gene.type = newType;
     gene.level = Math.max(1, Math.min(this.getDef(newType).maxLevel, newLevel));
+    state._allGeneTypesEver.add(newType); // 突变产生的类型也计入「曾获得过的基因类型」
     if (newType === 'gene_entangle') {
       gene.entangledProducers = this.pickTwoProducers(state);
     } else {

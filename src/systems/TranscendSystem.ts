@@ -57,6 +57,18 @@ export class TranscendSystem {
     const gainedSingularity = this.calculateSingularity(state.cumulativeDarkEnergy);
     const newState = new GameState();
 
+    // Sprint 3：图鉴与跨系统联动追踪字段跨 Transcend 继承
+    newState.codexEntries = state.codexEntries;
+    newState.codexInitialized = state.codexInitialized;
+    newState.collapsedDimensions = state.collapsedDimensions;
+    newState._chaosStreak4x = state._chaosStreak4x;
+    newState._prestigeDuringBurst = state._prestigeDuringBurst;
+    newState._archiveRecordCount = state._archiveRecordCount;
+    newState._rewindUsedCount = state._rewindUsedCount;
+    newState._expandedInChaosDim = state._expandedInChaosDim;
+    newState._singularityBurstEver = state._singularityBurstEver;
+    newState._allGeneTypesEver = state._allGeneTypesEver; // 跨轮累积字段，随重置保留
+
     // 基因链跨 Transcend 继承（GDD §2.3.3）
     newState.geneChain = geneSystem.cloneChain(state.geneChain);
 

@@ -60,6 +60,7 @@
       <span v-if="dimensionCrystals > 0" class="dimension-badge">{{ dimensionCrystals }}</span>
     </button>
     <button class="bottom-bar__settings-btn bottom-bar__settings-btn--gene" @click="emit('openGene')" title="基因链">🧬</button>
+    <button class="bottom-bar__settings-btn bottom-bar__settings-btn--codex" @click="emit('openCodex')" title="数字神话图鉴">📖</button>
     <button class="bottom-bar__settings-btn bottom-bar__settings-btn--archive" @click="emit('openArchive')" title="宇宙档案馆">🏛️</button>
     <button class="bottom-bar__settings-btn" @click="emit('openStats')" title="统计">📊</button>
     <button class="bottom-bar__settings-btn" @click="emit('openAchievements')" title="成就">🏆</button>
@@ -81,7 +82,7 @@ const saveStore = useSaveStore();
 
 const emit = defineEmits<{
   openSettings: []; openHelp: []; openStats: []; openAchievements: []; openChallenge: [];
-  openDimension: []; openGene: []; openArchive: [];
+  openDimension: []; openGene: []; openArchive: []; openCodex: [];
   useStabilizer: []; useRewind: []; useBarrier: [];
 }>();
 

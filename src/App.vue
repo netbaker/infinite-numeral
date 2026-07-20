@@ -69,6 +69,7 @@
       @open-dimension="showDimension = true"
       @open-gene="showGene = true"
       @open-archive="showArchive = true"
+      @open-codex="showCodex = true"
       @use-stabilizer="gameStore.useEntropyStabilizer()"
       @use-rewind="gameStore.useEntropyRewind()"
       @use-barrier="gameStore.useEntropyBarrier()"
@@ -133,6 +134,15 @@
       :visible="showArchive"
       @close="showArchive = false"
     />
+
+    <!-- Sprint 3：数字神话图鉴 -->
+    <CodexModal
+      :visible="showCodex"
+      @close="showCodex = false"
+    />
+
+    <!-- Sprint 3：图鉴收录通知（右上角堆叠） -->
+    <CodexToast />
   </div>
 </template>
 
@@ -148,6 +158,8 @@ import LeftPanel from '@/components/layout/LeftPanel.vue';
 import CenterPanel from '@/components/layout/CenterPanel.vue';
 import RightPanel from '@/components/layout/RightPanel.vue';
 import BottomBar from '@/components/layout/BottomBar.vue';
+import CodexModal from '@/components/modals/CodexModal.vue';
+import CodexToast from '@/components/feedback/CodexToast.vue';
 import OfflineRewardModal from '@/components/modals/OfflineRewardModal.vue';
 import NarrationToast from '@/components/feedback/NarrationToast.vue';
 import AchievementToast from '@/components/feedback/AchievementToast.vue';
@@ -192,6 +204,7 @@ const showChallenge = ref(false);
 const showDimension = ref(false);
 const showGene = ref(false);
 const showArchive = ref(false);
+const showCodex = ref(false);
 
 // 挑战面板数据
 const challengeData = computed(() => {

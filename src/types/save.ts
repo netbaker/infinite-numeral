@@ -195,6 +195,28 @@ export interface SerializedState {
   _runStardustEarned: number;
   /** 本轮暗能量获取量 */
   _runDarkEnergyEarned: number;
+  // ---- 数字神话图鉴（v2.0，Sprint 3） ----
+  /** 图鉴词条状态（id → { unlocked, unlockedAt }） */
+  codexEntries: Record<string, { unlocked: boolean; unlockedAt?: number }>;
+  /** 图鉴是否已初始化 */
+  codexInitialized: boolean;
+  // ---- 跨系统联动追踪字段（供 mystery_* 判定，跨重置继承） ----
+  /** 曾触发熵崩的维度列表 */
+  collapsedDimensions: number[];
+  /** 混沌维度连续 ≥4.0x 倍率次数 */
+  _chaosStreak4x: number;
+  /** 奇点维度爆发期间是否完成过坍缩 */
+  _prestigeDuringBurst: boolean;
+  /** 累计档案馆快照数 */
+  _archiveRecordCount: number;
+  /** 累计使用时间回溯次数 */
+  _rewindUsedCount: number;
+  /** 是否曾在混沌维度完成膨胀 */
+  _expandedInChaosDim: boolean;
+  /** 是否曾在奇点维度触发临界爆发 */
+  _singularityBurstEver: boolean;
+  /** 曾获得过的全部基因类型（跨多轮累积，供 mystery_05 allTypes 判定） */
+  allGeneTypesEver: string[];
 }
 
 /**

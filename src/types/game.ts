@@ -1,5 +1,6 @@
 import Decimal from 'break_eternity.js';
 import type { BigNumber } from '@/core/BigNumber';
+import type { CodexEntryState } from './codex';
 
 // ============================================================
 // 生产者配置
@@ -1008,4 +1009,26 @@ export class GameState {
   _runStardustEarned: number = 0;
   /** 本轮暗能量获取量（对齐 ADR-002 A5） */
   _runDarkEnergyEarned: number = 0;
+  // ---- 数字神话图鉴（v2.0，Sprint 3） ----
+  /** 图鉴词条状态（id → { unlocked, unlockedAt }），跨重置继承（见各 reset 函数的拷贝逻辑） */
+  codexEntries: Map<string, CodexEntryState> = new Map();
+  /** 图鉴是否已初始化（首次进入游戏时置 true） */
+  codexInitialized: boolean = false;
+  // ---- 跨系统联动追踪字段（供 CodexSystem.evaluateMystery 判定 mystery_* 使用，跨重置继承） ----
+  /** 曾在哪些维度触发过熵崩（用于 mystery_01 / mystery_07） */
+  collapsedDimensions: Set<number> = new Set();
+  /** 混沌维度连续掷出 ≥4.0x 倍率的次数（用于 mystery_02） */
+  _chaosStreak4x: number = 0;
+  /** 是否曾在奇点维度临界爆发期间完成坍缩（用于 mystery_04） */
+  _prestigeDuringBurst: boolean = false;
+  /** 累计已保存的档案馆快照数（用于 mystery_06） */
+  _archiveRecordCount: number = 0;
+  /** 累计使用时间回溯道具次数（用于 mystery_08） */
+  _rewindUsedCount: number = 0;
+  /** 是否曾在混沌维度完成过膨胀（用于 mystery_11） */
+  _expandedInChaosDim: boolean = false;
+  /** 是否曾在奇点维度触发过临界爆发（用于 mystery_04，持久标记） */
+  _singularityBurstEver: boolean = false;
+  /** 跨多轮累积「曾获得过的基因类型」集合（用于 mystery_05 的 allTypes 判定，跨重置继承） */
+  _allGeneTypesEver: Set<string> = new Set();
 }

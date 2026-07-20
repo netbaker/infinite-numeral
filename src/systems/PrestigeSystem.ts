@@ -62,6 +62,18 @@ export class PrestigeSystem {
 
     const newState = new GameState();
 
+    // Sprint 3：图鉴与跨系统联动追踪字段跨 Prestige 继承（否则每次坍缩都会清空图鉴收集）
+    newState.codexEntries = state.codexEntries;
+    newState.codexInitialized = state.codexInitialized;
+    newState.collapsedDimensions = state.collapsedDimensions;
+    newState._chaosStreak4x = state._chaosStreak4x;
+    newState._prestigeDuringBurst = state._prestigeDuringBurst;
+    newState._archiveRecordCount = state._archiveRecordCount;
+    newState._rewindUsedCount = state._rewindUsedCount;
+    newState._expandedInChaosDim = state._expandedInChaosDim;
+    newState._singularityBurstEver = state._singularityBurstEver;
+    newState._allGeneTypesEver = state._allGeneTypesEver; // 跨轮累积字段，随重置保留
+
     // 计算起步加成
     let startBonus = 0;
     const startBonusState = state.stardustUpgrades.get('start_bonus');
