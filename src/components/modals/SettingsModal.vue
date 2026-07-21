@@ -231,7 +231,7 @@ function onClose(): void {
   padding: var(--spacing-lg);
   background-color: var(--color-surface);
   border-radius: var(--border-radius);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--color-border);
   overflow-y: auto;
   animation: slideUp 0.3s ease;
 }
@@ -256,7 +256,7 @@ function onClose(): void {
   color: var(--color-text-dim);
   letter-spacing: 1px;
   padding-bottom: var(--spacing-xs);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .settings-card__btn-group {

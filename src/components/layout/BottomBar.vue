@@ -62,6 +62,7 @@
     <button class="bottom-bar__settings-btn bottom-bar__settings-btn--gene" @click="emit('openGene')" title="基因链">🧬</button>
     <button class="bottom-bar__settings-btn bottom-bar__settings-btn--codex" @click="emit('openCodex')" title="数字神话图鉴">📖</button>
     <button class="bottom-bar__settings-btn bottom-bar__settings-btn--archive" @click="emit('openArchive')" title="宇宙档案馆">🏛️</button>
+    <button class="bottom-bar__settings-btn bottom-bar__settings-btn--skin" @click="emit('openSkin')" title="皮肤定制">🎨</button>
     <button class="bottom-bar__settings-btn" @click="emit('openStats')" title="统计">📊</button>
     <button class="bottom-bar__settings-btn" @click="emit('openAchievements')" title="成就">🏆</button>
     <button class="bottom-bar__settings-btn bottom-bar__settings-btn--challenge" @click="emit('openChallenge')" title="挑战任务">⚔️</button>
@@ -82,7 +83,7 @@ const saveStore = useSaveStore();
 
 const emit = defineEmits<{
   openSettings: []; openHelp: []; openStats: []; openAchievements: []; openChallenge: [];
-  openDimension: []; openGene: []; openArchive: []; openCodex: [];
+  openDimension: []; openGene: []; openArchive: []; openCodex: []; openSkin: [];
   useStabilizer: []; useRewind: []; useBarrier: [];
 }>();
 
@@ -156,7 +157,7 @@ const dimensionCrystals = computed<number>(() => {
   height: 40px;
   padding: 0 var(--spacing-lg);
   background-color: var(--color-surface);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--color-border);
   font-size: 12px;
 }
 .bottom-bar__item { display: flex; align-items: center; gap: var(--spacing-xs); }
@@ -164,13 +165,13 @@ const dimensionCrystals = computed<number>(() => {
 .bottom-bar__value { font-weight: 600; }
 .bottom-bar__value--prestige { color: var(--color-prestige); }
 .bottom-bar__value--stardust { color: var(--color-milestone); }
-.bottom-bar__value--darkenergy { color: #00bcd4; }
-.bottom-bar__value--transcend { color: #ffd700; }
+.bottom-bar__value--darkenergy { color: var(--color-narrative); }
+.bottom-bar__value--transcend { color: var(--color-milestone); }
 .bottom-bar__value--narrative { color: var(--color-narrative); }
 .bottom-bar__value--dim { color: var(--color-text-dim); }
-.bottom-bar__divider { width: 1px; height: 16px; background-color: rgba(255, 255, 255, 0.1); }
+.bottom-bar__divider { width: 1px; height: 16px; background-color: var(--color-border-strong); }
 .bottom-bar__settings-btn {
-  background: none; border: 1px solid rgba(255,255,255,0.1);
+  background: none; border: 1px solid var(--color-border-strong);
   color: var(--color-text-dim); font-size: 16px; cursor: pointer;
   padding: 2px 6px; border-radius: 4px; line-height: 1;
 }

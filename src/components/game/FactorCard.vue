@@ -92,8 +92,8 @@ const categoryLabel = computed(() => catNames[props.def.category]);
   gap: 3px;
   padding: 6px 10px;
   border-radius: var(--border-radius, 4px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: var(--color-surface, rgba(255,255,255,0.03));
+  border: 1px solid var(--color-border);
+  background: var(--color-surface, var(--color-border));
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 
@@ -115,7 +115,7 @@ const categoryLabel = computed(() => catNames[props.def.category]);
   filter: grayscale(0.5);
 }
 .factor-card--inactive .factor-card__name {
-  color: var(--color-text-dim, #888);
+  color: var(--color-text-dim, var(--color-text-dim));
 }
 .factor-card--maxed {
   border-left-width: 4px;
@@ -189,7 +189,7 @@ const categoryLabel = computed(() => catNames[props.def.category]);
   font-size: 9px;
   padding: 1px 5px;
   border-radius: 3px;
-  background: rgba(255,255,255,0.06);
+  background: var(--color-border);
   color: var(--color-text-dim, #999);
   white-space: nowrap;
   font-weight: 500;
@@ -207,7 +207,7 @@ const categoryLabel = computed(() => catNames[props.def.category]);
   flex: 1;
   height: 4px;
   border-radius: 2px;
-  background: rgba(255,255,255,0.06);
+  background: var(--color-border);
   overflow: hidden;
 }
 .factor-card__bar-fill {

@@ -44,7 +44,7 @@ function onClick(entryId: string): void {
   width: 240px;
   padding: 10px 12px;
   border-radius: 10px;
-  border-left: 4px solid #ffd700;
+  border-left: 4px solid var(--color-milestone);
   background: rgba(26, 13, 46, 0.95);
   color: #ece6f5;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
@@ -57,7 +57,7 @@ function onClick(entryId: string): void {
 .codex-toast-title {
   font-size: 12px;
   font-weight: 700;
-  color: #ffd700;
+  color: var(--color-milestone);
 }
 .codex-toast-body {
   font-size: 14px;

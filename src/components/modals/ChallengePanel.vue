@@ -224,7 +224,7 @@ function formatTime(seconds: number): string {
   z-index: 1000;
 }
 .ch-panel {
-  background: #1a1a2e;
+  background: var(--color-surface);
   border: 1px solid #3a3a5e;
   border-radius: 14px;
   width: 92vw;
@@ -272,7 +272,7 @@ function formatTime(seconds: number): string {
   padding: 3px 10px;
   border-radius: 10px;
 }
-.ch-panel__stat--reward { color: #ffd700; }
+.ch-panel__stat--reward { color: var(--color-milestone); }
 
 .ch-panel__tabs {
   display: flex;
@@ -330,8 +330,8 @@ function formatTime(seconds: number): string {
 }
 .ch-item__icon { font-size: 16px; }
 .ch-item__name { font-weight: 600; font-size: 13px; flex: 1; }
-.ch-item__reward { font-size: 11px; color: #ffd700; }
-.ch-item__timer { font-size: 11px; color: #888; font-variant-numeric: tabular-nums; }
+.ch-item__reward { font-size: 11px; color: var(--color-milestone); }
+.ch-item__timer { font-size: 11px; color: var(--color-text-dim); font-variant-numeric: tabular-nums; }
 .ch-item__timer--run { color: #f59e0b; font-weight: 600; animation: pulse-timer 1s infinite; }
 
 @keyframes pulse-timer {

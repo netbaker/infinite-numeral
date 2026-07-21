@@ -11,10 +11,29 @@
   --color-bg: #0a0a1a;
   --color-surface: #1a1a2e;
   --color-surface-hover: #252540;
+  --color-surface-panel: rgba(20, 20, 40, 0.92);
+  --color-input: #0d0d1f;
 
   /* 文字 */
   --color-text: #e0e0e0;
   --color-text-dim: #888;
+
+  --color-text-accent: #6688ff;
+  --color-number: #aaccff;
+
+  /* 边框 / 分割线 */
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.16);
+  --color-border-accent: #5555cc;
+
+  /* 数字辉光 / 进度 / 按钮 */
+  --color-number-glow: rgba(100, 130, 255, 0.3);
+  --color-progress: linear-gradient(90deg, #4444aa, #6688ff);
+  --color-button: linear-gradient(135deg, #2a2a5a, #3a3a8a);
+  --color-button-hover: linear-gradient(135deg, #3a3a7a, #4a4a9a);
+
+  /* 纪元背景叠加 */
+  --color-epoch-overlay: radial-gradient(circle at 50% 30%, rgba(50, 50, 100, 0.15), transparent 70%);
 
   /* 间距 */
   --spacing-xs: 4px;

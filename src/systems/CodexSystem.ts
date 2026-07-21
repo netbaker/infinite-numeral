@@ -8,8 +8,8 @@
  * - 自动收录使用【精确文本匹配】（约束 B）：`onNarrativeTriggered(state, text)` 扫描
  *   CODEX_DEFS，凡 `narrativeTriggers.includes(text)` 且尚未收录者，标记收录并去重。
  * - 未解之谜解锁为【跨系统条件组合】，由 `evaluateMystery` 统一评估 `unlockConditions`。
- * - 皮肤相关条件（mystery_10 的 `skin_active`）当前 Sprint 4 皮肤系统未建，安全 guard
- *   返回 false，待 Sprint 4 接入 `state.activeSkin` 后启用。
+ * - 皮肤相关条件（mystery_10 的 `skin_active`）已接入 Sprint 4 皮肤系统，
+ *   比对 `state.activeNumberSkin`（GDD 旧命名 `binary_pulse` 对齐为 `skin_binary`）。
  */
 
 import type { GameState } from '@/types/game';
@@ -130,10 +130,13 @@ function evaluateCondition(state: GameState, c: CodexUnlockCondition): boolean {
         return !!st && st.unlocked;
       });
     }
-    case 'skin_active':
-      // Sprint 4 皮肤系统未建：安全 guard。待 SkinSystem 接入后可改为
-      // `(state as any).activeSkin === p.skin`。当前永远不满足。
-      return false;
+    case 'skin_active': {
+      // Sprint 4 皮肤系统接入：检查当前激活数字皮肤。
+      // GDD codex 旧命名为 'binary_pulse'，本作对齐为 NumberSkinId 'skin_binary'。
+      const raw = String(p.skin ?? '');
+      const expected = raw === 'binary_pulse' ? 'skin_binary' : raw;
+      return state.activeNumberSkin === expected;
+    }
     case 'number_exact': {
       if (typeof p.value === 'number' && state.number.toString() !== String(p.value)) return false;
       if (typeof p.log10AtLeast === 'number') {

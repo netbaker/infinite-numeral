@@ -1,0 +1,186 @@
+/**
+ * 皮肤系统 — UI 主题（Sprint 4，对齐 GDD skin-system.md §2.3 + ADR-003 S4/S5）
+ *
+ * 设计约束（主理人决策 S4）：
+ * - 复用现有 `--color-*` 变量命名（不使用 GDD 的 `--bg-primary` / `--text-primary`）。
+ * - `theme_deep_space` 的取值 = 代码当前实际色（即 variables.css 的 :root 默认值），
+ *   故其覆盖块与默认一致，保证默认外观零变化。
+ * - `<html data-theme="...">` 的属性值使用带前缀的 UIThemeId（S5）。
+ *
+ * 主题切换由 App.vue 的 watch 设置 `<html data-theme>`，CSS 变量自动级联。
+ */
+
+/* ============ 深空蓝（默认）— theme_deep_space ============ */
+:root[data-theme="theme_deep_space"] {
+  --color-bg: #0a0a1a;
+  --color-surface: #1a1a2e;
+  --color-surface-hover: #252540;
+  --color-surface-panel: rgba(20, 20, 40, 0.92);
+  --color-input: #0d0d1f;
+
+  --color-text: #e0e0e0;
+  --color-text-dim: #888;
+  --color-text-accent: #6688ff;
+  --color-number: #aaccff;
+  --color-current: #FFFFFF;
+
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.16);
+  --color-border-accent: #5555cc;
+
+  --color-growth: #4CAF50;
+  --color-cost: #F44336;
+  --color-milestone: #FFD700;
+  --color-prestige: #9C27B0;
+  --color-narrative: #00BCD4;
+
+  --color-number-glow: rgba(100, 130, 255, 0.3);
+  --color-progress: linear-gradient(90deg, #4444aa, #6688ff);
+  --color-button: linear-gradient(135deg, #2a2a5a, #3a3a8a);
+  --color-button-hover: linear-gradient(135deg, #3a3a7a, #4a4a9a);
+  --color-epoch-overlay: radial-gradient(circle at 50% 30%, rgba(50, 50, 100, 0.15), transparent 70%);
+}
+
+/* ============ 质数绿 — theme_prime_green ============ */
+:root[data-theme="theme_prime_green"] {
+  --color-bg: #000000;
+  --color-surface: #0a0f0a;
+  --color-surface-hover: #0f1a0f;
+  --color-surface-panel: rgba(5, 15, 5, 0.92);
+  --color-input: #000500;
+
+  --color-text: #00ff66;
+  --color-text-dim: #44dd55;
+  --color-text-accent: #00ff88;
+  --color-number: #00ff66;
+  --color-current: #aaffaa;
+
+  --color-border: #114422;
+  --color-border-strong: #226633;
+  --color-border-accent: #00ff66;
+
+  --color-growth: #00ff66;
+  --color-cost: #ff3333;
+  --color-milestone: #88ff00;
+  --color-prestige: #00ff88;
+  --color-narrative: #00ffaa;
+
+  --color-number-glow: rgba(0, 255, 102, 0.4);
+  --color-progress: linear-gradient(90deg, #114422, #00ff66);
+  --color-button: linear-gradient(135deg, #0a1a0a, #0f2a0f);
+  --color-button-hover: linear-gradient(135deg, #0f2a0f, #1a3a1a);
+  --color-epoch-overlay: radial-gradient(circle at 50% 30%, rgba(0, 50, 20, 0.2), transparent 70%);
+}
+
+/* ============ 混沌橙 — theme_chaos_orange ============ */
+:root[data-theme="theme_chaos_orange"] {
+  --color-bg: #1a0f08;
+  --color-surface: #2a1810;
+  --color-surface-hover: #3a2418;
+  --color-surface-panel: rgba(35, 20, 12, 0.92);
+  --color-input: #1a0f08;
+
+  --color-text: #ffcc88;
+  --color-text-dim: #cc8844;
+  --color-text-accent: #ff8844;
+  --color-number: #ffaa44;
+  --color-current: #ffe0b0;
+
+  --color-border: #4a3020;
+  --color-border-strong: #6a4530;
+  --color-border-accent: #cc8844;
+
+  --color-growth: #88cc44;
+  --color-cost: #cc3333;
+  --color-milestone: #ffaa00;
+  --color-prestige: #ff8844;
+  --color-narrative: #ddaa66;
+
+  --color-number-glow: rgba(255, 136, 68, 0.3);
+  --color-progress: linear-gradient(90deg, #6a4530, #ff8844);
+  --color-button: linear-gradient(135deg, #3a2418, #5a3624);
+  --color-button-hover: linear-gradient(135deg, #5a3624, #7a4830);
+  --color-epoch-overlay: radial-gradient(circle at 50% 30%, rgba(80, 40, 10, 0.2), transparent 70%);
+}
+
+/* ============ 奇点白 — theme_singularity_white ============ */
+:root[data-theme="theme_singularity_white"] {
+  --color-bg: #f8f8f8;
+  --color-surface: #eeeeee;
+  --color-surface-hover: #e0e0e0;
+  --color-surface-panel: rgba(255, 255, 255, 0.95);
+  --color-input: #f0f0f0;
+
+  --color-text: #222222;
+  --color-text-dim: #555555;
+  --color-text-accent: #c0a030;
+  --color-number: #c0a030;
+  --color-current: #222222;
+
+  --color-border: #cccccc;
+  --color-border-strong: #bbbbbb;
+  --color-border-accent: #c0a030;
+
+  --color-growth: #44aa44;
+  --color-cost: #cc4444;
+  --color-milestone: #cc8800;
+  --color-prestige: #b09020;
+  --color-narrative: #4488cc;
+
+  --color-number-glow: rgba(192, 160, 48, 0.2);
+  --color-progress: linear-gradient(90deg, #cccccc, #c0a030);
+  --color-button: linear-gradient(135deg, #e8e8e8, #d8d8d8);
+  --color-button-hover: linear-gradient(135deg, #d8d8d8, #c8c8c8);
+  --color-epoch-overlay: radial-gradient(circle at 50% 30%, rgba(200, 180, 100, 0.1), transparent 70%);
+}
+
+/* ============ 熵崩红 — theme_entropy_red ============ */
+:root[data-theme="theme_entropy_red"] {
+  --color-bg: #1a0808;
+  --color-surface: #2a1010;
+  --color-surface-hover: #3a1818;
+  --color-surface-panel: rgba(30, 10, 10, 0.92);
+  --color-input: #1a0808;
+
+  --color-text: #ffaaaa;
+  --color-text-dim: #cc6666;
+  --color-text-accent: #ff4444;
+  --color-number: #ff6666;
+  --color-current: #ffd0d0;
+
+  --color-border: #4a2020;
+  --color-border-strong: #6a3030;
+  --color-border-accent: #aa3333;
+
+  --color-growth: #aa6644;
+  --color-cost: #ff2222;
+  --color-milestone: #ff6644;
+  --color-prestige: #aa3333;
+  --color-narrative: #cc4466;
+
+  --color-number-glow: rgba(255, 68, 68, 0.3);
+  --color-progress: linear-gradient(90deg, #4a2020, #aa3333);
+  --color-button: linear-gradient(135deg, #2a1010, #3a1818);
+  --color-button-hover: linear-gradient(135deg, #3a1818, #4a2020);
+  --color-epoch-overlay: radial-gradient(circle at 50% 30%, rgba(80, 10, 10, 0.25), transparent 70%);
+}
+
+/* ============ 熵崩红：微弱屏幕抖动（GDD §2.3.5） ============ */
+@keyframes skin-shake {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(0.3px, -0.2px); }
+  50% { transform: translate(-0.2px, 0.3px); }
+  75% { transform: translate(0.2px, 0.2px); }
+}
+:root[data-theme="theme_entropy_red"] .app {
+  animation: skin-shake 8s infinite;
+}
+
+/* ============ 全局过渡 0.2s（GDD §5.5） ============
+   仅过渡颜色相关属性，不影响 transform/opacity 动画（如暴击、点击特效）。
+   通用选择器特异性最低，组件自身 transition 规则可覆盖它。 */
+*,
+*::before,
+*::after {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}

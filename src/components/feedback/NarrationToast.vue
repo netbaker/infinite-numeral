@@ -23,7 +23,7 @@ const gameStore = useGameStore();
   max-width: 90vw;
   padding: 12px 24px;
   background: linear-gradient(135deg, rgba(76,175,80,0.15), rgba(156,39,176,0.1));
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--color-border-strong);
   border-radius: 8px;
   color: var(--color-narrative);
   font-size: 14px;

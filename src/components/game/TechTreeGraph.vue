@@ -323,8 +323,8 @@ function doBuy() {
   width: 7px; height: 7px; border-radius: 50%;
   display: inline-block;
 }
-.tech-dot--unlocked  { background: #00bcd4; }
-.tech-dot--available { background: #00bcd4; opacity: 0.5; animation: dot-pulse 2s ease-in-out infinite; }
+.tech-dot--unlocked  { background: var(--color-narrative); }
+.tech-dot--available { background: var(--color-narrative); opacity: 0.5; animation: dot-pulse 2s ease-in-out infinite; }
 .tech-dot--locked    { background: rgba(255,255,255,0.18); }
 @keyframes dot-pulse {
   0%, 100% { opacity: 0.4; }
@@ -343,20 +343,20 @@ function doBuy() {
   box-shadow: 0 4px 16px rgba(0,0,0,0.6);
 }
 .tech-tip__name {
-  font-size: 12px; font-weight: 600; color: #00bcd4;
+  font-size: 12px; font-weight: 600; color: var(--color-narrative);
   margin-bottom: 3px;
 }
 .tech-tip__desc {
   font-size: 10px; color: rgba(255,255,255,0.65);
   line-height: 1.4; margin-bottom: 4px;
 }
-.tech-tip__cost { font-size: 11px; color: #9c27b0; font-weight: 500; }
+.tech-tip__cost { font-size: 11px; color: var(--color-prestige); font-weight: 500; }
 .tech-tip__done { font-size: 10px; color: rgba(255,255,255,0.4); }
 .tech-tip__locked { font-size: 10px; color: rgba(255,255,255,0.28); }
 .tech-tip__btn {
   margin-top: 5px; width: 100%;
   padding: 3px 0; border-radius: 3px;
-  background: rgba(0,188,212,0.2); color: #00bcd4;
+  background: rgba(0,188,212,0.2); color: var(--color-narrative);
   font-size: 11px; border: none; cursor: pointer;
   pointer-events: all;
 }
@@ -376,15 +376,15 @@ function doBuy() {
   text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.6);
 }
 .tech-confirm__icon { font-size: 18px; margin-bottom: 4px; }
-.tech-confirm__name { font-size: 14px; font-weight: 600; color: #00bcd4; margin-bottom: 3px; }
+.tech-confirm__name { font-size: 14px; font-weight: 600; color: var(--color-narrative); margin-bottom: 3px; }
 .tech-confirm__desc { font-size: 11px; color: rgba(255,255,255,0.65); line-height: 1.4; margin-bottom: 6px; }
-.tech-confirm__cost { font-size: 13px; color: #9c27b0; font-weight: 500; margin-bottom: 10px; }
+.tech-confirm__cost { font-size: 13px; color: var(--color-prestige); font-weight: 500; margin-bottom: 10px; }
 .tech-confirm__actions { display: flex; gap: 8px; justify-content: center; }
 .tech-confirm__ok, .tech-confirm__no {
   padding: 4px 18px; border-radius: 4px; font-size: 12px;
   cursor: pointer; border: none; transition: background 0.15s;
 }
-.tech-confirm__ok { background: rgba(0,188,212,0.25); color: #00bcd4; }
+.tech-confirm__ok { background: rgba(0,188,212,0.25); color: var(--color-narrative); }
 .tech-confirm__ok:hover { background: rgba(0,188,212,0.4); }
 .tech-confirm__no { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.5); }
 .tech-confirm__no:hover { background: rgba(255,255,255,0.14); }

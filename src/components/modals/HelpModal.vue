@@ -33,14 +33,14 @@ const emit = defineEmits<{ close: [] }>();
 
 <style scoped>
 .help-overlay { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.7); }
-.help-card { width: 420px; max-width: 92vw; max-height: 85vh; overflow-y: auto; padding: var(--spacing-lg); background: var(--color-surface); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--border-radius); }
+.help-card { width: 420px; max-width: 92vw; max-height: 85vh; overflow-y: auto; padding: var(--spacing-lg); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--border-radius); }
 .help-card h2 { text-align: center; margin-bottom: var(--spacing-md); color: var(--color-text); }
 .help-section { margin-bottom: var(--spacing-md); }
-.help-section h3 { font-size: 13px; color: var(--color-narrative); margin-bottom: var(--spacing-xs); border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 4px; }
+.help-section h3 { font-size: 13px; color: var(--color-narrative); margin-bottom: var(--spacing-xs); border-bottom: 1px solid var(--color-border); padding-bottom: 4px; }
 .help-section p { font-size: 12px; color: var(--color-text-dim); line-height: 1.6; margin-bottom: 4px; }
 .help-row { font-size: 12px; color: var(--color-text-dim); margin-bottom: 4px; }
 .hl-prestige { color: var(--color-prestige); font-weight: 600; }
-.hl-expand { color: #00bcd4; font-weight: 600; }
-.hl-transcend { color: #ffd700; font-weight: 600; }
+.hl-expand { color: var(--color-narrative); font-weight: 600; }
+.hl-transcend { color: var(--color-milestone); font-weight: 600; }
 .help-close { display: block; width: 100%; margin-top: var(--spacing-md); padding: 10px; background: var(--color-surface-hover); color: var(--color-text); border-radius: var(--border-radius); cursor: pointer; font-size: 14px; }
 </style>

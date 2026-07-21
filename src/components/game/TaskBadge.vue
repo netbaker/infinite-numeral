@@ -28,7 +28,7 @@ const emit = defineEmits<{
   display: flex;
   align-items: center;
   gap: 4px;
-  background: linear-gradient(135deg, #1a1a2e, #2d2d5e);
+  background: linear-gradient(135deg, var(--color-surface), #2d2d5e);
   border: 1px solid #6c63ff;
   border-radius: 20px;
   padding: 6px 12px;

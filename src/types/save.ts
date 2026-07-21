@@ -217,6 +217,15 @@ export interface SerializedState {
   _singularityBurstEver: boolean;
   /** 曾获得过的全部基因类型（跨多轮累积，供 mystery_05 allTypes 判定） */
   allGeneTypesEver: string[];
+  // ---- 皮肤系统（v2.0，Sprint 4） ----
+  /** 当前激活的数字皮肤 ID（字符串形式，反序列化时校验为 NumberSkinId） */
+  activeNumberSkin: string;
+  /** 当前激活的 UI 主题 ID（字符串形式，反序列化时校验为 UIThemeId） */
+  activeTheme: string;
+  /** 已解锁的数字皮肤 ID 列表 */
+  unlockedNumberSkins: string[];
+  /** 已解锁的 UI 主题 ID 列表 */
+  unlockedThemes: string[];
 }
 
 /**

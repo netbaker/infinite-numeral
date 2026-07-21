@@ -192,7 +192,7 @@ function handleOverlayClick() {
   max-width: 90vw;
   padding: var(--spacing-lg);
   background: var(--color-surface);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--border-radius);
   text-align: center;
   animation: tutorialSlideIn 0.3s ease-out;
@@ -219,7 +219,7 @@ function handleOverlayClick() {
 .tutorial-progress__bar {
   flex: 1;
   height: 4px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--color-border);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -287,11 +287,11 @@ function handleOverlayClick() {
 .tutorial-btn--secondary {
   background: var(--color-surface-hover);
   color: var(--color-text);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-border-strong);
 }
 
 .tutorial-btn--secondary:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-border);
 }
 
 .tutorial-skip {

@@ -242,12 +242,12 @@ const meta = CODEX_CATEGORY_META;
 .codex-total-bar {
   height: 8px;
   border-radius: 5px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-border);
   overflow: hidden;
 }
 .codex-total-fill {
   height: 100%;
-  background: linear-gradient(90deg, #ffd700, #ff8844);
+  background: linear-gradient(90deg, var(--color-milestone), #ff8844);
   transition: width 0.4s ease;
 }
 .codex-total-text {
@@ -268,7 +268,7 @@ const meta = CODEX_CATEGORY_META;
   padding: 8px 10px;
   border: 1px solid #3a2a5a;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--color-border);
   color: #c9bce6;
   cursor: pointer;
   font-size: 13px;
@@ -307,7 +307,7 @@ const meta = CODEX_CATEGORY_META;
   }
 }
 .codex-card--new {
-  border: 1px solid #ffd700;
+  border: 1px solid var(--color-milestone);
   box-shadow: 0 0 14px rgba(255, 215, 0, 0.35);
 }
 .codex-card--highlight {
@@ -336,7 +336,7 @@ const meta = CODEX_CATEGORY_META;
   user-select: none;
 }
 .codex-new {
-  background: #ffd700;
+  background: var(--color-milestone);
   color: #1a0d2e;
   font-size: 10px;
   font-weight: 700;

@@ -55,7 +55,7 @@ const gameStore = useGameStore();
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 2px;
-  color: #FFD700;
+  color: var(--color-milestone);
   text-transform: uppercase;
   opacity: 0.8;
 }

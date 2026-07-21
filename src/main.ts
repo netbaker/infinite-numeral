@@ -3,6 +3,7 @@ import { createPinia } from 'pinia';
 import App from './App.vue';
 import './styles/global.css';
 import './styles/animations.css';
+import './styles/themes.css';
 
 // PWA: 确保 Service Worker 正确注册并缓存
 if ('serviceWorker' in navigator) {

@@ -145,11 +145,11 @@ function onPulseClickValue(payload: { value: BigNumber; isCrit: boolean; x: numb
   display: flex; flex-direction: column; align-items: center; gap: var(--spacing-xs);
   padding: var(--spacing-sm) var(--spacing-lg);
   background: linear-gradient(135deg, rgba(0,188,212,0.2), rgba(0,188,212,0.05));
-  border: 2px solid #00bcd4; border-radius: var(--border-radius); cursor: pointer;
+  border: 2px solid var(--color-narrative); border-radius: var(--border-radius); cursor: pointer;
 }
 .expand-button:hover { background: linear-gradient(135deg, rgba(0,188,212,0.35), rgba(0,188,212,0.1)); box-shadow: 0 0 20px rgba(0,188,212,0.3); }
-.expand-button__title { font-size: 16px; font-weight: 700; color: #00bcd4; letter-spacing: 4px; }
-.expand-button__gain { font-size: 14px; font-weight: 600; color: #00bcd4; }
+.expand-button__title { font-size: 16px; font-weight: 700; color: var(--color-narrative); letter-spacing: 4px; }
+.expand-button__gain { font-size: 14px; font-weight: 600; color: var(--color-narrative); }
 
 .modal-overlay {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -157,34 +157,34 @@ function onPulseClickValue(payload: { value: BigNumber; isCrit: boolean; x: numb
   padding: 16px;
 }
 .modal-content {
-  background: var(--color-surface); border: 1px solid #00bcd4;
+  background: var(--color-surface); border: 1px solid var(--color-narrative);
   border-radius: var(--border-radius); padding: var(--spacing-lg); text-align: center;
   width: 100%; max-width: min(400px, 100%);
 }
-.modal-content h3 { color: #00bcd4; margin-bottom: var(--spacing-sm); font-size: 16px; }
+.modal-content h3 { color: var(--color-narrative); margin-bottom: var(--spacing-sm); font-size: 16px; }
 .modal-content p { color: var(--color-text-dim); font-size: 13px; margin-bottom: 4px; line-height: 1.5; }
-.modal-gain { color: #00bcd4; font-weight: 700; font-size: 16px !important; margin-top: var(--spacing-sm) !important; }
+.modal-gain { color: var(--color-narrative); font-weight: 700; font-size: 16px !important; margin-top: var(--spacing-sm) !important; }
 .modal-actions { display: flex; gap: var(--spacing-md); justify-content: center; margin-top: var(--spacing-md); flex-wrap: wrap; }
 .btn-cancel {
   padding: 8px 24px; border: 1px solid rgba(255,255,255,0.2);
   background: transparent; color: var(--color-text-dim);
   border-radius: 4px; cursor: pointer; font-size: 13px;
 }
-.btn-confirm { padding: 8px 24px; border: none; background: #00bcd4; color: #000; font-weight: 700; border-radius: 4px; cursor: pointer; font-size: 13px; }
+.btn-confirm { padding: 8px 24px; border: none; background: var(--color-narrative); color: #000; font-weight: 700; border-radius: 4px; cursor: pointer; font-size: 13px; }
 .btn-confirm:disabled { background: #555; color: #999; cursor: not-allowed; }
-.btn-transcend { background: #ffd700; }
+.btn-transcend { background: var(--color-milestone); }
 .transcend-button {
   display: flex; flex-direction: column; align-items: center; gap: var(--spacing-xs);
   padding: var(--spacing-sm) var(--spacing-lg);
   background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,215,0,0.05));
-  border: 2px solid #ffd700; border-radius: var(--border-radius); cursor: pointer;
+  border: 2px solid var(--color-milestone); border-radius: var(--border-radius); cursor: pointer;
 }
 .transcend-button:hover { background: linear-gradient(135deg, rgba(255,215,0,0.35), rgba(255,215,0,0.1)); box-shadow: 0 0 20px rgba(255,215,0,0.3); }
-.transcend-button__title { font-size: 16px; font-weight: 700; color: #ffd700; letter-spacing: 4px; }
-.transcend-button__gain { font-size: 14px; font-weight: 600; color: #ffd700; }
-.modal-transcend { border-color: #ffd700; }
-.modal-transcend h3 { color: #ffd700; }
-  .modal-gain--transcend { color: #ffd700 !important; }
+.transcend-button__title { font-size: 16px; font-weight: 700; color: var(--color-milestone); letter-spacing: 4px; }
+.transcend-button__gain { font-size: 14px; font-weight: 600; color: var(--color-milestone); }
+.modal-transcend { border-color: var(--color-milestone); }
+.modal-transcend h3 { color: var(--color-milestone); }
+  .modal-gain--transcend { color: var(--color-milestone) !important; }
 
 @media (max-height: 650px) {
   .center-panel { padding: 4px; gap: 4px; }

@@ -438,7 +438,7 @@ function confirmExpand() {
 }
 .panel-header {
   display: flex; align-items: center; justify-content: space-between;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--color-border-strong);
   padding-bottom: 8px; margin-bottom: 12px;
 }
 .panel-header h3 { margin: 0; font-size: 18px; color: #e1bee7; }
@@ -490,7 +490,7 @@ function confirmExpand() {
   flex-shrink: 0;
   border-radius: 10px;
   background: rgba(40, 20, 60, 0.85);
-  border: 2px solid var(--gene-color, #888);
+  border: 2px solid var(--gene-color, var(--color-text-dim));
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   cursor: pointer; user-select: none;
   transition: transform 0.15s, box-shadow 0.15s;
@@ -500,7 +500,7 @@ function confirmExpand() {
 .gene-name { font-size: 11px; margin-top: 4px; color: #f3e5f5; text-align: center; }
 .expr-bar {
   width: 70%; height: 4px; margin-top: 6px;
-  background: rgba(255, 255, 255, 0.15); border-radius: 2px; overflow: hidden;
+  background: var(--color-border-strong); border-radius: 2px; overflow: hidden;
 }
 .expr-fill { height: 100%; background: var(--gene-color, #fff); transition: width 0.3s; }
 .level-badge {
@@ -511,7 +511,7 @@ function confirmExpand() {
   border: 1px solid rgba(255,255,255,0.4);
 }
 .badge--silver { background: #b0bec5; color: #263238; }
-.badge--gold { background: linear-gradient(135deg, #ffd700, #ffb300); color: #3e2723; }
+.badge--gold { background: linear-gradient(135deg, var(--color-milestone), #ffb300); color: #3e2723; }
 .badge--rainbow { background: linear-gradient(135deg, #ff5252, #ffeb3b, #69f0ae, #40c4ff, #e040fb); color: #1a1a1a; }
 
 /* 突变闪光 */
@@ -528,7 +528,7 @@ function confirmExpand() {
 @keyframes flash-fade { from { opacity: 1; } to { opacity: 0; } }
 
 /* 可重组高亮 */
-.gene-card--recombinable { border-color: #4caf50; box-shadow: 0 0 12px rgba(76, 175, 80, 0.5); }
+.gene-card--recombinable { border-color: var(--color-growth); box-shadow: 0 0 12px rgba(76, 175, 80, 0.5); }
 
 /* 突变基因彩虹流动边框 */
 .gene-card--mutation {
@@ -538,17 +538,17 @@ function confirmExpand() {
 @keyframes rainbow-border { to { filter: hue-rotate(360deg); } }
 
 /* 待筛选红标 */
-.gene-card--pending { border-color: #f44336; }
+.gene-card--pending { border-color: var(--color-cost); }
 .prune-mark {
   position: absolute; top: -8px; left: -8px;
-  background: #f44336; color: #fff; font-size: 9px; padding: 1px 4px; border-radius: 6px;
+  background: var(--color-cost); color: #fff; font-size: 9px; padding: 1px 4px; border-radius: 6px;
 }
 .prune-btn, .recombine-btn {
   position: absolute; bottom: -14px; left: 50%; transform: translateX(-50%);
   font-size: 10px; padding: 2px 6px; border-radius: 4px; border: none; cursor: pointer; white-space: nowrap;
 }
-.prune-btn { background: #f44336; color: #fff; }
-.recombine-btn { background: #4caf50; color: #fff; }
+.prune-btn { background: var(--color-cost); color: #fff; }
+.recombine-btn { background: var(--color-growth); color: #fff; }
 
 /* 空槽 */
 .gene-card--empty {
@@ -563,7 +563,7 @@ function confirmExpand() {
 .stash-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .stash-card {
   width: 96px; padding: 8px; border-radius: 8px; text-align: center;
-  background: rgba(40, 20, 60, 0.7); border: 1px solid var(--gene-color, #888);
+  background: rgba(40, 20, 60, 0.7); border: 1px solid var(--gene-color, var(--color-text-dim));
 }
 .stash-card .gene-icon { font-size: 24px; }
 .stash-card .gene-name { font-size: 11px; }
@@ -591,7 +591,7 @@ function confirmExpand() {
 }
 .detail-card {
   position: relative; width: min(420px, 90vw);
-  background: rgba(28, 16, 44, 0.98); border: 1px solid var(--gene-color, #888);
+  background: rgba(28, 16, 44, 0.98); border: 1px solid var(--gene-color, var(--color-text-dim));
   border-radius: 12px; padding: 18px 20px; color: #eee;
 }
 .detail-card h4 { margin: 4px 0 10px; color: #e1bee7; }
@@ -603,6 +603,6 @@ function confirmExpand() {
 .confirm-card { width: min(360px, 90vw); }
 .confirm-card p { font-size: 13px; color: #d1c4e9; }
 .confirm-actions { display: flex; gap: 10px; margin-top: 12px; }
-.confirm-yes { flex: 1; background: #4caf50; color: #fff; border: none; border-radius: 6px; padding: 6px; cursor: pointer; }
-.confirm-no { flex: 1; background: rgba(255,255,255,0.15); color: #fff; border: none; border-radius: 6px; padding: 6px; cursor: pointer; }
+.confirm-yes { flex: 1; background: var(--color-growth); color: #fff; border: none; border-radius: 6px; padding: 6px; cursor: pointer; }
+.confirm-no { flex: 1; background: var(--color-border-strong); color: #fff; border: none; border-radius: 6px; padding: 6px; cursor: pointer; }
 </style>

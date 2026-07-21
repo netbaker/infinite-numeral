@@ -120,7 +120,7 @@ function handleBuy(): void {
   gap: var(--spacing-xs);
   padding: var(--spacing-sm) var(--spacing-md);
   background-color: var(--color-surface);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
   transition: border-color 0.2s ease, background-color 0.2s ease;
 }

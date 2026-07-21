@@ -119,7 +119,7 @@ function handleBuy(): void {
   display: flex; flex-direction: column; gap: 3px;
   padding: 5px var(--spacing-xs);
   background-color: var(--color-surface);
-  border: 1px solid rgba(255,255,255,0.06); border-radius: var(--border-radius);
+  border: 1px solid var(--color-border); border-radius: var(--border-radius);
 }
 .producer-card:hover { border-color: rgba(76,175,80,0.3); background-color: var(--color-surface-hover); }
 .producer-card--locked { opacity: 0.5; }

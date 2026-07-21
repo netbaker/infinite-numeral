@@ -312,7 +312,7 @@ const undiscoveredFactors = computed(() => {
   color: var(--color-text-dim);
   margin-bottom: var(--spacing-xs);
   padding-bottom: var(--spacing-xs);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -364,18 +364,18 @@ const undiscoveredFactors = computed(() => {
   padding: 4px 8px;
   border-radius: var(--border-radius, 4px);
   background: rgba(255,255,255,0.02);
-  border: 1px dashed rgba(255,255,255,0.08);
+  border: 1px dashed var(--color-border);
 }
 .factor-unknown__icon {
   width: 16px; height: 16px; line-height: 16px; text-align: center;
-  font-size: 10px; color: rgba(255,255,255,0.15);
+  font-size: 10px; color: var(--color-border-strong);
   background: rgba(255,255,255,0.04); border-radius: 50%;
 }
 .factor-unknown__name {
   font-size: 10px; color: rgba(255,255,255,0.2); flex: 1;
 }
 .factor-unknown__hint {
-  font-size: 9px; color: rgba(255,255,255,0.15); white-space: nowrap;
+  font-size: 9px; color: var(--color-border-strong); white-space: nowrap;
 }
 
 /* ---- 响应式断点 ---- */

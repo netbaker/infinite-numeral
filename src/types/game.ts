@@ -849,6 +849,70 @@ export interface EntropyItemDef {
 }
 
 // ============================================================
+// 皮肤系统（v2.0 — Sprint 4，对齐 GDD skin-system.md §3.1 + ADR-003 S1/S2/S3）
+// ============================================================
+
+/** 数字皮肤 ID（带前缀命名，S1） */
+export type NumberSkinId =
+  | 'skin_scientific'   // 科学记数（默认）
+  | 'skin_engineering'  // 工程记数
+  | 'skin_chinese'      // 汉字大数
+  | 'skin_binary';      // 二进制脉冲
+
+/** UI 主题 ID（带前缀命名，S1；data-theme 属性值也使用此带前缀值，S5） */
+export type UIThemeId =
+  | 'theme_deep_space'        // 深空蓝（默认）
+  | 'theme_prime_green'       // 质数绿
+  | 'theme_chaos_orange'      // 混沌橙
+  | 'theme_singularity_white' // 奇点白
+  | 'theme_entropy_red';      // 熵崩红
+
+/** 数字皮肤解锁消耗类型 */
+export type SkinCostType =
+  | 'none'                // 免费（默认皮肤）
+  | 'stardust'           // 星尘
+  | 'singularity'        // 奇点核心
+  | 'dimension_resource'; // 维度专属资源（dimId 指定维度）
+
+/** 数字皮肤解锁消耗 */
+export interface SkinCost {
+  type: SkinCostType;
+  amount: number;
+  /** dimension_resource 时指定维度 ID */
+  dimId?: number;
+}
+
+/** 数字皮肤静态定义（S2：独立定义） */
+export interface NumberSkinDef {
+  id: NumberSkinId;
+  name: string;
+  description: string;
+  icon: string;
+  /** 解锁条件描述（纯文本，供 UI 展示） */
+  unlockCondition: string;
+  /** 解锁消耗（默认皮肤 type='none'） */
+  unlockCost: SkinCost;
+  /** 格式化器标识 */
+  formatter: 'scientific' | 'engineering' | 'chinese' | 'binary';
+}
+
+/** UI 主题静态定义（S2：独立定义） */
+export interface UIThemeDef {
+  id: UIThemeId;
+  name: string;
+  /** 风格描述 */
+  style: string;
+  /** 预览配色（主色 + 强调色 + 背景色，用于选择器预览） */
+  preview: { primary: string; accent: string; bg: string };
+  /** 解锁条件描述 */
+  unlockCondition: string;
+  /** 解锁消耗 */
+  unlockCost: SkinCost;
+  /** 对应 <html data-theme="..."> 的值（S5，带前缀） */
+  cssThemeAttr: string;
+}
+
+// ============================================================
 // 游戏状态
 // ============================================================
 
@@ -1031,4 +1095,13 @@ export class GameState {
   _singularityBurstEver: boolean = false;
   /** 跨多轮累积「曾获得过的基因类型」集合（用于 mystery_05 的 allTypes 判定，跨重置继承） */
   _allGeneTypesEver: Set<string> = new Set();
+  // ---- 皮肤系统（v2.0，Sprint 4） ----
+  /** 当前激活的数字皮肤 */
+  activeNumberSkin: NumberSkinId = 'skin_scientific';
+  /** 当前激活的 UI 主题（对应 <html data-theme="..."> 值） */
+  activeTheme: UIThemeId = 'theme_deep_space';
+  /** 已解锁的数字皮肤 ID 集合（S3：与主题集合分开） */
+  unlockedNumberSkins: Set<NumberSkinId> = new Set<NumberSkinId>(['skin_scientific']);
+  /** 已解锁的 UI 主题 ID 集合（S3：与数字皮肤集合分开） */
+  unlockedThemes: Set<UIThemeId> = new Set<UIThemeId>(['theme_deep_space']);
 }

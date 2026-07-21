@@ -258,7 +258,7 @@ function onBuyCrystal(itemId: string) {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #1a1a3a;
+  background: var(--color-surface);
   border: 1px solid #4444aa;
   border-radius: 8px;
   padding: 10px 16px;
@@ -340,7 +340,7 @@ function onBuyCrystal(itemId: string) {
 
 .locked-badge {
   background: #333;
-  color: #888;
+  color: var(--color-text-dim);
 }
 
 .dim-desc {
@@ -485,7 +485,7 @@ function onBuyCrystal(itemId: string) {
 }
 
 .chaos-timer {
-  color: #888;
+  color: var(--color-text-dim);
   font-size: 0.85em;
 }
 

@@ -77,7 +77,7 @@ function dismiss(): void {
   padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-md);
   background-color: var(--color-surface);
   border-radius: var(--border-radius);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--color-border);
   animation: slideUp 0.3s ease;
 }
 

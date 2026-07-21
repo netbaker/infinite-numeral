@@ -31,7 +31,7 @@ const gameStore = useGameStore();
   font-weight: 700;
   color: var(--color-current);
   letter-spacing: 2px;
-  text-shadow: 0 0 12px rgba(255, 255, 255, 0.15);
+  text-shadow: 0 0 12px var(--color-border-strong);
   min-height: 40px;
 }
 

@@ -18,6 +18,22 @@
     <main v-else class="app-main-mobile">
       <div class="mobile-center">
         <CenterPanel />
+        <!-- 移动状态条：仅绑定既有 store 取值，不新增状态/逻辑 -->
+        <div class="mobile-status">
+          <div class="mobile-status__row">
+            <span class="mobile-status__label">每秒产出</span>
+            <span class="mobile-status__value mobile-status__value--cps">+{{ gameStore.displayOutputPerSec }}/秒</span>
+          </div>
+          <div class="mobile-status__row">
+            <span class="mobile-status__label">总计</span>
+            <span class="mobile-status__value mobile-status__value--total">{{ gameStore.displayTotalNumber }}</span>
+          </div>
+          <ProgressBar
+            class="mobile-status__progress"
+            :percent="nextEpochPercent"
+            :color="'var(--color-milestone)'"
+          />
+        </div>
       </div>
       <div class="mobile-tabs">
         <button
@@ -70,6 +86,7 @@
       @open-gene="showGene = true"
       @open-archive="showArchive = true"
       @open-codex="showCodex = true"
+      @open-skin="showSkin = true"
       @use-stabilizer="gameStore.useEntropyStabilizer()"
       @use-rewind="gameStore.useEntropyRewind()"
       @use-barrier="gameStore.useEntropyBarrier()"
@@ -143,11 +160,14 @@
 
     <!-- Sprint 3：图鉴收录通知（右上角堆叠） -->
     <CodexToast />
+
+    <!-- Sprint 4：皮肤定制 -->
+    <SkinSelector :visible="showSkin" @close="showSkin = false" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useGameStore } from '@/stores/gameStore';
 import { useGameLoop } from '@/composables/useGameLoop';
 import { useAutoSave } from '@/composables/useAutoSave';
@@ -158,8 +178,10 @@ import LeftPanel from '@/components/layout/LeftPanel.vue';
 import CenterPanel from '@/components/layout/CenterPanel.vue';
 import RightPanel from '@/components/layout/RightPanel.vue';
 import BottomBar from '@/components/layout/BottomBar.vue';
+import ProgressBar from '@/components/progress/ProgressBar.vue';
 import CodexModal from '@/components/modals/CodexModal.vue';
 import CodexToast from '@/components/feedback/CodexToast.vue';
+import SkinSelector from '@/components/modals/SkinSelector.vue';
 import OfflineRewardModal from '@/components/modals/OfflineRewardModal.vue';
 import NarrationToast from '@/components/feedback/NarrationToast.vue';
 import AchievementToast from '@/components/feedback/AchievementToast.vue';
@@ -181,6 +203,15 @@ useOffline();
 useGameLoop();
 useAutoSave();
 
+// Sprint 4：监听当前 UI 主题，写入 <html data-theme="..."> 触发 CSS 变量级联
+watch(
+  () => gameStore.activeTheme,
+  (theme) => {
+    document.documentElement.setAttribute('data-theme', theme);
+  },
+  { immediate: true },
+);
+
 // 移动端检测
 const isMobile = ref(window.innerWidth < 768);
 function onResize() { isMobile.value = window.innerWidth < 768; }
@@ -189,6 +220,9 @@ onUnmounted(() => window.removeEventListener('resize', onResize));
 
 // 移动端标签：生产者 / 升级 / 科技树
 const mobileTab = ref<'producers' | 'upgrades' | 'tech'>('producers');
+
+// 移动端状态条：下一纪元进度（复用 gameStore 既有方法，纯展示，不新增状态/逻辑）
+const nextEpochPercent = computed(() => gameStore.epochProgress().percent);
 
 const epochClass = computed(() => {
   void gameStore.stateVersion;
@@ -205,6 +239,7 @@ const showDimension = ref(false);
 const showGene = ref(false);
 const showArchive = ref(false);
 const showCodex = ref(false);
+const showSkin = ref(false);
 
 // 挑战面板数据
 const challengeData = computed(() => {
@@ -343,5 +378,146 @@ function restartTutorial() {
   background: none; border: none; color: rgba(255,255,255,0.7);
   font-size: 16px; cursor: pointer; padding: 4px;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* ============================================================
+ * 移动端布局重平衡（Sprint UI 优化）
+ * 子组件视觉微调统一用 :deep() + 移动媒体查询，子组件源码零改动。
+ * 仅用 --spacing-* / --color-* / --border-radius 变量，严禁硬编码 hex。
+ * ============================================================ */
+@media (max-width: 767px) {
+  /* 上半：自适应 + 上限封顶，内部铺满，消除空旷 */
+  .mobile-center {
+    flex: 0 0 auto;
+    max-height: 46dvh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  /* CenterPanel 移动端内部用 order 重排并铺满（:deep 覆盖子组件 scoped） */
+  .app-main-mobile :deep(.center-panel) {
+    flex: 1 1 auto;
+    justify-content: space-between;
+    padding: var(--spacing-sm);
+    gap: var(--spacing-sm);
+  }
+  .app-main-mobile :deep(.epoch-indicator) { order: 1; }
+  .app-main-mobile :deep(.number-display) { order: 2; }
+  .app-main-mobile :deep(.center-panel__click-area) { order: 3; }
+  /* prestige 无子时高度0、不占空白；显式 order:4 使其保持在脉冲下方（补文档遗漏） */
+  .app-main-mobile :deep(.center-panel__prestige) { order: 4; }
+
+  /* 脉冲按钮略缩，减少四周留白（不改渐变/动画） */
+  .app-main-mobile :deep(.pulse-button) {
+    width: min(104px, 28vw);
+    height: min(104px, 28vw);
+  }
+
+  /* 新增状态条（数据来自既有 store 取值，纯展示） */
+  .mobile-status {
+    order: 4;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+  }
+  .mobile-status__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .mobile-status__label { font-size: 12px; color: var(--color-text-dim); }
+  .mobile-status__value { font-size: 13px; font-weight: 600; color: var(--color-text); }
+  .mobile-status__value--cps { color: var(--color-growth); }
+  .mobile-status__value--total { color: var(--color-number); }
+  .mobile-status__progress { width: 100%; }
+
+  /* 标签栏定高、≥44px 触控 */
+  .mobile-tabs { min-height: 44px; }
+  .mobile-tab {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 下半占余量（维持 flex:1; min-height:0; overflow-y:auto） */
+  .mobile-panel { padding: var(--spacing-sm); }
+
+  /* 卡片网格：窄屏单列；宽屏(≥420px) 2 列 */
+  .app-main-mobile :deep(.left-panel__list),
+  .app-main-mobile :deep(.right-panel__list) {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+  /* 科技树保持单列（图结构不宜 2 列） */
+  .app-main-mobile :deep(.right-panel__section--tech) { grid-template-columns: 1fr; }
+
+  @media (min-width: 420px) {
+    .app-main-mobile :deep(.left-panel__list),
+    .app-main-mobile :deep(.right-panel__list) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  /* compact 列表（因子/星尘/膨胀/超越）始终单列，避免窄卡挤压 */
+  .app-main-mobile :deep(.right-panel__list.right-panel__list--compact) {
+    grid-template-columns: 1fr;
+  }
+
+  /* 吸顶分组标题 */
+  .app-main-mobile :deep(.right-panel__section-title) {
+    position: sticky;
+    top: 0;
+    background: var(--color-surface);
+    z-index: 2;
+  }
+
+  /* ---- ProducerCard：密度 + 触控 ≥44px ---- */
+  .app-main-mobile :deep(.producer-card) { padding: var(--spacing-sm); gap: var(--spacing-xs); }
+  .app-main-mobile :deep(.producer-card__name) { font-size: 12px; }
+  .app-main-mobile :deep(.producer-card__body) { font-size: 11px; }
+  .app-main-mobile :deep(.producer-card__buy-btn) {
+    min-height: 44px; font-size: 13px; border-radius: var(--border-radius);
+  }
+  .app-main-mobile :deep(.producer-card__bulk-btn) {
+    min-height: 44px; min-width: 44px; font-size: 11px;
+  }
+  .app-main-mobile :deep(.producer-card__output-label),
+  .app-main-mobile :deep(.producer-card__cost-label) { display: inline; font-size: 11px; }
+
+  /* ---- UpgradeCard：密度 + 触控 ≥44px（分类着色不动） ---- */
+  .app-main-mobile :deep(.upgrade-card) { padding: var(--spacing-sm) var(--spacing-md); gap: var(--spacing-xs); }
+  .app-main-mobile :deep(.upgrade-card__description) { line-height: 1.5; font-size: 12px; }
+  .app-main-mobile :deep(.upgrade-card__buy-btn) { min-height: 44px; font-size: 13px; }
+
+  /* ---- FactorCard：密度 + 触控（分类着色/左 border 保持不动） ---- */
+  .app-main-mobile :deep(.factor-card) { padding: var(--spacing-sm); gap: var(--spacing-xs); }
+  .app-main-mobile :deep(.factor-card__desc) { font-size: 11px; line-height: 1.4; }
+  .app-main-mobile :deep(.factor-card__effect-value) { font-size: 12px; }
+
+  /* ---- 底部栏收敛：单行横向滚动，避免换行吃空间 ---- */
+  .app :deep(.bottom-bar) {
+    height: auto;
+    min-height: 44px;
+    max-height: 56px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: var(--spacing-xs);
+  }
+  .app :deep(.bottom-bar__settings-btn) {
+    min-height: 44px; min-width: 44px;
+    font-size: 18px;
+  }
+  .app :deep(.bottom-bar__item) { white-space: nowrap; }
+  /* 熵值消耗按钮（稳定/回溯/屏障）触控 ≥44px，且不被 56px 底栏裁掉 */
+  .app :deep(.entropy-bar__action) {
+    min-height: 44px; min-width: 44px;
+  }
 }
 </style>

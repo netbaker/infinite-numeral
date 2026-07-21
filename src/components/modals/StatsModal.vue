@@ -110,7 +110,7 @@ const producerLevels = computed(() => {
 
 <style scoped>
 .stats-overlay { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.7); }
-.stats-card { width: 420px; max-width: 92vw; max-height: 85vh; overflow-y: auto; padding: var(--spacing-lg); background: var(--color-surface); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--border-radius); }
+.stats-card { width: 420px; max-width: 92vw; max-height: 85vh; overflow-y: auto; padding: var(--spacing-lg); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--border-radius); }
 .stats-card h2 { text-align: center; margin-bottom: var(--spacing-md); }
 .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
 .stat-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }

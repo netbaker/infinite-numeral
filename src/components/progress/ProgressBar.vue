@@ -24,7 +24,7 @@ const clampedPercent = computed(() => {
 .progress-bar {
   width: 100%;
   height: 6px;
-  background-color: rgba(255, 255, 255, 0.06);
+  background-color: var(--color-border);
   border-radius: 3px;
   overflow: hidden;
 }

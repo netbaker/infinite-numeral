@@ -907,7 +907,7 @@ export const CODEX_DEFS: CodexEntryDef[] = [
     icon: '❓',
     hiddenHint: '在 0 和 1 之间，是否存在着某个从未被记录的存在？',
     unlockConditions: [
-      { type: 'skin_active', params: { skin: 'binary_pulse' } },
+      { type: 'skin_active', params: { skin: 'skin_binary' } },
       { type: 'gene_possess', params: { gene: 'gene_mutation' } },
       { type: 'gene_possess', params: { gene: 'gene_exotic' } },
     ],

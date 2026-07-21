@@ -23,6 +23,8 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Sprint 4：UI 主题切换 0.2s 过渡（GDD §5.5） */
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 #app {

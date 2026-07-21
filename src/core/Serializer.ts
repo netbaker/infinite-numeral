@@ -1,6 +1,6 @@
 import Decimal from 'break_eternity.js';
 import { GameState } from '@/types/game';
-import type { AchievementState, DimensionId } from '@/types/game';
+import type { AchievementState, DimensionId, NumberSkinId, UIThemeId } from '@/types/game';
 import type { SaveData, SerializedState } from '@/types/save';
 
 /** 当前存档版本号（Sprint 3 图鉴：新增 codexEntries + codexInitialized + 8 个跨系统联动追踪字段 → 3 → 4） */
@@ -100,6 +100,11 @@ export function serialize(state: GameState): SaveData {
     _expandedInChaosDim: state._expandedInChaosDim,
     _singularityBurstEver: state._singularityBurstEver,
     allGeneTypesEver: Array.from(state._allGeneTypesEver),
+    // ---- 皮肤系统（v2.0，Sprint 4） ----
+    activeNumberSkin: state.activeNumberSkin,
+    activeTheme: state.activeTheme,
+    unlockedNumberSkins: Array.from(state.unlockedNumberSkins),
+    unlockedThemes: Array.from(state.unlockedThemes),
   };
 
   return {
@@ -255,6 +260,16 @@ export function deserialize(data: SaveData): GameState {
   state._expandedInChaosDim = s._expandedInChaosDim ?? false;
   state._singularityBurstEver = s._singularityBurstEver ?? false;
   state._allGeneTypesEver = new Set(s.allGeneTypesEver ?? []);
+
+  // ---- 皮肤系统（v2.0，Sprint 4，兼容旧存档：缺失则使用默认值，不 bump 版本号） ----
+  state.activeNumberSkin = (s.activeNumberSkin as NumberSkinId) ?? 'skin_scientific';
+  state.activeTheme = (s.activeTheme as UIThemeId) ?? 'theme_deep_space';
+  state.unlockedNumberSkins = new Set<NumberSkinId>(
+    (s.unlockedNumberSkins as NumberSkinId[] | undefined) ?? ['skin_scientific'],
+  );
+  state.unlockedThemes = new Set<UIThemeId>(
+    (s.unlockedThemes as UIThemeId[] | undefined) ?? ['theme_deep_space'],
+  );
 
   return state;
 }

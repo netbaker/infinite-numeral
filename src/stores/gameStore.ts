@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia';
 import { ref, computed, markRaw, shallowRef } from 'vue';
 import { BigNumber } from '@/core/BigNumber';
-import { format } from '@/core/Formatter';
+import { format, setActiveNumberSkin } from '@/core/Formatter';
 import { deserialize } from '@/core/Serializer';
-import { GameState, type EpochConfig, type DimensionId, type ArchiveRecord, type ArchiveSummary } from '@/types/game';
+import { GameState, type EpochConfig, type DimensionId, type ArchiveRecord, type ArchiveSummary, type NumberSkinId, type UIThemeId } from '@/types/game';
 import type { SaveData } from '@/types/save';
 import Decimal from 'break_eternity.js';
 import { ProducerSystem } from '@/systems/ProducerSystem';
@@ -23,6 +23,7 @@ import { DimensionSystem } from '@/systems/DimensionSystem';
 import { geneSystem } from '@/systems/GeneSystem';
 import type { CodexCategory, CodexEntryDef } from '@/types/codex';
 import * as codexSystem from '@/systems/CodexSystem';
+import * as skinSystem from '@/systems/SkinSystem';
 import {
   PRODUCER_CONFIGS,
   UPGRADE_DEFS,
@@ -467,6 +468,8 @@ export const useGameStore = defineStore('game', () => {
 
     gameState.value = markRaw(state);
     updateDisplayStrings(state);
+    // Sprint 4：同步 Formatter 的当前皮肤镜像（避免与 gameStore 形成循环依赖）
+    setActiveNumberSkin(state.activeNumberSkin);
     isRunning.value = true;
     bumpVersion();
   }
@@ -543,6 +546,8 @@ export const useGameStore = defineStore('game', () => {
 
     gameState.value = markRaw(state);
     updateDisplayStrings(state);
+    // Sprint 4：同步 Formatter 的当前皮肤镜像
+    setActiveNumberSkin(state.activeNumberSkin);
     isRunning.value = true;
     bumpVersion();
   }
@@ -1498,10 +1503,12 @@ export const useGameStore = defineStore('game', () => {
    * 更新显示字符串
    */
   function updateDisplayStrings(state: GameState): void {
-    displayNumber.value = format(BigNumber.from(state.number));
-    displayTotalNumber.value = format(BigNumber.from(state.totalNumber));
+    const skin = state.activeNumberSkin;
+    displayNumber.value = format(BigNumber.from(state.number), skin);
+    displayTotalNumber.value = format(BigNumber.from(state.totalNumber), skin);
     displayOutputPerSec.value = format(
       producerSystem.calculateTotalOutput(state, multiplierSystem),
+      skin,
     );
   }
 
@@ -1688,6 +1695,88 @@ export const useGameStore = defineStore('game', () => {
     return geneSystem.canExpandSlot(gameState.value);
   }
 
+  // ============================================================
+  // 皮肤系统（Sprint 4）— 响应式访问器 + Actions
+  // ============================================================
+
+  /** 当前激活的数字皮肤（响应式，依赖 stateVersion） */
+  const activeNumberSkin = computed<NumberSkinId>(() => {
+    void stateVersion.value;
+    return gameState.value.activeNumberSkin;
+  });
+
+  /** 当前激活的 UI 主题（响应式；App.vue watch 据此修改 <html data-theme>） */
+  const activeTheme = computed<UIThemeId>(() => {
+    void stateVersion.value;
+    return gameState.value.activeTheme;
+  });
+
+  /** 已解锁的数字皮肤集合（响应式） */
+  const unlockedNumberSkins = computed<Set<NumberSkinId>>(() => {
+    void stateVersion.value;
+    return gameState.value.unlockedNumberSkins;
+  });
+
+  /** 已解锁的 UI 主题集合（响应式） */
+  const unlockedThemes = computed<Set<UIThemeId>>(() => {
+    void stateVersion.value;
+    return gameState.value.unlockedThemes;
+  });
+
+  /** 切换当前激活的数字皮肤（须已解锁） */
+  function setNumberSkin(id: NumberSkinId): boolean {
+    const state = gameState.value;
+    const ok = skinSystem.setNumberSkin(state, id);
+    if (ok) {
+      setActiveNumberSkin(id); // 同步 Formatter 镜像，避免与 gameStore 循环依赖
+      bumpVersion();
+      // 联动：皮肤切换后兜底检查未解之谜（mystery_10 等）
+      const newly = codexSystem.checkAllMysteries(state);
+      for (const def of newly) enqueueCodexNotification(def);
+    }
+    return ok;
+  }
+
+  /** 解锁数字皮肤（条件 + 资源校验，扣减资源） */
+  function unlockNumberSkin(id: NumberSkinId): skinSystem.UnlockResult {
+    const state = gameState.value;
+    const result = skinSystem.unlockNumberSkin(state, id);
+    if (result.ok) {
+      bumpVersion();
+      const def = skinSystem.getNumberSkinDef(id);
+      showNarration([`🎨 已解锁数字皮肤：${def.name}！`], 2500);
+      const newly = codexSystem.checkAllMysteries(state);
+      for (const def2 of newly) enqueueCodexNotification(def2);
+    }
+    return result;
+  }
+
+  /** 切换当前激活的 UI 主题（须已解锁；App.vue watch 负责修改 DOM data-theme） */
+  function setTheme(id: UIThemeId): boolean {
+    const state = gameState.value;
+    const ok = skinSystem.setTheme(state, id);
+    if (ok) {
+      bumpVersion();
+      const newly = codexSystem.checkAllMysteries(state);
+      for (const def of newly) enqueueCodexNotification(def);
+    }
+    return ok;
+  }
+
+  /** 解锁 UI 主题（条件 + 资源校验，扣减资源） */
+  function unlockTheme(id: UIThemeId): skinSystem.UnlockResult {
+    const state = gameState.value;
+    const result = skinSystem.unlockTheme(state, id);
+    if (result.ok) {
+      bumpVersion();
+      const def = skinSystem.getThemeDef(id);
+      showNarration([`🎨 已解锁主题：${def.name}！`], 2500);
+      const newly = codexSystem.checkAllMysteries(state);
+      for (const def2 of newly) enqueueCodexNotification(def2);
+    }
+    return result;
+  }
+
   return {
     // State
     gameState,
@@ -1813,5 +1902,15 @@ export const useGameStore = defineStore('game', () => {
 
     // 基因系统暴露（供 GeneChain.vue 直接查询）
     geneSystem,
+
+    // Sprint 4：皮肤系统（响应式访问器 + Actions）
+    activeNumberSkin,
+    activeTheme,
+    unlockedNumberSkins,
+    unlockedThemes,
+    setNumberSkin,
+    unlockNumberSkin,
+    setTheme,
+    unlockTheme,
   };
 });

@@ -146,7 +146,7 @@ function getEffectTagClass(effect: EventEffect): string {
   max-height: 85vh;
   overflow-y: auto;
   padding: var(--spacing-lg);
-  background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(145deg, var(--color-surface) 0%, #16213e 100%);
   border-radius: var(--border-radius);
   border: 1px solid rgba(255, 193, 7, 0.25);
   box-shadow:
@@ -236,8 +236,8 @@ function getEffectTagClass(effect: EventEffect): string {
   gap: 6px;
   width: 100%;
   padding: var(--spacing-sm) var(--spacing-md);
-  background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: var(--color-border);
+  border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -258,7 +258,7 @@ function getEffectTagClass(effect: EventEffect): string {
 .event-card__option-text {
   font-size: 14px;
   font-weight: 600;
-  color: #e0e0e0;
+  color: var(--color-text);
 }
 
 /* ---- 效果标签行 ---- */
