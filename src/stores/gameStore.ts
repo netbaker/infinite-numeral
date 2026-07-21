@@ -1144,6 +1144,11 @@ export const useGameStore = defineStore('game', () => {
       for (const def of unlocked) enqueueCodexNotification(def);
     }
 
+    // 隐患3 修复：检查完刚结束那轮的未解之谜后，将本轮熵崩计数归零，开启新轮。
+    // 这样 mystery_03（_runCollapses===0）与 mystery_08（≥inRunAtLeast 阈值）判定的是"刚结束那轮"，
+    // 下一轮从 0 重新累计；Transcend 作为最高层重置，只在此处重算 _runCollapses。
+    gameState.value._runCollapses = 0;
+
     // 档案馆解锁叙事 —— Story 2.1.3（首次解锁展示专属叙事，否则常规超越叙事）
     if (newState.archiveUnlocked && !wasUnlocked) {
       showNarration(['🏛️ 宇宙档案馆已解锁！你的每一次超越都将被永久记录。'], 5000);

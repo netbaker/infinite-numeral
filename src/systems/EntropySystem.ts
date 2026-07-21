@@ -280,6 +280,7 @@ export class EntropySystem {
 
     // 3. 更新统计与连续崩塌计数
     state.totalCollapses++;
+    state._runCollapses++;        // ← 新增：本轮熵崩计数（隐患3 修复，原遗漏导致 _runCollapses 恒为 0）
     state.collapseStreak += 1;
     state.lastCollapseAt = Date.now();
 

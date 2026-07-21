@@ -61,13 +61,15 @@ export class TranscendSystem {
     newState.codexEntries = state.codexEntries;
     newState.codexInitialized = state.codexInitialized;
     newState.collapsedDimensions = state.collapsedDimensions;
-    newState._chaosStreak4x = state._chaosStreak4x;
+    // 隐患2 修复：_chaosStreak4x 不做跨轮拷贝 → 落回 newState 默认 0，实现"每轮清零"（streak 连续语义）
     newState._prestigeDuringBurst = state._prestigeDuringBurst;
     newState._archiveRecordCount = state._archiveRecordCount;
     newState._rewindUsedCount = state._rewindUsedCount;
     newState._expandedInChaosDim = state._expandedInChaosDim;
     newState._singularityBurstEver = state._singularityBurstEver;
     newState._allGeneTypesEver = state._allGeneTypesEver; // 跨轮累积字段，随重置保留
+    // 隐患3 修复：_runCollapses 跨 Transcend 保留，让 post-Transcend 的 checkAllMysteries 看到刚结束那轮的崩塌数
+    newState._runCollapses = state._runCollapses;
 
     // 基因链跨 Transcend 继承（GDD §2.3.3）
     newState.geneChain = geneSystem.cloneChain(state.geneChain);

@@ -12,7 +12,21 @@ import {
   checkAllMysteries,
   getCategoryCounts,
 } from '@/systems/CodexSystem';
+import { TranscendSystem } from '@/systems/TranscendSystem';
+import { PrestigeSystem } from '@/systems/PrestigeSystem';
 import { PRESTIGE_NARRATIVES, PRODUCER_UNLOCK_NARRATIVES } from '@/core/Constants';
+
+/** 全部 8 种基因类型（mystery_05 的 allTypes 判定目标） */
+const ALL8_GENES = [
+  'gene_growth',
+  'gene_catalyst',
+  'gene_resilience',
+  'gene_resonance',
+  'gene_mutation',
+  'gene_memory',
+  'gene_entangle',
+  'gene_exotic',
+];
 
 /** 构造带指定基因的 GameState */
 function withGenes(
@@ -236,5 +250,86 @@ describe('Sprint 3 分类计数', () => {
     expect(counts.sage_record.total).toBe(18);
     expect(counts.mystery.total).toBe(12);
     expect(counts.mystery.unlocked).toBe(1);
+  });
+});
+
+describe('批次1 隐患修复验证', () => {
+  // ---- mystery_05 跨轮累积（依赖 _allGeneTypesEver 的跨重置保留） ----
+  it('mystery_05 跨轮累积 A：_allGeneTypesEver 5→8 种解锁', () => {
+    const s = withGenes([{ type: 'gene_exotic', level: 3 }]); // 满足 gene_possess gene_exotic Lv3
+    s.archiveUnlocked = true;
+    s._archiveRecordCount = 1; // 满足 archive_count min 1
+    s._allGeneTypesEver = new Set(ALL8_GENES.slice(0, 5)); // 仅 5 种类型（链上 exotic 不计入 allTypes 累积）
+
+    // 第一轮 checkAllMysteries：基因类型不足 8，mystery_05 不应解锁
+    checkAllMysteries(s);
+    expect(s.codexEntries.get('mystery_05')?.unlocked).toBeFalsy();
+
+    // 模拟跨轮累积到 8 种类型
+    s._allGeneTypesEver = new Set(ALL8_GENES);
+    checkAllMysteries(s);
+    expect(s.codexEntries.get('mystery_05')?.unlocked).toBe(true);
+  });
+
+  it('mystery_05 跨轮累积 B：Prestige 不丢 _allGeneTypesEver（跨轮不丢）', () => {
+    const ps = new PrestigeSystem();
+    const s = new GameState();
+    s._allGeneTypesEver = new Set(['gene_growth', 'gene_catalyst', 'gene_resilience']);
+
+    const ns = ps.executePrestige(s);
+    expect(ns._allGeneTypesEver.has('gene_growth')).toBe(true);
+    expect(ns._allGeneTypesEver.has('gene_catalyst')).toBe(true);
+    expect(ns._allGeneTypesEver.has('gene_resilience')).toBe(true);
+    expect(ns._allGeneTypesEver.size).toBeGreaterThanOrEqual(3);
+  });
+
+  // ---- 隐患3：_runCollapses 时序正确性 ----
+  it('mystery_03 时序：_runCollapses=0 时解锁（零崩塌 Run 条件成立）', () => {
+    const s = withGenes([{ type: 'gene_resilience', level: 1 }]);
+    s.currentDimension = 3; // 反熵维度
+    s._runCollapses = 0; // 本轮 0 次熵崩
+    s.prestigeCount = 20;
+
+    const unlocked = checkAllMysteries(s);
+    expect(unlocked.some((d) => d.id === 'mystery_03')).toBe(true);
+    expect(s.codexEntries.get('mystery_03')?.unlocked).toBe(true);
+  });
+
+  it('mystery_08 时序：_runCollapses≥阈值(=3) 时解锁', () => {
+    const s = new GameState();
+    s._rewindUsedCount = 10; // item_used_count rewind min 10
+    s._runCollapses = 3; // entropy_collapse inRunAtLeast 3
+
+    const unlocked = checkAllMysteries(s);
+    expect(unlocked.some((d) => d.id === 'mystery_08')).toBe(true);
+    expect(s.codexEntries.get('mystery_08')?.unlocked).toBe(true);
+  });
+
+  it('Transcend 保留 _runCollapses（关键）：修复前为 0，修复后应为 3，并驱动 mystery_08 解锁', () => {
+    const ts = new TranscendSystem();
+    const s = new GameState();
+    s._runCollapses = 3;
+    s._rewindUsedCount = 10; // 满足 mystery_08 另一条件，隔离验证 _runCollapses 字段
+
+    const ns = ts.executeTranscend(s);
+    expect(ns._runCollapses).toBe(3); // 修复前此断言为 0（bug 根源）
+
+    // 对新 newState 跑 checkAllMysteries → mystery_08 应解锁（依赖跨 Transcend 保留的 _runCollapses）
+    const unlocked = checkAllMysteries(ns);
+    expect(unlocked.some((d) => d.id === 'mystery_08')).toBe(true);
+
+    // 模拟 gameStore 重置：开启新轮，从 0 起算
+    ns._runCollapses = 0;
+    expect(ns._runCollapses).toBe(0);
+  });
+
+  // ---- 隐患2：_chaosStreak4x 每轮清零 ----
+  it('隐患2 清零：Transcend 后 _chaosStreak4x 落回 0（每轮清零）', () => {
+    const ts = new TranscendSystem();
+    const s = new GameState();
+    s._chaosStreak4x = 3;
+
+    const ns = ts.executeTranscend(s);
+    expect(ns._chaosStreak4x).toBe(0);
   });
 });
