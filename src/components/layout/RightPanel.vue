@@ -392,16 +392,4 @@ const undiscoveredFactors = computed(() => {
   .right-panel__title { font-size: 12px; }
   .right-panel__section-title { font-size: 11px; }
 }
-/* 移动端全屏面板 */
-@media (max-width: 767px) {
-  .right-panel {
-    max-width: 100%;
-    min-width: 0;
-    width: 100%;
-    padding: 6px 8px;
-    height: 100%;
-  }
-  .right-panel__section { margin-bottom: 8px; }
-  .right-panel__title { font-size: 13px; margin-bottom: 4px; }
-}
 </style>

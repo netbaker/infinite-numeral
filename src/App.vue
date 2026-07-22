@@ -447,28 +447,28 @@ function restartTutorial() {
   }
 
   /* 下半占余量（维持 flex:1; min-height:0; overflow-y:auto） */
-  .mobile-panel { padding: var(--spacing-sm); }
+  .mobile-panel { padding: var(--spacing-md); }
 
-  /* 卡片网格：窄屏单列；宽屏(≥420px) 2 列 */
+  /* 面板在移动端必须全宽（替代 RightPanel/LeftPanel 各自移动端 width 规则；删 RightPanel.vue 内部 @media 后此条为唯一来源） */
+  .app-main-mobile :deep(.left-panel),
+  .app-main-mobile :deep(.right-panel) {
+    max-width: 100%; min-width: 0; width: 100%;
+  }
+
+  /* 卡片网格：移动端默认 2 列（覆盖 360–414px 主流手机）；≤340px 超窄回退单列 */
   .app-main-mobile :deep(.left-panel__list),
   .app-main-mobile :deep(.right-panel__list) {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--spacing-sm);
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
   }
-  /* 科技树保持单列（图结构不宜 2 列） */
-  .app-main-mobile :deep(.right-panel__section--tech) { grid-template-columns: 1fr; }
-
-  @media (min-width: 420px) {
+  @media (max-width: 340px) {
     .app-main-mobile :deep(.left-panel__list),
-    .app-main-mobile :deep(.right-panel__list) {
-      grid-template-columns: repeat(2, 1fr);
-    }
+    .app-main-mobile :deep(.right-panel__list) { grid-template-columns: 1fr; }
   }
-  /* compact 列表（因子/星尘/膨胀/超越）始终单列，避免窄卡挤压 */
-  .app-main-mobile :deep(.right-panel__list.right-panel__list--compact) {
-    grid-template-columns: 1fr;
-  }
+  /* compact 列表（因子/暗能量/元）与科技树保持单列（图结构/窄卡不宜 2 列） */
+  .app-main-mobile :deep(.right-panel__list--compact) { grid-template-columns: 1fr; gap: var(--spacing-sm); }
+  .app-main-mobile :deep(.right-panel__section--tech) { grid-template-columns: 1fr; }
 
   /* 吸顶分组标题 */
   .app-main-mobile :deep(.right-panel__section-title) {
@@ -478,28 +478,34 @@ function restartTutorial() {
     z-index: 2;
   }
 
-  /* ---- ProducerCard：密度 + 触控 ≥44px ---- */
-  .app-main-mobile :deep(.producer-card) { padding: var(--spacing-sm); gap: var(--spacing-xs); }
-  .app-main-mobile :deep(.producer-card__name) { font-size: 12px; }
-  .app-main-mobile :deep(.producer-card__body) { font-size: 11px; }
+  /* ---- ProducerCard：密度 + 触控（内部 @media 已删，此处为唯一来源） ---- */
+  .app-main-mobile :deep(.producer-card) { padding: var(--spacing-sm); gap: var(--spacing-sm); }
+  .app-main-mobile :deep(.producer-card__name) { font-size: 13px; }
+  .app-main-mobile :deep(.producer-card__body) { font-size: 12px; gap: var(--spacing-sm); flex-wrap: wrap; }
   .app-main-mobile :deep(.producer-card__buy-btn) {
     min-height: 44px; font-size: 13px; border-radius: var(--border-radius);
   }
   .app-main-mobile :deep(.producer-card__bulk-btn) {
-    min-height: 44px; min-width: 44px; font-size: 11px;
+    min-height: 44px; min-width: 44px; font-size: 12px; padding: 0 6px;
   }
   .app-main-mobile :deep(.producer-card__output-label),
-  .app-main-mobile :deep(.producer-card__cost-label) { display: inline; font-size: 11px; }
+  .app-main-mobile :deep(.producer-card__cost-label) { display: inline; font-size: 12px; }
 
   /* ---- UpgradeCard：密度 + 触控 ≥44px（分类着色不动） ---- */
-  .app-main-mobile :deep(.upgrade-card) { padding: var(--spacing-sm) var(--spacing-md); gap: var(--spacing-xs); }
+  .app-main-mobile :deep(.upgrade-card) { padding: var(--spacing-sm) var(--spacing-md); gap: var(--spacing-sm); }
   .app-main-mobile :deep(.upgrade-card__description) { line-height: 1.5; font-size: 12px; }
   .app-main-mobile :deep(.upgrade-card__buy-btn) { min-height: 44px; font-size: 13px; }
+  /* 紧凑升级（暗能量/元）"买"按钮触控达标（原无 min-height → ~20px） */
+  .app-main-mobile :deep(.upgrade-mini__btn) { min-height: 44px; font-size: 12px; }
 
-  /* ---- FactorCard：密度 + 触控（分类着色/左 border 保持不动） ---- */
-  .app-main-mobile :deep(.factor-card) { padding: var(--spacing-sm); gap: var(--spacing-xs); }
-  .app-main-mobile :deep(.factor-card__desc) { font-size: 11px; line-height: 1.4; }
+  /* ---- FactorCard：保持单列；分类着色/左 border 不动 ---- */
+  .app-main-mobile :deep(.factor-card) { padding: var(--spacing-sm); gap: var(--spacing-sm); }
+  .app-main-mobile :deep(.factor-card__desc) { font-size: 12px; line-height: 1.4; }
   .app-main-mobile :deep(.factor-card__effect-value) { font-size: 12px; }
+  .app-main-mobile :deep(.factor-card__level) { font-size: 12px; }
+
+  /* 状态条间隙抬到 --spacing-sm（原 --spacing-xs=4px） */
+  .mobile-status { gap: var(--spacing-sm); }
 
   /* ---- 底部栏收敛：单行横向滚动，避免换行吃空间 ---- */
   .app :deep(.bottom-bar) {
@@ -508,7 +514,7 @@ function restartTutorial() {
     max-height: 56px;
     flex-wrap: nowrap;
     overflow-x: auto;
-    gap: var(--spacing-xs);
+    gap: var(--spacing-sm);
   }
   .app :deep(.bottom-bar__settings-btn) {
     min-height: 44px; min-width: 44px;

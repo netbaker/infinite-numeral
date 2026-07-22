@@ -45,19 +45,19 @@
   --border-radius: 8px;
 }
 
-/* 中等高度屏幕：缩小间距 */
+/* 中等高度屏幕：缩小间距，但抬高下限（v2） */
 @media (max-height: 850px) {
   :root {
     --spacing-lg: 16px;
-    --spacing-md: 12px;
+    --spacing-md: 14px;
   }
 }
 
-/* 低高度屏幕（笔记本 768px 高度附近）：进一步缩小 */
+/* 低高度屏幕（笔记本/横屏手机）：进一步缩小，但保留舒适下限（v2） */
 @media (max-height: 700px) {
   :root {
     --spacing-lg: 12px;
-    --spacing-md: 8px;
-    --spacing-sm: 6px;
+    --spacing-md: 12px;
+    --spacing-sm: 8px;
   }
 }

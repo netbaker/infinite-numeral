@@ -158,14 +158,4 @@ function handleBuy(): void {
 .producer-card__buy-btn:hover:not(:disabled) { background-color: rgba(76,175,80,0.3); }
 .producer-card__buy-btn--disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ---- 移动端适配 ---- */
-@media (max-width: 767px) {
-  .producer-card { padding: 4px 5px; gap: 2px; }
-  .producer-card__name { font-size: 11px; }
-  .producer-card__body { font-size: 10px; }
-  .producer-card__bulk-btn { padding: 1px 6px; font-size: 9px; }
-  .producer-card__buy-btn { font-size: 10px; padding: 2px 0; }
-  .producer-card__output-label,
-  .producer-card__cost-label { display: none; }
-}
 </style>

@@ -223,12 +223,4 @@ const categoryLabel = computed(() => catNames[props.def.category]);
   margin-left: auto;
 }
 
-/* ---- 移动端适配 ---- */
-@media (max-width: 767px) {
-  .factor-card { padding: 5px 8px; gap: 2px; }
-  .factor-card__name { font-size: 11px; }
-  .factor-card__desc { font-size: 9px; -webkit-line-clamp: 1; }
-  .factor-card__effect-value { font-size: 10px; }
-  .factor-card__level { font-size: 9px; }
-}
 </style>
