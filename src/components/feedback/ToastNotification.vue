@@ -46,8 +46,8 @@ onMounted(() => {
 }
 
 .toast-notification--info {
-  background-color: rgba(0, 188, 212, 0.15);
-  border: 1px solid rgba(0, 188, 212, 0.3);
+  background-color: rgba(var(--color-tech-accent-rgb), 0.15);
+  border: 1px solid rgba(var(--color-tech-accent-rgb), 0.3);
   color: var(--color-narrative);
 }
 

@@ -265,7 +265,7 @@ const TYPE_COLORS: Record<GeneType, string> = {
   gene_resilience: '#2196f3',
   gene_resonance: '#ff9800',
   gene_mutation: '#e91e63',
-  gene_memory: '#00bcd4',
+  gene_memory: 'var(--color-tech-accent)',
   gene_entangle: '#8bc34a',
   gene_exotic: '#ffd700',
 };

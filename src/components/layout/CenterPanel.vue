@@ -144,10 +144,10 @@ function onPulseClickValue(payload: { value: BigNumber; isCrit: boolean; x: numb
 .expand-button {
   display: flex; flex-direction: column; align-items: center; gap: var(--spacing-xs);
   padding: var(--spacing-sm) var(--spacing-lg);
-  background: linear-gradient(135deg, rgba(0,188,212,0.2), rgba(0,188,212,0.05));
+  background: linear-gradient(135deg, rgba(var(--color-tech-accent-rgb),0.2), rgba(var(--color-tech-accent-rgb),0.05));
   border: 2px solid var(--color-narrative); border-radius: var(--border-radius); cursor: pointer;
 }
-.expand-button:hover { background: linear-gradient(135deg, rgba(0,188,212,0.35), rgba(0,188,212,0.1)); box-shadow: 0 0 20px rgba(0,188,212,0.3); }
+.expand-button:hover { background: linear-gradient(135deg, rgba(var(--color-tech-accent-rgb),0.35), rgba(var(--color-tech-accent-rgb),0.1)); box-shadow: 0 0 20px rgba(var(--color-tech-accent-rgb),0.3); }
 .expand-button__title { font-size: 16px; font-weight: 700; color: var(--color-narrative); letter-spacing: 4px; }
 .expand-button__gain { font-size: 14px; font-weight: 600; color: var(--color-narrative); }
 

@@ -311,7 +311,7 @@ function restartTutorial() {
   background-color: var(--color-bg);
 }
 .app.epoch-sprout { --epoch-glow: rgba(76, 175, 80, 0.03); }
-.app.epoch-expand { --epoch-glow: rgba(0, 188, 212, 0.05); }
+.app.epoch-expand { --epoch-glow: rgba(var(--color-tech-accent-rgb), 0.05); }
 .app.epoch-construct { --epoch-glow: rgba(156, 39, 176, 0.04); }
 .app.epoch-perceive { --epoch-glow: rgba(255, 215, 0, 0.04); }
 .app.epoch-celestial { --epoch-glow: rgba(255, 255, 255, 0.05); }
@@ -347,7 +347,7 @@ function restartTutorial() {
 .mobile-tab.active {
   color: var(--color-text); border-bottom-color: var(--color-growth);
 }
-.mobile-tab--tech.active { border-bottom-color: #00bcd4; }
+.mobile-tab--tech.active { border-bottom-color: var(--color-tech-accent); }
 .mobile-panel {
   flex: 1; min-height: 0; overflow-y: auto;
   -webkit-overflow-scrolling: touch;

@@ -11,7 +11,7 @@
       <g v-for="(edge, i) in edges" :key="'e' + i">
         <path
           :d="edge.d"
-          :stroke="edge.active ? '#00bcd4' : 'rgba(255,255,255,0.1)'"
+          :style="{ stroke: edge.active ? 'var(--color-tech-accent)' : 'rgba(255,255,255,0.1)' }"
           :stroke-width="edge.active ? 2 : 1"
           stroke-linecap="round"
           :stroke-dasharray="edge.active ? 'none' : '4,3'"
@@ -20,7 +20,7 @@
         <polygon
           v-if="edge.active"
           :points="edge.arrow"
-          fill="#00bcd4"
+          :style="{ fill: 'var(--color-tech-accent)' }"
           opacity="0.9"
         />
       </g>
@@ -48,8 +48,7 @@
           :cx="node.x"
           :cy="node.y"
           :r="NODE_R"
-          :fill="fillFor(node.status)"
-          :stroke="strokeFor(node.status)"
+          :style="{ fill: fillFor(node.status), stroke: strokeFor(node.status) }"
           :stroke-width="node.status === 'available' ? 2.5 : 1.5"
           :stroke-dasharray="node.status === 'locked' ? '4,3' : 'none'"
         />
@@ -60,7 +59,7 @@
           :y="node.y + 1"
           text-anchor="middle"
           dominant-baseline="central"
-          fill="#00bcd4"
+          :style="{ fill: 'var(--color-tech-accent)' }"
           font-size="11"
           font-weight="bold"
           class="tech-check"
@@ -71,7 +70,7 @@
           :y="node.y + NODE_R + 11"
           text-anchor="middle"
           dominant-baseline="central"
-          :fill="node.status === 'locked' ? 'rgba(255,255,255,0.28)' : '#00bcd4'"
+          :style="{ fill: node.status === 'locked' ? 'rgba(255,255,255,0.28)' : 'var(--color-tech-accent)' }"
           font-size="8.5"
           font-weight="600"
           class="tech-label"
@@ -197,13 +196,13 @@ const edges = computed(() => {
 // 样式辅助
 // ========================
 function fillFor(s: string): string {
-  if (s === 'unlocked') return 'rgba(0,188,212,0.28)';
-  if (s === 'available') return 'rgba(0,188,212,0.16)';
+  if (s === 'unlocked') return 'rgba(var(--color-tech-accent-rgb),0.28)';
+  if (s === 'available') return 'rgba(var(--color-tech-accent-rgb),0.16)';
   return 'rgba(255,255,255,0.04)';
 }
 function strokeFor(s: string): string {
-  if (s === 'unlocked') return '#00bcd4';
-  if (s === 'available') return '#00bcd4';
+  if (s === 'unlocked') return 'var(--color-tech-accent)';
+  if (s === 'available') return 'var(--color-tech-accent)';
   return 'rgba(255,255,255,0.16)';
 }
 
@@ -295,7 +294,7 @@ function doBuy() {
 .tech-node-g { cursor: default; }
 .tech-node-g--available { cursor: pointer; }
 .tech-node-g--available:active circle:first-child {
-  fill: rgba(0,188,212,0.32);
+  fill: rgba(var(--color-tech-accent-rgb),0.32);
 }
 .tech-node-g--unlocked { opacity: 0.7; }
 .tech-node-g--locked { opacity: 1; }
@@ -336,7 +335,7 @@ function doBuy() {
   position: absolute;
   z-index: 50;
   background: rgba(12, 12, 30, 0.97);
-  border: 1px solid rgba(0, 188, 212, 0.4);
+  border: 1px solid rgba(var(--color-tech-accent-rgb), 0.4);
   border-radius: 6px;
   padding: 8px 10px;
   pointer-events: none;
@@ -356,11 +355,11 @@ function doBuy() {
 .tech-tip__btn {
   margin-top: 5px; width: 100%;
   padding: 3px 0; border-radius: 3px;
-  background: rgba(0,188,212,0.2); color: var(--color-narrative);
+  background: rgba(var(--color-tech-accent-rgb),0.2); color: var(--color-narrative);
   font-size: 11px; border: none; cursor: pointer;
   pointer-events: all;
 }
-.tech-tip__btn:hover { background: rgba(0,188,212,0.35); }
+.tech-tip__btn:hover { background: rgba(var(--color-tech-accent-rgb),0.35); }
 
 /* ---- 购买弹窗 ---- */
 .tech-confirm {
@@ -370,7 +369,7 @@ function doBuy() {
 }
 .tech-confirm__box {
   background: rgba(14, 14, 34, 0.98);
-  border: 1px solid rgba(0,188,212,0.4);
+  border: 1px solid rgba(var(--color-tech-accent-rgb),0.4);
   border-radius: 8px; padding: 14px 16px 12px;
   min-width: 140px; max-width: 90%;
   text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.6);
@@ -384,8 +383,8 @@ function doBuy() {
   padding: 4px 18px; border-radius: 4px; font-size: 12px;
   cursor: pointer; border: none; transition: background 0.15s;
 }
-.tech-confirm__ok { background: rgba(0,188,212,0.25); color: var(--color-narrative); }
-.tech-confirm__ok:hover { background: rgba(0,188,212,0.4); }
+.tech-confirm__ok { background: rgba(var(--color-tech-accent-rgb),0.25); color: var(--color-narrative); }
+.tech-confirm__ok:hover { background: rgba(var(--color-tech-accent-rgb),0.4); }
 .tech-confirm__no { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.5); }
 .tech-confirm__no:hover { background: rgba(255,255,255,0.14); }
 

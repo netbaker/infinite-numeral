@@ -7,6 +7,12 @@
   --color-prestige: #9C27B0;
   --color-narrative: #00BCD4;
 
+  /* Sprint 清理：主题强调色语义变量（唯一真值在此处，组件内不得硬编码 hex） */
+  --color-tech-accent: #00bcd4;
+  --color-tech-accent-rgb: 0, 188, 212;
+  --color-chaos-accent: #ff8844;
+  --color-singularity-accent: #ffd54f;
+
   /* 背景与表面 */
   --color-bg: #0a0a1a;
   --color-surface: #1a1a2e;

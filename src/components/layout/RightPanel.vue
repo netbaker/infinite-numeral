@@ -323,9 +323,9 @@ const undiscoveredFactors = computed(() => {
   color: #ce93d8;
   border-bottom-color: rgba(156, 39, 176, 0.3);
 }
-.right-panel__section-title--tech { color: #4dd0e1; border-bottom-color: rgba(0,188,212,0.25); }
-.right-panel__section-title--expansion { color: #4dd0e1; border-bottom-color: rgba(0,188,212,0.25); }
-.right-panel__section-title--transcend { color: #ffd54f; border-bottom-color: rgba(255,215,0,0.25); }
+.right-panel__section-title--tech { color: #4dd0e1; border-bottom-color: rgba(var(--color-tech-accent-rgb),0.25); }
+.right-panel__section-title--expansion { color: #4dd0e1; border-bottom-color: rgba(var(--color-tech-accent-rgb),0.25); }
+.right-panel__section-title--transcend { color: var(--color-singularity-accent); border-bottom-color: rgba(255,215,0,0.25); }
 .right-panel__section-title--factor { color: #ff8a65; border-bottom-color: rgba(255,138,101,0.25); }
 
 .right-panel__res-count { font-size: 11px; opacity: 0.85; }
@@ -335,25 +335,25 @@ const undiscoveredFactors = computed(() => {
 /* ---- 紧凑升级卡片（暗能量/元升级） ---- */
 .upgrade-mini {
   padding: 5px 8px;
-  border: 1px solid rgba(0,188,212,0.12);
+  border: 1px solid rgba(var(--color-tech-accent-rgb),0.12);
   border-radius: var(--border-radius, 4px);
   background: var(--color-surface);
 }
 .upgrade-mini--gold { border-color: rgba(255,215,0,0.12); }
 .upgrade-mini__name { font-size: 11px; font-weight: 600; color: #4dd0e1; margin-bottom: 1px; }
-.upgrade-mini--gold .upgrade-mini__name { color: #ffd54f; }
+.upgrade-mini--gold .upgrade-mini__name { color: var(--color-singularity-accent); }
 .upgrade-mini__desc { font-size: 10px; color: var(--color-text-dim); margin-bottom: 3px; line-height: 1.3; }
 .upgrade-mini__footer { display: flex; align-items: center; gap: 4px; }
 .upgrade-mini__cost { font-size: 10px; color: #4dd0e1; font-weight: 500; }
-.upgrade-mini--gold .upgrade-mini__cost { color: #ffd54f; }
+.upgrade-mini--gold .upgrade-mini__cost { color: var(--color-singularity-accent); }
 .upgrade-mini__level { font-size: 10px; color: var(--color-text-dim); flex: 1; }
 .upgrade-mini__btn {
   padding: 1px 10px; border-radius: 3px; border: none; cursor: pointer;
-  background: rgba(0,188,212,0.18); color: #4dd0e1; font-size: 10px;
+  background: rgba(var(--color-tech-accent-rgb),0.18); color: #4dd0e1; font-size: 10px;
 }
-.upgrade-mini__btn:hover:not(:disabled) { background: rgba(0,188,212,0.32); }
+.upgrade-mini__btn:hover:not(:disabled) { background: rgba(var(--color-tech-accent-rgb),0.32); }
 .upgrade-mini__btn:disabled { opacity: 0.35; cursor: not-allowed; }
-.upgrade-mini__btn--gold { background: rgba(255,215,0,0.15); color: #ffd54f; }
+.upgrade-mini__btn--gold { background: rgba(255,215,0,0.15); color: var(--color-singularity-accent); }
 .upgrade-mini__btn--gold:hover:not(:disabled) { background: rgba(255,215,0,0.28); }
 
 /* ---- 未发现因子占位 ---- */

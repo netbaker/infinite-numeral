@@ -33,6 +33,8 @@
   --color-milestone: #FFD700;
   --color-prestige: #9C27B0;
   --color-narrative: #00BCD4;
+  --color-tech-accent: #00bcd4;
+  --color-tech-accent-rgb: 0, 188, 212;
 
   --color-number-glow: rgba(100, 130, 255, 0.3);
   --color-progress: linear-gradient(90deg, #4444aa, #6688ff);
@@ -64,6 +66,8 @@
   --color-milestone: #88ff00;
   --color-prestige: #00ff88;
   --color-narrative: #00ffaa;
+  --color-tech-accent: #00ff88;
+  --color-tech-accent-rgb: 0, 255, 136;
 
   --color-number-glow: rgba(0, 255, 102, 0.4);
   --color-progress: linear-gradient(90deg, #114422, #00ff66);
@@ -95,6 +99,8 @@
   --color-milestone: #ffaa00;
   --color-prestige: #ff8844;
   --color-narrative: #ddaa66;
+  --color-tech-accent: #ff8844;
+  --color-tech-accent-rgb: 255, 136, 68;
 
   --color-number-glow: rgba(255, 136, 68, 0.3);
   --color-progress: linear-gradient(90deg, #6a4530, #ff8844);
@@ -126,6 +132,8 @@
   --color-milestone: #cc8800;
   --color-prestige: #b09020;
   --color-narrative: #4488cc;
+  --color-tech-accent: #c0a030;
+  --color-tech-accent-rgb: 192, 160, 48;
 
   --color-number-glow: rgba(192, 160, 48, 0.2);
   --color-progress: linear-gradient(90deg, #cccccc, #c0a030);
@@ -157,6 +165,8 @@
   --color-milestone: #ff6644;
   --color-prestige: #aa3333;
   --color-narrative: #cc4466;
+  --color-tech-accent: #ff4444;
+  --color-tech-accent-rgb: 255, 68, 68;
 
   --color-number-glow: rgba(255, 68, 68, 0.3);
   --color-progress: linear-gradient(90deg, #4a2020, #aa3333);

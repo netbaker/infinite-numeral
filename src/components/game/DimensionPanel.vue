@@ -480,7 +480,7 @@ function onBuyCrystal(itemId: string) {
 }
 
 .chaos-mult {
-  color: #ff8844;
+  color: var(--color-chaos-accent);
   font-weight: bold;
 }
 

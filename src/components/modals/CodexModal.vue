@@ -247,7 +247,7 @@ const meta = CODEX_CATEGORY_META;
 }
 .codex-total-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--color-milestone), #ff8844);
+  background: linear-gradient(90deg, var(--color-milestone), var(--color-chaos-accent));
   transition: width 0.4s ease;
 }
 .codex-total-text {
