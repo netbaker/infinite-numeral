@@ -23,12 +23,15 @@ const categoryCounts = computed(() => {
   return codexSystem.getCategoryCounts(store.gameState);
 });
 
-/** 总收录进度 */
+/** 总收录进度（按 CODEX_CATEGORIES 泛型汇总，自动计入 knowledge 等新增分类） */
 const totalProgress = computed(() => {
   const c = categoryCounts.value;
-  const unlocked =
-    c.origin.unlocked + c.cosmic_event.unlocked + c.sage_record.unlocked + c.mystery.unlocked;
-  const all = CODEX_DEFS.length;
+  let unlocked = 0;
+  let all = 0;
+  for (const cat of CODEX_CATEGORIES) {
+    unlocked += c[cat].unlocked;
+    all += c[cat].total;
+  }
   const pct = all > 0 ? (unlocked / all) * 100 : 0;
   return { unlocked, all, pct };
 });
@@ -157,6 +160,8 @@ const meta = CODEX_CATEGORY_META;
               <span class="codex-card-title">{{ def.title }}</span>
               <span v-if="isNew(def)" class="codex-new">NEW</span>
               <span v-if="def.category === 'mystery'" class="codex-key">🔑</span>
+              <span v-if="def.category === 'knowledge' && def.unlockLog10 != null" class="codex-magnitude">量级 e{{ def.unlockLog10 }}</span>
+              <span v-if="def.category === 'knowledge'" class="codex-real">📐 真实知识</span>
             </div>
             <p v-for="(para, i) in def.content" :key="i" class="codex-card-body">{{ para }}</p>
             <div v-if="def.category === 'mystery' && def.hiddenHint" class="codex-unlock-cond">
@@ -349,6 +354,21 @@ const meta = CODEX_CATEGORY_META;
 }
 .codex-key {
   font-size: 14px;
+}
+.codex-magnitude {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: #33dd99;
+  color: #063;
+}
+.codex-real {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 6px;
+  border: 1px solid #33dd99;
+  color: #33dd99;
 }
 .codex-card-body {
   margin: 4px 0;

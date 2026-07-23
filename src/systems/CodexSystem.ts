@@ -27,7 +27,7 @@ import { ACHIEVEMENT_DEFS } from '@/core/Constants';
 export const CODE_NEW_BADGE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 /** 分类顺序（用于 UI 与计数） */
-export const CODEX_CATEGORIES: CodexCategory[] = ['origin', 'cosmic_event', 'sage_record', 'mystery'];
+export const CODEX_CATEGORIES: CodexCategory[] = ['origin', 'cosmic_event', 'sage_record', 'mystery', 'knowledge'];
 
 /**
  * 叙事触发时尝试自动收录。

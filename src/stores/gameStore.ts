@@ -734,7 +734,15 @@ export const useGameStore = defineStore('game', () => {
       const key = String(logE);
       if (NUMBER_MILESTONE_NARRATIVES[key] && !triggeredNumberMilestones.has(key)) {
         triggeredNumberMilestones.add(key);
-        narrationMessage.value = NUMBER_MILESTONE_NARRATIVES[key];
+        const text = NUMBER_MILESTONE_NARRATIVES[key];
+        narrationMessage.value = text;
+        // Sprint 5 B③：联动 Codex 知识词条——精确文本匹配 onNarrativeTriggered
+        // （对齐 magnitude-milestone.md §2.2 / knowledge-entry-pool.md；
+        //  text 须与 KNOWLEDGE_ENTRY_DEFS.narrativeTriggers 逐字符一致）
+        const collected = codexSystem.onNarrativeTriggered(state, text);
+        for (const def of collected) {
+          enqueueCodexNotification(def);
+        }
         setTimeout(() => { narrationMessage.value = ''; }, 4000);
       }
     }
@@ -1167,6 +1175,32 @@ export const useGameStore = defineStore('game', () => {
     }
 
     bumpVersion();
+  }
+
+  /** R1 红线：数字印记总上限（5 次量级里程碑超越 + 9 个档案馆成就 = 14，超过不发放） */
+  const NUMERAL_IMPRINT_CAP = 14;
+
+  /**
+   * 发放数字印记（A③ 数字人格 / B 量级里程碑 共享货币的地基）。
+   *
+   * - R1 红线：numeralImprints 总上限 = 14，超过部分不发放（硬钳制）。
+   * - 走现有叙事 Toast 通道（showNarration）通知玩家。
+   * - Phase 0 只累加 + 上限钳制，不含任何消费/业务逻辑。
+   *
+   * @param amount 拟发放数量（应为正数；非正数或超上限部分直接忽略）
+   * @returns 实际发放数量（钳制后，可能 < amount 或 = 0）
+   */
+  function grantNumeralImprint(amount: number): number {
+    if (!Number.isFinite(amount) || amount <= 0) return 0;
+    const state = gameState.value;
+    const before = state.numeralImprints;
+    const granted = Math.min(amount, NUMERAL_IMPRINT_CAP - before);
+    if (granted <= 0) return 0;
+    state.numeralImprints = before + granted;
+    bumpVersion();
+    // 走现有叙事 Toast 通道
+    showNarration([`✨ 数字印记 +${granted}`], 4000);
+    return granted;
   }
 
   /**
@@ -1828,6 +1862,7 @@ export const useGameStore = defineStore('game', () => {
     executePrestige,
     executeExpansion,
     executeTranscend,
+    grantNumeralImprint,
     buyTechNode,
     buyExpansionUpgrade,
     buyTranscendUpgrade,

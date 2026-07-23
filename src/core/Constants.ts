@@ -16,6 +16,7 @@ import type {
   GeneDef,
   GeneType,
 } from '@/types/game';
+import type { CodexEntryDef } from '@/types/codex';
 
 // ============================================================
 // 生产者配置
@@ -871,15 +872,284 @@ export const PRODUCER_UNLOCK_NARRATIVES: Record<string, string> = {
   producer9: '超数降临。语言已无法描述这里的规模。',
 };
 
-/** 数字里程碑叙事（key = 指数，如 '6' 代表 1e6） */
+/**
+ * 数字里程碑叙事（key = 指数，如 '6' 代表 1e6）
+ * 注意：以下文本须与 KNOWLEDGE_ENTRY_DEFS.narrativeTriggers 逐字符一致
+ * （Sprint 5 B③ 知识解锁钩子 onNarrativeTriggered 精确文本匹配）。
+ * 其中 '6'/'50' 与 magnitude-milestone.md §2.2 一致；'12'/'100' 采用 §2.2 文本，
+ * 切勿回退到旧版 NUMBER_MILESTONE_NARRATIVES 文案，否则 know_trillion / know_googol 无法解锁。
+ */
 export const NUMBER_MILESTONE_NARRATIVES: Record<string, string> = {
   '6':  '你的数字超越了地球上每一粒沙。',
-  '12': '万亿。曾经只有神才能数清的数字。',
+  '12': '万亿。文明的总和在此刻度。',
   '20': '你超越了可观测宇宙中的原子数量。',
   '30': '量子泡沫中的数字也显得渺小了。',
   '50': '这个数字没有物理意义——只有数学意义。',
-  '100': 'Googol。一个只存在于数学梦境中的数字，如今在你手中。',
+  '100': 'Googol。只存在于数学梦境的数字。',
 };
+
+// ============================================================
+// 数字神话图鉴·数学知识（Sprint 5 · Codex 第 5 分类 knowledge）
+// 类型与字段集对齐 types/codex.ts 的 CodexEntryDef。
+// 解锁复用既有 CodexSystem.onNarrativeTriggered(state, narration) 钩子：
+//   narrativeTriggers 须与 magnitude-milestone.md §2.2 的 MAGNITUDE_MILESTONE_DEFS
+//   对应 narration 逐字符一致；未列专门里程碑的 9 条按"最近里程碑叙事兜底匹配"
+//   （GDD knowledge-entry-pool.md §2.2 / §6 边缘情况 #5）挂到最近里程碑，使其仍可经
+//   既有钩子解锁，不引入新机制。
+// unlockLog10 仅用于 UI 展示"量级 e{N}"徽章，不参与匹配。
+// ============================================================
+
+export const KNOWLEDGE_ENTRY_DEFS: CodexEntryDef[] = [
+  {
+    id: 'know_million',
+    title: '百万之沙',
+    category: 'knowledge',
+    icon: '🔢',
+    unlockLog10: 6,
+    narrativeTriggers: ['你的数字超越了地球上每一粒沙。'],
+    content: [
+      '一百万，约等于一个人类头皮上的头发总数；也是你呼吸约 10 天的次数。',
+      '当数字跨过 10⁶，世界开始有了"规模"的概念——城市、公司、种群，都以百万为单位被计数。',
+    ],
+  },
+  {
+    id: 'know_ten_million',
+    title: '千万脉动',
+    category: 'knowledge',
+    icon: '📡',
+    unlockLog10: 7,
+    // 兜底：无专门里程碑(7)，挂到最近里程碑 log10=6
+    narrativeTriggers: ['你的数字超越了地球上每一粒沙。'],
+    content: [
+      '一千万，大致是一台普通服务器一天处理的请求量级。',
+      '在信息时代，10⁷ 是"被机器默默数过"的最小单位之一。',
+    ],
+  },
+  {
+    id: 'know_hundred_million',
+    title: '亿兆之国',
+    category: 'knowledge',
+    icon: '🌍',
+    unlockLog10: 8,
+    // 兜底：无专门里程碑(8)，挂到最近里程碑 log10=9
+    narrativeTriggers: ['十亿——曾经只有神才能数清的数字。'],
+    content: [
+      '一亿，约等于一个中等国家的人口规模。',
+      '当数字达到 10⁸，你已站在"国家级别"的尺度上俯瞰众生。',
+    ],
+  },
+  {
+    id: 'know_billion',
+    title: '十亿众生',
+    category: 'knowledge',
+    icon: '👥',
+    unlockLog10: 9,
+    narrativeTriggers: ['十亿——曾经只有神才能数清的数字。'],
+    content: [
+      '十亿，约等于当今全球总人口；也是 10⁹ 秒所代表的约 31.7 年。',
+      '10⁹ 让"人口"与"时间"第一次以同一把尺子被丈量。',
+    ],
+  },
+  {
+    id: 'know_ten_billion',
+    title: '百亿星海',
+    category: 'knowledge',
+    icon: '💡',
+    unlockLog10: 10,
+    // 兜底：无专门里程碑(10)，挂到最近里程碑 log10=9
+    narrativeTriggers: ['十亿——曾经只有神才能数清的数字。'],
+    content: [
+      '百亿，约等于人类肉眼可辨的银河系恒星数量级。',
+      '当你数到 10¹⁰，整条星河都在你的数字里闪烁。',
+    ],
+  },
+  {
+    id: 'know_hundred_billion',
+    title: '千亿思络',
+    category: 'knowledge',
+    icon: '🧠',
+    unlockLog10: 11,
+    // 兜底：无专门里程碑(11)，挂到最近里程碑 log10=12
+    narrativeTriggers: ['万亿。文明的总和在此刻度。'],
+    content: [
+      '千亿，约等于人脑中神经元的数量（约 8.6×10¹⁰）。',
+      '每个神经元都是一台微型计算机——你的思想，正是一千亿次计算的合奏。',
+    ],
+  },
+  {
+    id: 'know_trillion',
+    title: '万亿文明',
+    category: 'knowledge',
+    icon: '🏛️',
+    unlockLog10: 12,
+    narrativeTriggers: ['万亿。文明的总和在此刻度。'],
+    content: [
+      '万亿（1 tera），约等于全球每年生产的硅晶体管数量级。',
+      '10¹² 是"文明总和"的刻度：货币、晶体管、沙粒，都在这一档交汇。',
+    ],
+  },
+  {
+    id: 'know_peta',
+    title: '千万亿蚁潮',
+    category: 'knowledge',
+    icon: '🐜',
+    unlockLog10: 15,
+    // 兜底：无专门里程碑(15)，挂到最近里程碑 log10=12
+    narrativeTriggers: ['万亿。文明的总和在此刻度。'],
+    content: [
+      '千万亿（1 peta），地球上的蚂蚁总数估计约 10¹⁶ 只。',
+      '当你越过 10¹⁵，个体的渺小与种群的浩瀚在同一次幂里重叠。',
+    ],
+  },
+  {
+    id: 'know_sand',
+    title: '数沙者',
+    category: 'knowledge',
+    icon: '🏖️',
+    unlockLog10: 18,
+    narrativeTriggers: ['你数清了阿基米德想象过的所有沙。'],
+    content: [
+      '地球所有沙滩上的沙粒总数估计约 7.5×10¹⁸——这正是阿基米德在《数沙者》中试图想象的尺度。',
+      '两千多年前，他已算出"宇宙能装下多少粒沙"，是人类第一次系统地处理如此巨大的数。',
+    ],
+  },
+  {
+    id: 'know_quintillion',
+    title: '百万立方',
+    category: 'knowledge',
+    icon: '✨',
+    unlockLog10: 19,
+    // 兜底：无专门里程碑(19)，挂到最近里程碑 log10=18
+    narrativeTriggers: ['你数清了阿基米德想象过的所有沙。'],
+    content: [
+      '百万的立方（10⁶）³ 等于 10¹⁸；古人曾用"可观测宇宙的沙粒"来近似 10¹⁹ 这样的量级。',
+      '当幂次被立方，数字以你意想不到的速度膨胀。',
+    ],
+  },
+  {
+    id: 'know_hundred_quintillion',
+    title: '百京银河',
+    category: 'knowledge',
+    icon: '🌌',
+    unlockLog10: 20,
+    // 兜底：无专门里程碑(20)，挂到最近里程碑 log10=18
+    narrativeTriggers: ['你数清了阿基米德想象过的所有沙。'],
+    content: [
+      '百京（10²⁰），约等于以太阳质量计的银河系总质量级。',
+      '你手中的数字，已重得能压垮一整个星系。',
+    ],
+  },
+  {
+    id: 'know_avogadro',
+    title: '摩尔之海',
+    category: 'knowledge',
+    icon: '🧪',
+    unlockLog10: 23,
+    narrativeTriggers: ['一摩尔——阿伏伽德罗数在指尖。'],
+    content: [
+      '阿伏伽德罗常数约为 6.02×10²³——1 摩尔任何物质所含的微粒数。',
+      '它把"宏观可称量的克"与"微观不可数的原子"连了起来，是化学得以成立的基石。',
+    ],
+  },
+  {
+    id: 'know_stars',
+    title: '星海无垠',
+    category: 'knowledge',
+    icon: '⭐',
+    unlockLog10: 24,
+    narrativeTriggers: ['可观测宇宙的恒星，不过如此。'],
+    content: [
+      '可观测宇宙中的恒星总数估计约 10²⁴ 颗。',
+      '当你数到 10²⁴，每一颗星都是宇宙写下的一个句号。',
+    ],
+  },
+  {
+    id: 'know_galaxies',
+    title: '星系之网',
+    category: 'knowledge',
+    icon: '🕸️',
+    unlockLog10: 26,
+    // 兜底：无专门里程碑(26)，挂到最近里程碑 log10=24
+    narrativeTriggers: ['可观测宇宙的恒星，不过如此。'],
+    content: [
+      '可观测宇宙中的星系总数估计约 2×10¹² 个，每个星系又含千亿恒星——叠加起来逼近 10²⁶。',
+      '宇宙不是一颗星，而是一张由万亿星系织成的网。',
+    ],
+  },
+  {
+    id: 'know_earth_drops',
+    title: '沧海一粟',
+    category: 'knowledge',
+    icon: '💧',
+    unlockLog10: 40,
+    // 兜底：无专门里程碑(40)，挂到最近里程碑 log10=50
+    narrativeTriggers: ['这个数字没有物理意义——只有数学意义。'],
+    content: [
+      '地球海洋中的水滴总数估计约 10⁴⁶ 滴——虽大于 10⁴⁰，却仍是同一个"水"的尺度。',
+      '当你越过 10⁴⁰，连海洋都以"滴"为单位被你清点。',
+    ],
+  },
+  {
+    id: 'know_no_physical',
+    title: '无物之尺',
+    category: 'knowledge',
+    icon: '📏',
+    unlockLog10: 50,
+    narrativeTriggers: ['这个数字没有物理意义——只有数学意义。'],
+    content: [
+      '10⁵⁰ 已远超可观测宇宙中的原子总数（约 10⁸⁰ 之前），是一个"没有物理对应物"的纯数学刻度。',
+      '在这里，数字不再描述任何东西，它只是数学自己呼吸的痕迹。',
+    ],
+  },
+  {
+    id: 'know_archimedes',
+    title: '沙者之数',
+    category: 'knowledge',
+    icon: '🏺',
+    unlockLog10: 63,
+    narrativeTriggers: ['沙者之数——古人想象的字宙之沙。'],
+    content: [
+      '阿基米德曾估算宇宙能容纳的沙粒约为 10⁶³——这是古代人类想象过的最大数字。',
+      '在没有"亿""兆"词汇的时代，他已用指数思想触摸到了 10⁶³ 的天花板。',
+    ],
+  },
+  {
+    id: 'know_atoms',
+    title: '原子宇宙',
+    category: 'knowledge',
+    icon: '⚛️',
+    unlockLog10: 80,
+    narrativeTriggers: ['你握住了可观测宇宙的每一个原子。'],
+    content: [
+      '可观测宇宙中的原子总数估计约 10⁸⁰。',
+      '当你数到 10⁸⁰，你已握住了整个宇宙中每一个原子的名字。',
+    ],
+  },
+  {
+    id: 'know_googol',
+    title: '古戈尔梦',
+    category: 'knowledge',
+    icon: '💭',
+    unlockLog10: 100,
+    narrativeTriggers: ['Googol。只存在于数学梦境的数字。'],
+    content: [
+      '古戈尔（Googol）= 10¹⁰⁰，由九岁男孩 Milton Sirotta 命名，也正是 Google 一词的词源。',
+      '它是一个"只存在于数学梦境"的数——比可观测宇宙中的原子还多得多。',
+    ],
+  },
+  {
+    id: 'know_double_max',
+    title: '浮点之巅',
+    category: 'knowledge',
+    icon: '💻',
+    unlockLog10: 308,
+    narrativeTriggers: ['浮点之巅——计算机能表示的最大数字。'],
+    content: [
+      'IEEE 754 双精度浮点数的最大值约为 1.8×10³⁰⁸，是计算机能直接表示的最大有限数字。',
+      '一旦越过 e308，计算机也会"溢出"——这是数字在机器世界里能抵达的绝对天花板。',
+    ],
+  },
+];
 
 // ============================================================
 // 因子系统配置（数字分解 / Factor System）

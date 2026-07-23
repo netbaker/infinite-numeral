@@ -70,6 +70,8 @@ export class TranscendSystem {
     newState._allGeneTypesEver = state._allGeneTypesEver; // 跨轮累积字段，随重置保留
     // 隐患3 修复：_runCollapses 跨 Transcend 保留，让 post-Transcend 的 checkAllMysteries 看到刚结束那轮的崩塌数
     newState._runCollapses = state._runCollapses;
+    newState.numeralImprints = state.numeralImprints;
+    newState.persona = state.persona;
 
     // 基因链跨 Transcend 继承（GDD §2.3.3）
     newState.geneChain = geneSystem.cloneChain(state.geneChain);

@@ -45,12 +45,13 @@ function withGenes(
 }
 
 describe('Sprint 3 数字神话图鉴 — 词条计数', () => {
-  it('CODEX_DEFS 总数为 65，分类计数对齐 GDD §2.1', () => {
-    expect(CODEX_DEFS.length).toBe(65);
+  it('CODEX_DEFS 总数为 85（65 + Sprint5 knowledge 20），分类计数对齐 GDD §2.1 + Sprint5', () => {
+    expect(CODEX_DEFS.length).toBe(85);
     expect(CODEX_TOTAL_BY_CATEGORY.origin).toBe(15);
     expect(CODEX_TOTAL_BY_CATEGORY.cosmic_event).toBe(20);
     expect(CODEX_TOTAL_BY_CATEGORY.sage_record).toBe(18);
     expect(CODEX_TOTAL_BY_CATEGORY.mystery).toBe(12);
+    expect(CODEX_TOTAL_BY_CATEGORY.knowledge).toBe(20);
   });
 
   it('每个未解之谜词条都带有解锁条件与模糊提示', () => {

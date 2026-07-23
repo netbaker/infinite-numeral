@@ -121,6 +121,37 @@
           </div>
         </div>
 
+        <!-- 档案成就 -->
+        <div class="arch-ach">
+          <div class="arch-ach__header">
+            <span class="arch-ach__title">🏛️ 档案成就</span>
+            <span class="arch-ach__progress">{{ archiveUnlockedCount }} / {{ archiveAchievements.length }}</span>
+          </div>
+          <div class="arch-ach__grid">
+            <div
+              v-for="item in archiveAchievementList"
+              :key="item.def.id"
+              class="arch-ach__tile"
+              :class="{ 'arch-ach__tile--unlocked': item.unlocked }"
+              :title="item.unlocked ? ('已解锁 · ' + (item.unlockedAtText ?? '')) : '尚未解锁'"
+            >
+              <div class="arch-ach__icon">{{ item.unlocked ? item.def.icon : '🔒' }}</div>
+              <div class="arch-ach__body">
+                <div class="arch-ach__name">{{ item.def.name }}</div>
+                <div class="arch-ach__desc">{{ item.def.description }}</div>
+                <div class="arch-ach__foot">
+                  <span class="arch-ach__status">
+                    {{ item.unlocked ? '✓ 已解锁' : '🔒 未解锁' }}
+                  </span>
+                  <span v-if="item.def.rewardSingularity" class="arch-ach__reward">
+                    奇点 +{{ item.def.rewardSingularity }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 对比面板 -->
         <div v-if="cmp" class="compare-panel">
           <h4>⚖️ 对比：#{{ compareSelection[0].transcendCount }} vs #{{ compareSelection[1].transcendCount }}</h4>
@@ -182,7 +213,7 @@
 import { ref, computed, watch } from 'vue';
 import { useGameStore } from '@/stores/gameStore';
 import { compareRecords } from '@/systems/ArchiveSystem';
-import { DIMENSION_DEFS } from '@/core/Constants';
+import { DIMENSION_DEFS, ACHIEVEMENT_DEFS } from '@/core/Constants';
 import { format } from '@/core/Formatter';
 import { BigNumber } from '@/core/BigNumber';
 import type { ArchiveRecordDB } from '@/db/database';
@@ -208,6 +239,43 @@ const filterTabs: Array<{ key: FilterKey; label: string }> = [
 ];
 
 const summary = computed(() => store.archiveSummary);
+
+// ---- 档案成就（group: 'archive'，仅由 ArchiveSystem.evaluateSpecialAchievements 解锁）----
+// 数据来源：store.gameState.achievements（Map<string, AchievementState>）。
+// 未解锁的档案成就在 Map 中无条目（普通 checkAchievements 跳过 archive 组），
+// 因此 get(id) 返回 undefined 时统一视为"未解锁"。
+const archiveAchievements = ACHIEVEMENT_DEFS.filter((d) => d.group === 'archive');
+
+interface ArchiveAchView {
+  def: (typeof archiveAchievements)[number];
+  unlocked: boolean;
+  unlockedAt?: number;
+  unlockedAtText?: string;
+}
+
+const archiveAchievementList = computed<ArchiveAchView[]>(() => {
+  // 读取 stateVersion 以建立响应式依赖（achievements 存于 shallowRef 的 GameState 中）
+  void store.stateVersion;
+  return archiveAchievements.map((def) => {
+    const st = store.gameState.achievements.get(def.id);
+    const unlocked = st?.unlocked ?? false;
+    const unlockedAt = st?.unlockedAt;
+    return {
+      def,
+      unlocked,
+      unlockedAt,
+      unlockedAtText: unlockedAt
+        ? new Date(unlockedAt).toLocaleString('zh-CN', {
+            month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+          })
+        : undefined,
+    };
+  });
+});
+
+const archiveUnlockedCount = computed(
+  () => archiveAchievementList.value.filter((a) => a.unlocked).length,
+);
 
 const visibleRecords = computed<ArchiveRecordDB[]>(() => {
   let list = store.archiveRecords;
@@ -430,4 +498,39 @@ watch(
 .compare-genes { display: flex; gap: 24px; margin-top: 10px; font-size: 12px; color: #cfd8dc; }
 .compare-genes strong { color: #90caf9; margin-right: 6px; }
 .compare-genes .gene-chip { margin-right: 3px; }
+
+/* 档案成就 */
+.arch-ach {
+  margin-top: 16px; padding: 12px;
+  background: rgba(255, 215, 0, 0.05); border: 1px solid rgba(255, 215, 0, 0.18);
+  border-radius: 8px;
+}
+.arch-ach__header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
+}
+.arch-ach__title { font-size: 15px; font-weight: 700; color: #ffe082; }
+.arch-ach__progress { font-size: 12px; color: #b0bec5; }
+.arch-ach__grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px;
+}
+.arch-ach__tile {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 8px 10px; border-radius: 8px;
+  background: rgba(40, 44, 66, 0.6); border: 1px solid rgba(255, 255, 255, 0.12);
+  opacity: 0.55; transition: opacity 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+.arch-ach__tile--unlocked {
+  opacity: 1; border-color: rgba(255, 215, 0, 0.5);
+  background: linear-gradient(160deg, rgba(60, 50, 20, 0.6), rgba(40, 44, 66, 0.6));
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+}
+.arch-ach__icon { font-size: 22px; line-height: 1; flex-shrink: 0; margin-top: 1px; }
+.arch-ach__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.arch-ach__name { font-size: 13px; font-weight: 600; color: #cfd8dc; }
+.arch-ach__tile--unlocked .arch-ach__name { color: #ffe082; }
+.arch-ach__desc { font-size: 11px; color: #90a4ae; line-height: 1.4; }
+.arch-ach__foot { display: flex; align-items: center; gap: 8px; margin-top: 2px; flex-wrap: wrap; }
+.arch-ach__status { font-size: 10px; color: #90a4ae; }
+.arch-ach__tile--unlocked .arch-ach__status { color: #69f0ae; }
+.arch-ach__reward { font-size: 10px; color: rgba(255, 215, 0, 0.7); }
 </style>

@@ -105,6 +105,9 @@ export function serialize(state: GameState): SaveData {
     activeTheme: state.activeTheme,
     unlockedNumberSkins: Array.from(state.unlockedNumberSkins),
     unlockedThemes: Array.from(state.unlockedThemes),
+    // ---- 数字印记 / 数字人格（Sprint 5 Phase 0） ----
+    numeralImprints: state.numeralImprints,
+    persona: { depthAccumulated: state.persona.depthAccumulated },
   };
 
   return {
@@ -270,6 +273,12 @@ export function deserialize(data: SaveData): GameState {
   state.unlockedThemes = new Set<UIThemeId>(
     (s.unlockedThemes as UIThemeId[] | undefined) ?? ['theme_deep_space'],
   );
+
+  // ---- 数字印记 / 数字人格（Sprint 5 Phase 0，兼容旧存档：缺失则默认 0 / 空骨架） ----
+  state.numeralImprints = s.numeralImprints ?? 0;
+  state.persona = s.persona
+    ? { depthAccumulated: s.persona.depthAccumulated ?? 0 }
+    : { depthAccumulated: 0 };
 
   return state;
 }

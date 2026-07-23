@@ -24,6 +24,7 @@ import {
   GENE_MUTATION_NARRATIVES,
   EVENT_POST_NARRATIVES,
   FACTOR_DISCOVER_NARRATIVES,
+  KNOWLEDGE_ENTRY_DEFS,
 } from '@/core/Constants';
 
 /** 图鉴分类 */
@@ -31,7 +32,8 @@ export type CodexCategory =
   | 'origin' // 起源传说
   | 'cosmic_event' // 宇宙事件
   | 'sage_record' // 先贤记录
-  | 'mystery'; // 未解之谜
+  | 'mystery' // 未解之谜
+  | 'knowledge'; // 数学知识（Sprint 5 第 5 分类）
 
 /** 未解之谜解锁条件类型（GDD §3 并集 + Sprint 3 扩展 dark_energy） */
 export type CodexUnlockConditionType =
@@ -79,6 +81,8 @@ export interface CodexEntryDef {
   hiddenHint?: string;
   /** 图标 emoji */
   icon: string;
+  /** Sprint 5 扩展：量级阈值（log10），用于 UI 展示「量级 e{N}」徽章（仅 knowledge 等真实知识词条使用），不参与匹配 */
+  unlockLog10?: number;
 }
 
 /** 图鉴词条运行时状态（存于 GameState.codexEntries） */
@@ -100,6 +104,7 @@ export const CODEX_CATEGORY_META: Record<
   cosmic_event: { label: '宇宙事件', icon: '⚡', color: '#ff8844' },
   sage_record: { label: '先贤记录', icon: '🧬', color: '#aa66ff' },
   mystery: { label: '未解之谜', icon: '❓', color: '#44ddff' },
+  knowledge: { label: '数学知识', icon: '🔢', color: '#33dd99' },
 };
 
 // ============================================================
@@ -950,12 +955,17 @@ export const CODEX_DEFS: CodexEntryDef[] = [
       '图鉴合上的那一刻，你终于明白：这部神话，写的从来不是宇宙，而是读它的你。',
     ],
   },
+  // ---------------- 数学知识 knowledge（20） ----------------
+  // 数据来自 src/core/Constants.ts 的 KNOWLEDGE_ENTRY_DEFS（Sprint 5），
+  // 此处并入 CODEX_DEFS 以复用既有解锁/持久化/UI 机制（GDD knowledge-entry-pool.md）。
+  ...KNOWLEDGE_ENTRY_DEFS,
 ];
 
-/** 分类计数（对齐 GDD §2.1） */
+/** 分类计数（对齐 GDD §2.1 + Sprint 5 knowledge 扩展） */
 export const CODEX_TOTAL_BY_CATEGORY: Record<CodexCategory, number> = {
   origin: CODEX_DEFS.filter((d) => d.category === 'origin').length,
   cosmic_event: CODEX_DEFS.filter((d) => d.category === 'cosmic_event').length,
   sage_record: CODEX_DEFS.filter((d) => d.category === 'sage_record').length,
   mystery: CODEX_DEFS.filter((d) => d.category === 'mystery').length,
+  knowledge: CODEX_DEFS.filter((d) => d.category === 'knowledge').length,
 };

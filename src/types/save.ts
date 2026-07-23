@@ -67,6 +67,14 @@ export interface SerializedGeneChainState {
 }
 
 /**
+ * 数字人格状态序列化形式（纯可序列化字段，Phase 0 仅 depthAccumulated）
+ */
+export interface SerializedPersonaState {
+  /** 质量深度累加值 */
+  depthAccumulated: number;
+}
+
+/**
  * 序列化后的状态（所有Decimal转为string，Map/Set转为可序列化结构）
  */
 export interface SerializedState {
@@ -226,6 +234,11 @@ export interface SerializedState {
   unlockedNumberSkins: string[];
   /** 已解锁的 UI 主题 ID 列表 */
   unlockedThemes: string[];
+  // ---- 数字印记 / 数字人格（Sprint 5 Phase 0） ----
+  /** 数字印记总量 */
+  numeralImprints: number;
+  /** 数字人格元进度状态（序列化形式） */
+  persona: SerializedPersonaState;
 }
 
 /**

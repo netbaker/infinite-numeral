@@ -76,6 +76,8 @@ export class ExpansionSystem {
     newState._expandedInChaosDim = state._expandedInChaosDim;
     newState._singularityBurstEver = state._singularityBurstEver;
     newState._allGeneTypesEver = state._allGeneTypesEver;
+    newState.numeralImprints = state.numeralImprints;
+    newState.persona = state.persona;
 
     // 保留+重置字段
     // 基因链跨 Expansion 继承；并授予一次筛选窗口（GDD §2.3.2）

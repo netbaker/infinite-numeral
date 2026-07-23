@@ -73,6 +73,8 @@ export class PrestigeSystem {
     newState._expandedInChaosDim = state._expandedInChaosDim;
     newState._singularityBurstEver = state._singularityBurstEver;
     newState._allGeneTypesEver = state._allGeneTypesEver; // 跨轮累积字段，随重置保留
+    newState.numeralImprints = state.numeralImprints;
+    newState.persona = state.persona;
 
     // 计算起步加成
     let startBonus = 0;

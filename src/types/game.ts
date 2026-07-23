@@ -917,6 +917,17 @@ export interface UIThemeDef {
 // ============================================================
 
 /**
+ * 数字人格（Digital Persona / 数字印记元进度）状态
+ *
+ * Phase 0 仅搭骨架：质量深度累加字段为后续 D(s) 计算（GDD A③）预留输入，
+ * 此处不写任何业务逻辑。后续 Phase 将按需扩展字段（如人格等级、已解锁特质等）。
+ */
+export interface PersonaState {
+  /** 质量深度累加值（A③ D(s) = D_max·(1−e^(−kA)) 的输入 A，Phase 0 仅占位） */
+  depthAccumulated: number;
+}
+
+/**
  * 游戏核心状态类
  * 包含所有运行时数据，Decimal字段直接存储Decimal实例
  */
@@ -1104,4 +1115,12 @@ export class GameState {
   unlockedNumberSkins: Set<NumberSkinId> = new Set<NumberSkinId>(['skin_scientific']);
   /** 已解锁的 UI 主题 ID 集合（S3：与数字皮肤集合分开） */
   unlockedThemes: Set<UIThemeId> = new Set<UIThemeId>(['theme_deep_space']);
+  // ---- 数字印记 / 数字人格（v2.0，Sprint 5 Phase 0 地基） ----
+  /**
+   * 数字印记总量（A③ 数字人格 / B 量级里程碑 共享货币）。
+   * R1 红线：总上限 = 14（5 次量级里程碑超越 + 9 个档案馆成就），超过不发放。
+   */
+  numeralImprints: number = 0;
+  /** 数字人格元进度状态（Phase 0 仅含质量深度累加骨架，业务逻辑见后续 Phase） */
+  persona: PersonaState = { depthAccumulated: 0 };
 }
