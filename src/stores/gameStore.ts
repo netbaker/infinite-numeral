@@ -22,6 +22,7 @@ import { EntropySystem } from '@/systems/EntropySystem';
 import { DimensionSystem } from '@/systems/DimensionSystem';
 import { geneSystem } from '@/systems/GeneSystem';
 import type { CodexCategory, CodexEntryDef } from '@/types/codex';
+import type { MilestoneReward } from '@/core/Constants';
 import * as codexSystem from '@/systems/CodexSystem';
 import * as skinSystem from '@/systems/SkinSystem';
 import {
@@ -39,7 +40,7 @@ import {
   EXPANSION_NARRATIVES,
   TRANSCEND_NARRATIVES,
   PRODUCER_UNLOCK_NARRATIVES,
-  NUMBER_MILESTONE_NARRATIVES,
+  MAGNITUDE_MILESTONE_DEFS,
   EVENT_POST_NARRATIVES,
   ENTROPY_WARNING_NARRATIVES,
   ENTROPY_RECOVERY_NARRATIVES,
@@ -728,22 +729,30 @@ export const useGameStore = defineStore('game', () => {
       pushAchievement({ id: def.id, name: def.name, description: def.description, icon: def.icon });
     }
 
-    // 8. 数字里程碑叙事（仅在无活跃叙事时触发）
+    // 8. 量级里程碑（Sprint 5 Phase 3 · Magnitude Milestone）
+    //    仅在无活跃叙事时评估；跨量级首次跨越 → 一次性非货币奖励（维度洞察）+
+    //    解锁对应 Codex 知识词条。离线大跳（logE 跨越多档）时单次 tick 内对每档各触发一次（均幂等）。
     if (!narrationMessage.value) {
       const logE = Math.floor(Math.log10(BigNumber.from(state.number).toDecimal().toNumber() || 1));
-      const key = String(logE);
-      if (NUMBER_MILESTONE_NARRATIVES[key] && !triggeredNumberMilestones.has(key)) {
-        triggeredNumberMilestones.add(key);
-        const text = NUMBER_MILESTONE_NARRATIVES[key];
-        narrationMessage.value = text;
-        // Sprint 5 B③：联动 Codex 知识词条——精确文本匹配 onNarrativeTriggered
-        // （对齐 magnitude-milestone.md §2.2 / knowledge-entry-pool.md；
-        //  text 须与 KNOWLEDGE_ENTRY_DEFS.narrativeTriggers 逐字符一致）
-        const collected = codexSystem.onNarrativeTriggered(state, text);
-        for (const def of collected) {
-          enqueueCodexNotification(def);
+      for (const def of MAGNITUDE_MILESTONE_DEFS) {
+        const key = String(def.log10);
+        // 幂等：每个量级只触发一次（triggeredNumberMilestones 随主存档序列化，跨 Run 不重复）
+        if (def.log10 <= logE && !triggeredNumberMilestones.has(key)) {
+          triggeredNumberMilestones.add(key);
+          // 叙事（同时作为 Codex 精确匹配键，须与 KNOWLEDGE_ENTRY_DEFS.narrativeTriggers 逐字符一致）
+          // 直接写入 narrationMessage（而非 showNarration），以确保下方 onNarrativeTriggered 为唯一一次触发、
+          // 避免 showNarration 内部已调用 onNarrativeTriggered 造成的重复收录。
+          narrationMessage.value = def.narration;
+          // Sprint 5 B③：联动 Codex 知识词条——精确文本匹配 onNarrativeTriggered
+          // （对齐 magnitude-milestone.md §2.2；def.narration 须与 knowledge 词条 narrativeTriggers 一致）
+          const collected = codexSystem.onNarrativeTriggered(state, def.narration);
+          for (const d of collected) {
+            enqueueCodexNotification(d);
+          }
+          // Sprint 5 Phase 3：一次性非货币奖励（维度洞察），不发放数字印记（R1 红线，见 grantMilestoneReward）
+          grantMilestoneReward(def.reward);
+          setTimeout(() => { narrationMessage.value = ''; }, 4000);
         }
-        setTimeout(() => { narrationMessage.value = ''; }, 4000);
       }
     }
 
@@ -1201,6 +1210,28 @@ export const useGameStore = defineStore('game', () => {
     // 走现有叙事 Toast 通道
     showNarration([`✨ 数字印记 +${granted}`], 4000);
     return granted;
+  }
+
+  /**
+   * 量级里程碑奖励（Sprint 5 Phase 3 · Magnitude Milestone）
+   *
+   * R1 红线（权威口径，防通胀）：
+   * - 量级里程碑【绝不】发放数字印记（numeralImprints）——与 numeral-persona.md §2.3 完全脱钩；
+   *   本函数【不调用】grantNumeralImprint，亦不触碰任何生产乘区 / effMult / 任何货币。
+   * - 维度洞察为纯叙事/图鉴类反馈（GDD §2.3），仅作轻量提示。
+   *
+   * 当前唯一奖励类型 'dimensionInsight'：在叙事 Toast 上追加「🔭 维度洞察解锁 · e<N>」后缀
+   * （GDD §5：叙事后追加；复用既有 narration 通道，不单独建 Toast，避免覆盖里程碑叙事本身）。
+   *
+   * @param reward 来自 MAGNITUDE_MILESTONE_DEFS 的一次性非货币奖励定义
+   */
+  function grantMilestoneReward(reward: MilestoneReward): void {
+    if (reward.kind !== 'dimensionInsight') return; // 未来扩展点：其它 kind 在此分发
+    // 绝不调用 grantNumeralImprint（R1 红线）。维度洞察不进入 effMult/任何货币。
+    const m = /^ins_log(\d+)$/.exec(reward.insightId);
+    const tag = m ? `e${m[1]}` : reward.insightId;
+    const suffix = ` 🔭 维度洞察解锁 · ${tag}`;
+    narrationMessage.value = (narrationMessage.value || '') + suffix;
   }
 
   /**
