@@ -56,10 +56,11 @@ const GROUP_LABELS: Record<string, string> = {
   producer:    '⚙️ 生产者',
   exploration: '🌌 探索',
   legend:      '✨ 传说',
+  archive:     '🗂️ 档案',
 };
 
 const groups = computed(() => {
-  const order = ['growth', 'prestige', 'producer', 'exploration', 'legend'];
+  const order = ['growth', 'prestige', 'producer', 'exploration', 'legend', 'archive'];
   return order.map((key) => ({
     key,
     label: GROUP_LABELS[key],
