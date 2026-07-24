@@ -6,6 +6,7 @@ import {
   DIMENSION_MASTERY_REWARDS,
   DIMENSION_CRYSTAL_SHOP,
 } from '@/core/Constants';
+import * as personaSystem from '@/systems/PersonaSystem';
 
 /**
  * 维度系统核心引擎
@@ -43,8 +44,12 @@ export class DimensionSystem {
    */
   switchDimension(state: GameState, targetDim: DimensionId): boolean {
     const now = Date.now();
-    // 冷却检查（5秒防误触）
-    if (now - state._lastDimensionSwitch < 5000) {
+    // 冷却检查（5秒防误触）；维度行者 L2：本轮首次进入新维度免冷却（GDD §2.4 / §6.4）。
+    // 「新维度」= 本轮 _runDimensionsVisited 尚未收录者（首访即免，之后恢复冷却）。
+    const walkerL2NewDim =
+      personaSystem.isActiveL2(state, 'persona_walker') &&
+      !state._runDimensionsVisited.has(targetDim);
+    if (!walkerL2NewDim && now - state._lastDimensionSwitch < 5000) {
       return false;
     }
     const def = DIMENSION_DEFS.find(d => d.id === targetDim);

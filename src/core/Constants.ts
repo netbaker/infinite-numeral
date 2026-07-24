@@ -430,6 +430,61 @@ export const SAVE_VERSION = 2;
 export const TRANSCEND_THRESHOLD = 100;
 
 // ============================================================
+// 数字人格系统（Sprint 5 Phase 4 · A③ Digital Persona）
+// 全部对齐 numeral-persona.md（GDD-1 §2.2 / §2.3 / §2.4 / §6）
+// 以下为「可调参数」，集中放置便于平衡调参（GDD §2.3 / 任务约束）。
+// ============================================================
+
+/** 数字印记硬上限（R1 红线）：5 次量级里程碑超越 + 9 个档案馆成就首解 = 14，超过不发放。numeral-persona.md §2.3 */
+export const NUMERAL_IMPRINT_CAP = 14;
+
+/** D(s) 加成率上限 = +25%：A(s)→∞ 时 D(s) 收敛于此，全局有界、不随时长通胀。numeral-persona.md §2.3 */
+export const D_PERSONA_MAX = 0.25; // numeral-persona.md §2.3 参数建议
+
+/** 凹函数曲率 k = 2.0：数值示例 A=0.5→D≈0.158，A=1→D≈0.216，A=2→D≈0.244（边际递减）。numeral-persona.md §2.3 */
+export const K_PERSONA = 2.0; // numeral-persona.md §2.3 参数建议
+
+/** s 向量权重 w_i（Σw_i = 1，GDD §2.3 A(s)=Σ w_i·s_i）。三等分。numeral-persona.md §2.3 */
+export const PERSONA_WEIGHTS: Record<'walker' | 'tamer' | 'chronicler', number> = {
+  walker: 1 / 3,
+  tamer: 1 / 3,
+  chronicler: 1 / 3,
+}; // numeral-persona.md §2.3
+
+/** L1 升级成本（数字印记）。numeral-persona.md §2.2 */
+export const PERSONA_L1_COST = 3; // numeral-persona.md §2.2
+
+/** L2 升级成本（数字印记）。numeral-persona.md §2.2 */
+export const PERSONA_L2_COST = 8; // numeral-persona.md §2.2
+
+/** 维度总数（s_walker 归一化分母：已访问维度种类数 / 5）。numeral-persona.md §2.1 walker */
+export const PERSONA_DIMENSION_KINDS = 5; // numeral-persona.md §2.1（维度行者：维度种类数）
+
+/**
+ * 驯者 s_tamer 归一化参考：单轮「熵崩率」达到此值（次/分钟）即视为完全失控 → 归 1。
+ * 设计取舍：GDD 未给定具体归一化常数，此为 A③ 实现选定调参（见 REPORT 歧义 #3）。
+ */
+export const PERSONA_TAMER_MAX_RATE_PER_MIN = 2; // A③ 实现选定（GDD §2.1 tamer：熵崩率↓）
+
+/**
+ * 编年史家 s_chronicler 归一化参考（GDD §2.1 chronicler：事件总数 / 总 Run 数 / 总超越数）。
+ * 三项各占 ~1/3，分别用以下参考值归一化到 [0,1]。A③ 实现选定调参（见 REPORT 歧义 #3）。
+ */
+export const PERSONA_CHRONICLER_EVENTS_REF = 100; // 累计事件触发 100 次 → 满
+export const PERSONA_CHRONICLER_RUNS_REF = 30; // 累计 Run 30 次 → 满
+export const PERSONA_CHRONICLER_TRANSCEND_REF = 100; // 总超越 100 次 → 满
+
+/** 驯者 L2：熵崩损失封顶 = 50% × 当前数字（GDD §2.4 / §6.4：lossApplied = min(rawLoss, 0.5·production)）。numeral-persona.md §2.4 / §6.4 */
+export const TAMER_LOSS_CAP_FRACTION = 0.5; // numeral-persona.md §2.4 / §6.4
+
+/**
+ * 编年史家 L2：每轮开局一次性星尘缓冲上限（基于历史深度 s_chronicler 线性缩放到 [0, MAX]）。
+ * 为「一次性 stardust boost」（非永久乘区，不进 effMult，不增生产指数，GDD §2.4）。
+ * 具体上限数值 GDD 未给定，此为 A③ 实现选定调参（见 REPORT 歧义 #3）。
+ */
+export const CHRONICLER_START_BUFFER_MAX = 50; // numeral-persona.md §2.4（编年史家：一次性起始缓冲）
+
+// ============================================================
 // 多周目里程碑配置
 // ============================================================
 

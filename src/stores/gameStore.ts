@@ -3,7 +3,7 @@ import { ref, computed, markRaw, shallowRef } from 'vue';
 import { BigNumber } from '@/core/BigNumber';
 import { format, setActiveNumberSkin } from '@/core/Formatter';
 import { deserialize } from '@/core/Serializer';
-import { GameState, type EpochConfig, type DimensionId, type ArchiveRecord, type ArchiveSummary, type NumberSkinId, type UIThemeId } from '@/types/game';
+import { GameState, type EpochConfig, type DimensionId, type ArchiveRecord, type ArchiveSummary, type NumberSkinId, type UIThemeId, type PersonaId } from '@/types/game';
 import type { SaveData } from '@/types/save';
 import Decimal from 'break_eternity.js';
 import { ProducerSystem } from '@/systems/ProducerSystem';
@@ -25,6 +25,8 @@ import type { CodexCategory, CodexEntryDef } from '@/types/codex';
 import type { MilestoneReward } from '@/core/Constants';
 import * as codexSystem from '@/systems/CodexSystem';
 import * as skinSystem from '@/systems/SkinSystem';
+import * as personaSystem from '@/systems/PersonaSystem';
+import type { PersonaVector } from '@/systems/PersonaSystem';
 import {
   PRODUCER_CONFIGS,
   UPGRADE_DEFS,
@@ -162,6 +164,16 @@ export const useGameStore = defineStore('game', () => {
   const archiveSummary = computed<ArchiveSummary>(() => {
     return computeSummary(archiveRecords.value);
   });
+
+  /**
+   * 数字人格历史深度向量 s ∈ [0,1]^3（A③ Digital Persona，GDD §2.1 / §2.3）。
+   * 仅依赖档案馆全量快照，仅在 run 结束（超越）后 archiveRecords 变化时重算，
+   * 故 gameTick 每帧直接读取缓存向量，无需每帧遍历档案馆（性能护栏）。
+   * ArchiveRecordDB 结构上蕴含 ArchiveRecord 全部字段，故此处类型断言安全。
+   */
+  const personaVector = computed<PersonaVector>(() =>
+    personaSystem.computePersonaVector(archiveRecords.value as unknown as ArchiveRecord[]),
+  );
 
   /** 异步加载全部快照（打开档案馆时调用） */
   async function loadArchives(): Promise<void> {
@@ -648,7 +660,16 @@ export const useGameStore = defineStore('game', () => {
 
     // 1. 计算总产出/秒（应用熵值惩罚）
     const entropyMult = entropySystem.getProductionMultiplier(state.entropy);
-    const outputPerSec = rawOutputPerSec.mul(entropyMult);
+    let outputPerSec = rawOutputPerSec.mul(entropyMult);
+
+    // 1.1 数字人格 effMult 末端乘区（GDD §2.3 / R1 红线 / 设计支柱①）：
+    // 在既有「飞升+超越+基因+维度+熵」乘区（M_run）计算末端，单一乘入 (1 + D(s))，
+    // 有界 ≤ 1.25，不堆叠、不进入任何 L2 机制。D(s) 仅由历史质量深度向量决定（缓存于 personaVector）。
+    if (state.persona.active) {
+      outputPerSec = outputPerSec.mul(
+        personaSystem.getPersonaBonusFromVector(state, personaVector.value),
+      );
+    }
 
     // 2. 计算增量 = outputPerSec × (effectiveDelta / 1000)
     const deltaSec = effectiveDelta / 1000;
@@ -1160,6 +1181,19 @@ export const useGameStore = defineStore('game', () => {
     gameState.value = markRaw(newState);
     updateDisplayStrings(newState);
 
+    // ---- 数字印记发放（A③ 来源 A+B；R1 红线：仅此两源，量级里程碑绝不发放）----
+    // 时序铁律：必须在 gameState.value = markRaw(newState)（上方）之后调用，
+    // 否则 grantNumeralImprint 改写 preState 会被下方赋值覆盖（信任-验证发现的真实阻断）。
+    // 来源 A = 9 个档案成就首解（newlyUnlocked 仅含新解锁 id，每个 +1）；
+    // 来源 B = 超越里程碑 5/10/25/50/100（computeTranscendImprintGain 按跨越一次性发放，幂等）。
+    // grantNumeralImprint 内部已钳制 ≤ NUMERAL_IMPRINT_CAP(14)，无需额外上限逻辑。
+    const achGain = newlyUnlocked.length;
+    const milestoneGain = personaSystem.computeTranscendImprintGain(preState.transcendCount, newState.transcendCount);
+    const imprintGain = achGain + milestoneGain;
+    if (imprintGain > 0) {
+      grantNumeralImprint(imprintGain);
+    }
+
     // Sprint 3：每次 Transcend 后全量兜底检查未解之谜（GDD §6.3，主理解锁时机）
     {
       const unlocked = codexSystem.checkAllMysteries(gameState.value);
@@ -1170,6 +1204,15 @@ export const useGameStore = defineStore('game', () => {
     // 这样 mystery_03（_runCollapses===0）与 mystery_08（≥inRunAtLeast 阈值）判定的是"刚结束那轮"，
     // 下一轮从 0 重新累计；Transcend 作为最高层重置，只在此处重算 _runCollapses。
     gameState.value._runCollapses = 0;
+
+    // 编年史家 L2：每轮开局一次性星尘缓冲（基于历史深度 s_chronicler，非永久乘区，GDD §2.4 / §6.4）。
+    // 使用本轮 run 开始前的历史深度（personaVector 依赖 archiveRecords，尚未纳入本轮回快照）。
+    if (personaSystem.isActiveL2(gameState.value, 'persona_chronicler')) {
+      const granted = personaSystem.applyChroniclerStartBuffer(gameState.value, personaVector.value.chronicler);
+      if (granted > 0) {
+        showNarration([`📜 编年史家 L2：开局星尘缓冲 +${granted}`], 3500);
+      }
+    }
 
     // 档案馆解锁叙事 —— Story 2.1.3（首次解锁展示专属叙事，否则常规超越叙事）
     if (newState.archiveUnlocked && !wasUnlocked) {
@@ -1210,6 +1253,46 @@ export const useGameStore = defineStore('game', () => {
     // 走现有叙事 Toast 通道
     showNarration([`✨ 数字印记 +${granted}`], 4000);
     return granted;
+  }
+
+  // ============================================================
+  // 数字人格（A③ Digital Persona，GDD §2.1~§2.4 / §6.5）
+  // 业务逻辑全在 PersonaSystem；本 store 仅做「状态变更 + 叙事 + 版本号」适配。
+  // ============================================================
+
+  /**
+   * 激活 / 切换数字人格。旧 L1/L2 保留在 levels 映射中（GDD §6.5：切换无退还）。
+   * 新激活的人格从自身保留等级起步（已升过级则沿用，否则 L0）。
+   * @param id 目标人格
+   * @returns 是否发生了改变（用于触发叙事 / 版本号）
+   */
+  function activatePersona(id: PersonaId): boolean {
+    const state = gameState.value;
+    const changed = personaSystem.setActivePersona(state, id);
+    if (changed) {
+      bumpVersion();
+      const meta = personaSystem.PERSONA_META[id];
+      showNarration([`🧬 已激活数字人格：${meta.name}（${meta.style}）`], 3500);
+    }
+    return changed;
+  }
+
+  /**
+   * 升级当前激活数字人格（0→1 花费 3 印记；1→2 花费 8 印记，GDD §2.2）。
+   * 不激活 / 已满级 / 印记不足时幂等失败（PersonaSystem 内部保护，不扣减）。
+   * @returns 实际花费的印记数（0 = 未升级）
+   */
+  function upgradePersona(): number {
+    const state = gameState.value;
+    if (!state.persona.active) return 0;
+    const before = state.persona.levels[state.persona.active];
+    const spent = personaSystem.upgradeActivePersona(state);
+    if (spent > 0) {
+      bumpVersion();
+      const meta = personaSystem.PERSONA_META[state.persona.active];
+      showNarration([`🧬 ${meta.name} 晋升至 L${before + 1}！`], 3500);
+    }
+    return spent;
   }
 
   /**
@@ -1894,6 +1977,10 @@ export const useGameStore = defineStore('game', () => {
     executeExpansion,
     executeTranscend,
     grantNumeralImprint,
+    // 数字人格（A③ Digital Persona，GDD §2.1~§2.4 / §5 / §6.5）
+    activatePersona,
+    upgradePersona,
+    personaVector,
     buyTechNode,
     buyExpansionUpgrade,
     buyTranscendUpgrade,

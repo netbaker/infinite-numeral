@@ -67,11 +67,14 @@ export interface SerializedGeneChainState {
 }
 
 /**
- * 数字人格状态序列化形式（纯可序列化字段，Phase 0 仅 depthAccumulated）
+ * 数字人格状态序列化形式（纯可序列化字段，A③ 实现：active + 各人格 levels）
+ * 兼容旧存档：老存档仅含 `depthAccumulated`（Phase 0 占位），反序列化时忽略并回落默认值。
  */
 export interface SerializedPersonaState {
-  /** 质量深度累加值 */
-  depthAccumulated: number;
+  /** 当前激活人格 ID（null 表示未激活） */
+  active: string | null;
+  /** 各人格等级（0|1|2） */
+  levels: Record<string, number>;
 }
 
 /**

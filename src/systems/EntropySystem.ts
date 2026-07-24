@@ -2,7 +2,9 @@ import type { GameState, EntropyCollapseLevel } from '@/types/game';
 import {
   ENTROPY_CONFIG,
   ENTROPY_COLLAPSE_NARRATIVES,
+  TAMER_LOSS_CAP_FRACTION,
 } from '@/core/Constants';
+import * as personaSystem from '@/systems/PersonaSystem';
 import { BigNumber } from '@/core/BigNumber';
 import Decimal from 'break_eternity.js';
 
@@ -268,7 +270,13 @@ export class EntropySystem {
         ENTROPY_CONFIG.COLLAPSE_DRAIN_PERCENT + state.collapseStreak * ENTROPY_CONFIG.COLLAPSE_DRAIN_STEP,
         ENTROPY_CONFIG.COLLAPSE_DRAIN_MAX,
       ) / 100;
-    const drainAmount = state.number.times(drainPercent);
+    let drainAmount = state.number.times(drainPercent);
+    // 熵之驯者 L2：熵崩损失上限封顶 50% 当前数字（GDD §2.4 / §6.4）。
+    // 默认 ENTROPY_CONFIG 扣除 25%~40% < 50%，故默认不绑定；高扣除配置下自动生效（不堆叠、非负）。
+    if (personaSystem.isActiveL2(state, 'persona_tamer')) {
+      const capped = state.number.times(TAMER_LOSS_CAP_FRACTION);
+      if (drainAmount.gt(capped)) drainAmount = capped;
+    }
     state.number = state.number.minus(drainAmount);
     // 安全兜底：Decimal 用 .lt() 比较，用 .minus() 做减法
     if ((state.number as unknown as Decimal).lt(0)) {

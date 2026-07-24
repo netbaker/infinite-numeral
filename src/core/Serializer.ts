@@ -1,6 +1,6 @@
 import Decimal from 'break_eternity.js';
 import { GameState } from '@/types/game';
-import type { AchievementState, DimensionId, NumberSkinId, UIThemeId } from '@/types/game';
+import type { AchievementState, DimensionId, NumberSkinId, UIThemeId, PersonaId } from '@/types/game';
 import type { SaveData, SerializedState } from '@/types/save';
 
 /** 当前存档版本号（Sprint 3 图鉴：新增 codexEntries + codexInitialized + 8 个跨系统联动追踪字段 → 3 → 4） */
@@ -105,9 +105,12 @@ export function serialize(state: GameState): SaveData {
     activeTheme: state.activeTheme,
     unlockedNumberSkins: Array.from(state.unlockedNumberSkins),
     unlockedThemes: Array.from(state.unlockedThemes),
-    // ---- 数字印记 / 数字人格（Sprint 5 Phase 0） ----
+    // ---- 数字印记 / 数字人格（Sprint 5 Phase 4 · A③） ----
     numeralImprints: state.numeralImprints,
-    persona: { depthAccumulated: state.persona.depthAccumulated },
+    persona: {
+      active: state.persona.active,
+      levels: { ...state.persona.levels },
+    },
   };
 
   return {
@@ -274,11 +277,23 @@ export function deserialize(data: SaveData): GameState {
     (s.unlockedThemes as UIThemeId[] | undefined) ?? ['theme_deep_space'],
   );
 
-  // ---- 数字印记 / 数字人格（Sprint 5 Phase 0，兼容旧存档：缺失则默认 0 / 空骨架） ----
+  // ---- 数字印记 / 数字人格（Sprint 5 Phase 4 · A③，兼容旧存档 §6.3：缺失 / 旧 depthAccumulated 骨架 → 默认 L0） ----
+  const FALLBACK_LEVELS: Record<PersonaId, 0 | 1 | 2> = {
+    persona_walker: 0,
+    persona_tamer: 0,
+    persona_chronicler: 0,
+  };
   state.numeralImprints = s.numeralImprints ?? 0;
   state.persona = s.persona
-    ? { depthAccumulated: s.persona.depthAccumulated ?? 0 }
-    : { depthAccumulated: 0 };
+    ? {
+        active: (s.persona.active as PersonaId | null) ?? null,
+        levels: {
+          persona_walker: (s.persona.levels?.persona_walker ?? 0) as 0 | 1 | 2,
+          persona_tamer: (s.persona.levels?.persona_tamer ?? 0) as 0 | 1 | 2,
+          persona_chronicler: (s.persona.levels?.persona_chronicler ?? 0) as 0 | 1 | 2,
+        },
+      }
+    : { active: null, levels: FALLBACK_LEVELS };
 
   return state;
 }

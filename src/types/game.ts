@@ -917,14 +917,26 @@ export interface UIThemeDef {
 // ============================================================
 
 /**
- * 数字人格（Digital Persona / 数字印记元进度）状态
+ * 数字人格（Digital Persona / 数字印记元进度）ID 集合（GDD A③ §2.1）
+ */
+export type PersonaId = 'persona_walker' | 'persona_tamer' | 'persona_chronicler';
+
+/**
+ * 数字人格（Digital Persona / 数字印记元进度）状态（GDD A③ §3 / §6.5）
  *
- * Phase 0 仅搭骨架：质量深度累加字段为后续 D(s) 计算（GDD A③）预留输入，
- * 此处不写任何业务逻辑。后续 Phase 将按需扩展字段（如人格等级、已解锁特质等）。
+ * 设计说明（A③ 实现阶段）：
+ * - GDD §3 原始草稿为 `{ active: PersonaId | null; level: 0|1|2 }`（单 active 等级）。
+ * - 但 GDD §6.5 明确要求「切换激活人格后，旧人格的 L1/L2 保留、新人格从 L0 起（印记不退还）」。
+ *   单字段 `level` 无法在切换后保留旧人格等级，故实现为按人格存储的 `levels` 映射，
+ *   切换时仅移动 `active` 指针，三人格等级均原样保留。这是与 GDD 草稿的**唯一偏差**，
+ *   已向 lead 报告（见 REPORT 设计歧义 #1）。
+ * - `active === null` 表示「未激活」，面板显示「未激活」。
  */
 export interface PersonaState {
-  /** 质量深度累加值（A③ D(s) = D_max·(1−e^(−kA)) 的输入 A，Phase 0 仅占位） */
-  depthAccumulated: number;
+  /** 当前激活人格（仅 1 个；null = 未激活） */
+  active: PersonaId | null;
+  /** 各人格等级（跨切换保留；升级写入对应人格槽，切换不清除，GDD §6.5） */
+  levels: Record<PersonaId, 0 | 1 | 2>;
 }
 
 /**
@@ -1122,5 +1134,8 @@ export class GameState {
    */
   numeralImprints: number = 0;
   /** 数字人格元进度状态（Phase 0 仅含质量深度累加骨架，业务逻辑见后续 Phase） */
-  persona: PersonaState = { depthAccumulated: 0 };
+  persona: PersonaState = {
+    active: null,
+    levels: { persona_walker: 0, persona_tamer: 0, persona_chronicler: 0 },
+  };
 }

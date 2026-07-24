@@ -60,6 +60,10 @@
       <span v-if="dimensionCrystals > 0" class="dimension-badge">{{ dimensionCrystals }}</span>
     </button>
     <button class="bottom-bar__settings-btn bottom-bar__settings-btn--gene" @click="emit('openGene')" title="基因链">🧬</button>
+    <button class="bottom-bar__settings-btn bottom-bar__settings-btn--persona" @click="emit('openPersona')" :title="`数字人格（推荐：${recommendedPersonaName}）`">
+      🎭
+      <span v-if="personaUpgradeAvailable" class="persona-badge">↑</span>
+    </button>
     <button class="bottom-bar__settings-btn bottom-bar__settings-btn--codex" @click="emit('openCodex')" title="数字神话图鉴">📖</button>
     <button class="bottom-bar__settings-btn bottom-bar__settings-btn--archive" @click="emit('openArchive')" title="宇宙档案馆">🏛️</button>
     <button class="bottom-bar__settings-btn bottom-bar__settings-btn--skin" @click="emit('openSkin')" title="皮肤定制">🎨</button>
@@ -76,6 +80,7 @@ import { computed } from 'vue';
 import { useGameStore } from '@/stores/gameStore';
 import { useSaveStore } from '@/stores/saveStore';
 import { EPOCH_CONFIGS } from '@/core/Constants';
+import * as personaSystem from '@/systems/PersonaSystem';
 import EntropyBar from '@/components/game/EntropyBar.vue';
 
 const gameStore = useGameStore();
@@ -83,7 +88,7 @@ const saveStore = useSaveStore();
 
 const emit = defineEmits<{
   openSettings: []; openHelp: []; openStats: []; openAchievements: []; openChallenge: [];
-  openDimension: []; openGene: []; openArchive: []; openCodex: []; openSkin: [];
+  openDimension: []; openGene: []; openArchive: []; openCodex: []; openSkin: []; openPersona: [];
   useStabilizer: []; useRewind: []; useBarrier: [];
 }>();
 
@@ -146,6 +151,21 @@ const dimensionCrystals = computed<number>(() => {
   void gameStore.stateVersion;
   return gameStore.gameState.dimensionCrystals.toNumber() || 0;
 });
+
+// ---- 数字人格（A③ Digital Persona）入口状态 ----
+// 推荐人格（基于历史深度向量，GDD §2.1 自主权：仅推荐，玩家可无视）。
+const recommendedPersonaId = computed(() => {
+  void gameStore.stateVersion;
+  return personaSystem.getRecommendedPersona(gameStore.personaVector);
+});
+const recommendedPersonaName = computed(() =>
+  personaSystem.PERSONA_META[recommendedPersonaId.value].name,
+);
+// 推荐徽标：当前激活人格可负担升级（印记充足）时显示「↑」提示（GDD §2.1 推荐 + §5 升级按钮）。
+const personaUpgradeAvailable = computed(() => {
+  void gameStore.stateVersion;
+  return personaSystem.canUpgradeActivePersona(gameStore.gameState);
+});
 </script>
 
 <style scoped>
@@ -176,6 +196,13 @@ const dimensionCrystals = computed<number>(() => {
   padding: 2px 6px; border-radius: 4px; line-height: 1;
 }
 .bottom-bar__settings-btn:hover { color: var(--color-text); border-color: rgba(255,255,255,0.3); }
+.bottom-bar__settings-btn--persona { position: relative; }
+.persona-badge {
+  position: absolute; top: -6px; right: -6px;
+  background: var(--color-milestone); color: #1a1a1a;
+  font-size: 10px; font-weight: 700; line-height: 1;
+  padding: 1px 3px; border-radius: 6px;
+}
 
 /* ---- 移动端适配 ---- */
 @media (max-width: 767px) {

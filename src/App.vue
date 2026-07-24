@@ -87,6 +87,7 @@
       @open-archive="showArchive = true"
       @open-codex="showCodex = true"
       @open-skin="showSkin = true"
+      @open-persona="showPersona = true"
       @use-stabilizer="gameStore.useEntropyStabilizer()"
       @use-rewind="gameStore.useEntropyRewind()"
       @use-barrier="gameStore.useEntropyBarrier()"
@@ -163,6 +164,9 @@
 
     <!-- Sprint 4：皮肤定制 -->
     <SkinSelector :visible="showSkin" @close="showSkin = false" />
+
+    <!-- Sprint 5 Phase 4：数字人格面板（A③ Digital Persona，GDD §5） -->
+    <PersonaModal :visible="showPersona" @close="showPersona = false" />
   </div>
 </template>
 
@@ -197,6 +201,7 @@ import DimensionPanel from '@/components/game/DimensionPanel.vue';
 import GeneChain from '@/components/game/GeneChain.vue';
 import TutorialGuide from '@/components/game/TutorialGuide.vue';
 import ArchiveModal from '@/components/modals/ArchiveModal.vue';
+import PersonaModal from '@/components/modals/PersonaModal.vue';
 
 const gameStore = useGameStore();
 useOffline();
@@ -240,6 +245,7 @@ const showGene = ref(false);
 const showArchive = ref(false);
 const showCodex = ref(false);
 const showSkin = ref(false);
+const showPersona = ref(false);
 
 // 挑战面板数据
 const challengeData = computed(() => {
