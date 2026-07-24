@@ -1272,7 +1272,7 @@ export const useGameStore = defineStore('game', () => {
     if (changed) {
       bumpVersion();
       const meta = personaSystem.PERSONA_META[id];
-      showNarration([`🧬 已激活数字人格：${meta.name}（${meta.style}）`], 3500);
+      showNarration([`🎭 已激活数字人格：${meta.name}（${meta.style}）`], 3500);
     }
     return changed;
   }
@@ -1290,7 +1290,7 @@ export const useGameStore = defineStore('game', () => {
     if (spent > 0) {
       bumpVersion();
       const meta = personaSystem.PERSONA_META[state.persona.active];
-      showNarration([`🧬 ${meta.name} 晋升至 L${before + 1}！`], 3500);
+      showNarration([`🎭 ${meta.name} 晋升至 L${before + 1}！`], 3500);
     }
     return spent;
   }

@@ -2,7 +2,7 @@
   <div v-if="visible" class="persona-modal">
     <!-- 标题栏 + 印记计数 -->
     <div class="panel-header">
-      <h3>🧬 数字人格</h3>
+      <h3>🎭 数字人格</h3>
       <div class="imprint-count">印记: {{ imprints }}/{{ IMPRINT_CAP }} 💠</div>
       <button class="close-btn" @click="emit('close')">✕</button>
     </div>

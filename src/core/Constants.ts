@@ -1162,7 +1162,7 @@ export const KNOWLEDGE_ENTRY_DEFS: CodexEntryDef[] = [
     category: 'knowledge',
     icon: '🏺',
     unlockLog10: 63,
-    narrativeTriggers: ['沙者之数——古人想象的字宙之沙。'],
+    narrativeTriggers: ['沙者之数——古人想象的宇宙之沙。'],
     content: [
       '阿基米德曾估算宇宙能容纳的沙粒约为 10⁶³——这是古代人类想象过的最大数字。',
       '在没有"亿""兆"词汇的时代，他已用指数思想触摸到了 10⁶³ 的天花板。',
@@ -1245,7 +1245,7 @@ export const MAGNITUDE_MILESTONE_DEFS: MagnitudeMilestoneDef[] = [
   { log10: 23,  narration: '一摩尔——阿伏伽德罗数在指尖。',          reward: { kind: 'dimensionInsight', insightId: 'ins_log23' },  knowledgeEntryId: 'know_avogadro' },
   { log10: 24,  narration: '可观测宇宙的恒星，不过如此。',          reward: { kind: 'dimensionInsight', insightId: 'ins_log24' },  knowledgeEntryId: 'know_stars' },
   { log10: 50,  narration: '这个数字没有物理意义——只有数学意义。', reward: { kind: 'dimensionInsight', insightId: 'ins_log50' },  knowledgeEntryId: 'know_no_physical' },
-  { log10: 63,  narration: '沙者之数——古人想象的字宙之沙。',        reward: { kind: 'dimensionInsight', insightId: 'ins_log63' },  knowledgeEntryId: 'know_archimedes' },
+  { log10: 63,  narration: '沙者之数——古人想象的宇宙之沙。',        reward: { kind: 'dimensionInsight', insightId: 'ins_log63' },  knowledgeEntryId: 'know_archimedes' },
   { log10: 80,  narration: '你握住了可观测宇宙的每一个原子。',      reward: { kind: 'dimensionInsight', insightId: 'ins_log80' },  knowledgeEntryId: 'know_atoms' },
   { log10: 100, narration: 'Googol。只存在于数学梦境的数字。',      reward: { kind: 'dimensionInsight', insightId: 'ins_log100' }, knowledgeEntryId: 'know_googol' },
   { log10: 308, narration: '浮点之巅——计算机能表示的最大数字。',    reward: { kind: 'dimensionInsight', insightId: 'ins_log308' }, knowledgeEntryId: 'know_double_max' },

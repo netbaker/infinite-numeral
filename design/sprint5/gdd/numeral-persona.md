@@ -72,9 +72,10 @@ L2 **不提供额外 `D` 倍率**，仅改变机制/质量 → 不增加生产�
 export type PersonaId = 'persona_walker' | 'persona_tamer' | 'persona_chronicler';
 
 export interface PersonaState {
-  active: PersonaId | null;     // 当前激活人格（仅 1 个）
-  level: 0 | 1 | 2;             // 激活人格等级
+  active: PersonaId | null;                  // 当前激活人格（仅 1 个）
+  levels: Record<PersonaId, 0 | 1 | 2>;      // 各人格独立等级（per-persona map）
 }
+// 注：levels 为各人格独立等级映射，切换激活人格时旧人格等级保留（见 §6 边缘情况 #5）。
 // GameState 新增字段：
 numeralImprints: number;        // 数字印记（元货币）
 persona: PersonaState;          // 数字人格状态
@@ -100,11 +101,11 @@ persona: PersonaState;          // 数字人格状态
 
 ## 5. UI 规格（新增 Persona 面板）
 
-入口：主菜单/侧栏「🧬 数字人格」按钮 → `PersonaModal.vue`（新增）。
+入口：主菜单/侧栏「🎭 数字人格」按钮 → `PersonaModal.vue`（新增）。
 
 ```
 ┌──────────────────────────────────────────┐
-│  🧬 数字人格               印记: 7/14 💠  │
+│  🎭 数字人格               印记: 7/14 💠  │
 ├──────────────────────────────────────────┤
 │  推荐: 维度行者 (基于你的维度广度)       │
 │  [维度行者 Lv?] [熵之驯者] [编年史家]    │
