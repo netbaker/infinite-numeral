@@ -73,6 +73,19 @@ export class TranscendSystem {
     newState.numeralImprints = state.numeralImprints;
     newState.persona = state.persona;
 
+    // Sprint 6 阻断修复：Transcend 不重置 master（GDD §4.1 仅列 prestige/expansion 重置 master），
+    // 故 master 完整保留；resource/crystals/maxNumber 重置为新轮起点。transcend 不走 S5（S5 为 prestige 专属）。
+    for (const [id, ds] of state.dimensionStates) {
+      newState.dimensionStates.set(id, {
+        id: ds.id,
+        unlocked: ds.unlocked,
+        master: ds.master,
+        resource: new Decimal(0),
+        crystals: 0,
+        maxNumber: new Decimal(0),
+      });
+    }
+
     // 基因链跨 Transcend 继承（GDD §2.3.3）
     newState.geneChain = geneSystem.cloneChain(state.geneChain);
 
@@ -91,7 +104,12 @@ export class TranscendSystem {
     newState.cumulativeDarkEnergy = 0;
     newState.prestigeCount = 0;
     newState.expansionCount = 0;
-    newState.singularity = state.singularity + gainedSingularity;
+    // dim3_l5：Transcend 后额外 +1 奇点核心（非数字印记）；dim4_l5：保留 20% 既有奇点核心。
+    // 二者均读 state.activeMasteryEffects（超越前维度精通状态），不触碰 numeralImprint（R1 红线）。
+    let newSingularity = state.singularity + gainedSingularity;
+    if (state.activeMasteryEffects.has('dim3_l5')) newSingularity += 1;
+    if (state.activeMasteryEffects.has('dim4_l5')) newSingularity += Math.floor(state.singularity * 0.20);
+    newState.singularity = newSingularity;
     newState.transcendCount = state.transcendCount + 1;
 
     // 保留元升级、超越升级

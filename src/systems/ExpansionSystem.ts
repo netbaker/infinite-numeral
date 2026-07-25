@@ -79,6 +79,19 @@ export class ExpansionSystem {
     newState.numeralImprints = state.numeralImprints;
     newState.persona = state.persona;
 
+    // Sprint 6 阻断修复：Expansion 按 GDD §4.1 重置 master 回退（master 清零），
+    // 但保留 unlocked 结构（避免维度重新锁死）；resource/crystals/maxNumber 重置。
+    for (const [id, ds] of state.dimensionStates) {
+      newState.dimensionStates.set(id, {
+        id: ds.id,
+        unlocked: ds.unlocked,
+        master: 0,
+        resource: new Decimal(0),
+        crystals: 0,
+        maxNumber: new Decimal(0),
+      });
+    }
+
     // 保留+重置字段
     // 基因链跨 Expansion 继承；并授予一次筛选窗口（GDD §2.3.2）
     newState.geneChain = geneSystem.cloneChain(state.geneChain);

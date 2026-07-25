@@ -11,7 +11,21 @@
       <span class="crystal-label">维度晶体</span>
     </div>
 
-    <div class="dimension-list">
+    <div class="panel-tabs">
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'overview' }"
+        @click="activeTab = 'overview'"
+      >维度总览</button>
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'synergy' }"
+        @click="activeTab = 'synergy'"
+      >维度羁绊</button>
+    </div>
+
+    <template v-if="activeTab === 'overview'">
+      <div class="dimension-list">
       <div
         v-for="dim in panelData"
         :key="dim.id"
@@ -58,6 +72,24 @@
           <div class="stat-row">
             <span class="stat-label">晶体：</span>
             <span class="stat-value">{{ dim.crystals }} 💎</span>
+          </div>
+        </div>
+
+        <!-- 精通奖励列表（Sprint 6 Must ②） -->
+        <div v-if="dim.unlocked && masteryEffectsByDim[dim.id]" class="dim-mastery-rewards">
+          <div class="rewards-title">精通奖励</div>
+          <div
+            v-for="(eff, idx) in masteryEffectsByDim[dim.id]"
+            :key="eff.key"
+            class="reward-item"
+            :class="{
+              'reward-active': activeMastery.has(eff.key),
+              'reward-locked': idx >= dim.masterLevel,
+            }"
+          >
+            <span class="reward-level">L{{ idx + 1 }}</span>
+            <span class="reward-label">{{ eff.label }}</span>
+            <span v-if="activeMastery.has(eff.key)" class="reward-on">✓</span>
           </div>
         </div>
 
@@ -123,14 +155,45 @@
         </button>
       </div>
     </div>
+    </template>
+
+    <!-- 跨维度协同增益（Sprint 6 Must ③） -->
+    <div v-else class="synergy-tab">
+      <p class="synergy-intro">
+        当一组维度同时达到精通 Lv.{{ SYNERGY_MIN_LEVEL }}（mastery ≥ {{ SYNERGY_MIN_LEVEL * 20 }}）时解锁协同增益。
+        全部为机制/规则型，<strong>零乘源、零印记</strong>。
+      </p>
+      <div
+        v-for="syn in synergyList"
+        :key="syn.id"
+        class="synergy-card"
+        :class="{ 'synergy-active': syn.active, 'synergy-niche': syn.niche }"
+      >
+        <div class="syn-head">
+          <span class="syn-id">{{ syn.id }}</span>
+          <span class="syn-name">{{ syn.name }}</span>
+          <span v-if="syn.niche" class="syn-niche" title="小众组合">★</span>
+          <span v-if="syn.active" class="syn-badge active">已激活</span>
+          <span v-else class="syn-badge locked">未激活</span>
+        </div>
+        <div class="syn-desc">{{ syn.desc }}</div>
+        <div class="syn-req">需求：{{ syn.reqDims.join(' + ') }} 均 ≥ Lv.{{ syn.minLevel }}</div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import Decimal from 'break_eternity.js';
 import { useGameStore } from '@/stores/gameStore';
-import { DIMENSION_CRYSTAL_SHOP } from '@/core/Constants';
+import {
+  DIMENSION_CRYSTAL_SHOP,
+  DIMENSION_MASTERY_EFFECTS,
+  DIMENSION_SYNERGY_DEFS,
+  DIMENSION_DEFS,
+  SYNERGY_MIN_LEVEL,
+} from '@/core/Constants';
 import type { DimensionCrystalShopItem } from '@/core/Constants';
 import type { DimensionPanelData, DimensionId } from '@/types/game';
 
@@ -147,6 +210,29 @@ const emit = defineEmits<{
 }>();
 
 const store = useGameStore();
+
+// 当前标签页（维度总览 / 维度羁绊）
+const activeTab = ref<'overview' | 'synergy'>('overview');
+
+// 单权威精通效果表（只读），供模板按 dim.id 取该维度 5 级奖励
+const masteryEffectsByDim = DIMENSION_MASTERY_EFFECTS;
+
+// 已激活的精通奖励键集合（依赖 stateVersion 触发重算）
+const activeMastery = computed<Set<string>>(() => {
+  void store.stateVersion;
+  return store.gameState.activeMasteryEffects;
+});
+
+// 跨维度协同增益列表（含激活状态 + 需求维度名），依赖 stateVersion 触发重算
+const synergyList = computed(() => {
+  void store.stateVersion;
+  const active = store.gameState.activeSynergies;
+  return DIMENSION_SYNERGY_DEFS.map((def) => ({
+    ...def,
+    active: active.has(def.id),
+    reqDims: def.dims.map((d) => DIMENSION_DEFS[d]?.name ?? `Dim-${d}`),
+  }));
+});
 
 const panelData = computed<DimensionPanelData[]>(() =>
   store.getDimensionPanelData()
@@ -547,5 +633,155 @@ function onBuyCrystal(itemId: string) {
 }
 .btn-buy-crystal:not(:disabled):hover {
   background: linear-gradient(135deg, #3a6a8a, #4a8aaa);
+}
+
+/* ===== Sprint 6 Must ②③：标签页 / 精通奖励 / 维度羁绊 ===== */
+.panel-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.tab-btn {
+  flex: 1;
+  background: #1a1a2a;
+  border: 1px solid #333366;
+  color: #8888bb;
+  padding: 8px 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95em;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.tab-btn.active {
+  border-color: var(--color-milestone, #d4af37);
+  color: var(--color-milestone, #d4af37);
+  background: #221f12;
+}
+.tab-btn:hover {
+  border-color: #5555aa;
+}
+
+/* 精通奖励列表 */
+.dim-mastery-rewards {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed #333366;
+}
+.rewards-title {
+  font-size: 0.8em;
+  color: #8888aa;
+  margin-bottom: 6px;
+}
+.reward-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82em;
+  padding: 3px 6px;
+  border-radius: 6px;
+  margin-bottom: 2px;
+}
+.reward-level {
+  color: #6666aa;
+  font-size: 0.85em;
+  min-width: 22px;
+}
+.reward-label {
+  flex: 1;
+  color: #8888aa;
+}
+.reward-item.reward-active {
+  background: rgba(212, 175, 55, 0.12);
+}
+.reward-item.reward-active .reward-level {
+  color: var(--color-milestone, #d4af37);
+}
+.reward-item.reward-active .reward-label {
+  color: #e8d9a0;
+}
+.reward-on {
+  color: #66ffaa;
+  font-weight: bold;
+}
+.reward-item.reward-locked {
+  opacity: 0.4;
+}
+
+/* 维度羁绊（协同增益） */
+.synergy-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.synergy-intro {
+  font-size: 0.85em;
+  color: #8888aa;
+  line-height: 1.5;
+  background: #141428;
+  border: 1px solid #333366;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 0;
+}
+.synergy-intro strong {
+  color: #66ffaa;
+}
+.synergy-card {
+  background: #141428;
+  border: 1px solid #333366;
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+.synergy-card.synergy-active {
+  border-color: var(--color-milestone, #d4af37);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.25);
+}
+.synergy-card.synergy-niche {
+  border-style: dashed;
+}
+.syn-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.syn-id {
+  font-weight: bold;
+  color: #6688ff;
+  font-size: 1.05em;
+}
+.syn-name {
+  font-weight: bold;
+  color: #ccccee;
+  flex: 1;
+}
+.syn-niche {
+  color: var(--color-milestone, #d4af37);
+  cursor: help;
+}
+.syn-badge {
+  font-size: 0.72em;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.syn-badge.active {
+  background: #2a5a3a;
+  color: #88ffaa;
+}
+.syn-badge.locked {
+  background: #333;
+  color: var(--color-text-dim, #8888aa);
+}
+.syn-desc {
+  font-size: 0.85em;
+  color: #8888aa;
+  margin-bottom: 6px;
+}
+.syn-req {
+  font-size: 0.78em;
+  color: #6666aa;
+}
+.synergy-active .syn-req {
+  color: #aaccff;
 }
 </style>

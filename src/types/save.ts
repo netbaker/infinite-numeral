@@ -242,6 +242,11 @@ export interface SerializedState {
   numeralImprints: number;
   /** 数字人格元进度状态（序列化形式） */
   persona: SerializedPersonaState;
+  // ---- 维度精通 / 协同 派生缓存（由 refreshDimensionBuilds 重算，仅做容错持久化） ----
+  /** 已激活的精通奖励键集合（dim0_l1 ... dim4_l5） */
+  activeMasteryEffects: string[];
+  /** 已激活的跨维度协同增益ID集合（S1 ... S10） */
+  activeSynergies: string[];
 }
 
 /**

@@ -104,7 +104,9 @@ export class EventSystem {
     for (const def of candidates) {
       // 概率随量级略微提升（对数衰减）
       const magBonus = Math.min(0.003, (currentMag - def.minMagnitude) * 0.0005);
-      const probability = (def.baseProbability + magBonus) * resonance.rateMult;
+      let probability = (def.baseProbability + magBonus) * resonance.rateMult;
+      // dim2_l5：随机事件触发率 +10%
+      if (state.activeMasteryEffects.has('dim2_l5')) probability *= 1.10;
 
       if (Math.random() < probability) {
         // 命中！设置活跃事件
@@ -194,7 +196,8 @@ export class EventSystem {
     for (const effect of effects) {
       switch (effect.type) {
         case 'stardust_gain':
-          state.stardust += effect.value;
+          // dim0_l1：星尘获取 +10%
+          state.stardust += Math.floor(effect.value * (state.activeMasteryEffects.has('dim0_l1') ? 1.1 : 1));
           break;
         case 'stardust_loss':
           state.stardust = Math.max(0, state.stardust - effect.value);

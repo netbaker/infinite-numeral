@@ -1,5 +1,5 @@
 import { BigNumber } from '@/core/BigNumber';
-import { UPGRADE_DEFS, STARDUST_UPGRADE_DEFS, TECH_TREE_DEFS, EXPANSION_UPGRADE_DEFS, TRANSCEND_UPGRADE_DEFS, TRANSCEND_MILESTONE_DEFS, FACTOR_DEFS, DIMENSION_CRYSTAL_SHOP, GENE_DEFS } from '@/core/Constants';
+import { UPGRADE_DEFS, STARDUST_UPGRADE_DEFS, TECH_TREE_DEFS, EXPANSION_UPGRADE_DEFS, TRANSCEND_UPGRADE_DEFS, TRANSCEND_MILESTONE_DEFS, FACTOR_DEFS, DIMENSION_CRYSTAL_SHOP, GENE_DEFS, MASTERY_GLOBAL_MULT_CAP } from '@/core/Constants';
 import { dimensionSystem } from '@/systems/DimensionSystem';
 import type { MultiplierEntry, GameState } from '@/types/game';
 
@@ -316,11 +316,17 @@ export class MultiplierSystem {
   registerDimensionMultiplier(state: GameState): void {
     this.unregister('dimension_global');
     const dimMult = dimensionSystem.calculateDimensionMultiplier(state);
+    // 全局型精通奖励折叠进唯一 dimension 源：dim0_l5 等 global 型 magnitude 之和，
+    // 受 MASTERY_GLOBAL_MULT_CAP（0.25）夹紧 → 维度源因精通最多 ×1.25。无新 source。
+    const masteryDelta = Math.min(
+      Math.max(dimensionSystem.getMasteryGlobalMultiplierDelta(state), 0),
+      MASTERY_GLOBAL_MULT_CAP,
+    );
     this.register({
       id: 'dimension_global',
       source: 'dimension',
       target: '',
-      value: dimMult,
+      value: dimMult * (1 + masteryDelta),
     });
   }
 
@@ -466,6 +472,12 @@ export class MultiplierSystem {
       }
     }
 
+    // dim0_l2：生产者成本 -5%（与既有折扣叠加，统一受 0.5 上限夹紧）
+    if (state.activeMasteryEffects.has('dim0_l2')) {
+      totalDiscount += 0.05;
+    }
+
+    // 成本折扣上限 50%（成本乘数下限 0.5）——与 mastery-rewards.md §6 边缘情况 4 一致
     return Math.min(totalDiscount, 0.5);
   }
 }

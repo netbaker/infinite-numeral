@@ -1054,6 +1054,11 @@ export class GameState {
   _singularityBurstEndsAt: number = 0;
   /** 已购买的维度晶体增益ID集合（消耗晶体购买的永久全局加成） */
   purchasedCrystalUpgrades: Set<string> = new Set();
+  // ---- 维度精通 / 协同 派生缓存（由 refreshDimensionBuilds 重算，非存档真相源） ----
+  /** 当前已激活的精通奖励键集合（dim0_l1 ... dim4_l5），供宿主系统按 key 读取机制型效果 */
+  activeMasteryEffects: Set<string> = new Set();
+  /** 当前已激活的跨维度协同增益ID集合（S1 ... S10），供宿主系统按 id 读取协同效果 */
+  activeSynergies: Set<string> = new Set();
   // ---- 新手引导 ----
   /** 新手引导当前步骤（0=未开始，-1=已完成） */
   tutorialStep: number = 0;

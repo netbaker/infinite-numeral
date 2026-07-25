@@ -2,6 +2,7 @@ import Decimal from 'break_eternity.js';
 import { GameState } from '@/types/game';
 import type { AchievementState, DimensionId, NumberSkinId, UIThemeId, PersonaId } from '@/types/game';
 import type { SaveData, SerializedState } from '@/types/save';
+import { dimensionSystem } from '@/systems/DimensionSystem';
 
 /** 当前存档版本号（Sprint 3 图鉴：新增 codexEntries + codexInitialized + 8 个跨系统联动追踪字段 → 3 → 4） */
 const CURRENT_VERSION = 4;
@@ -111,6 +112,9 @@ export function serialize(state: GameState): SaveData {
       active: state.persona.active,
       levels: { ...state.persona.levels },
     },
+    // ---- 维度精通 / 协同 派生缓存（容错持久化，反序列化后由 refreshDimensionBuilds 重算覆盖） ----
+    activeMasteryEffects: Array.from(state.activeMasteryEffects),
+    activeSynergies: Array.from(state.activeSynergies),
   };
 
   return {
@@ -294,6 +298,12 @@ export function deserialize(data: SaveData): GameState {
         },
       }
     : { active: null, levels: FALLBACK_LEVELS };
+
+  // ---- 维度精通 / 协同 派生缓存（容错恢复；旧的保存缺字段则 ?? [] → 空 Set，随后 refreshDimensionBuilds 重算覆盖） ----
+  state.activeMasteryEffects = new Set(s.activeMasteryEffects ?? []);
+  state.activeSynergies = new Set(s.activeSynergies ?? []);
+  // 反序列化后统一重算派生缓存，保证存档后的精通/协同状态与主存一致（不 bump CURRENT_VERSION）。
+  dimensionSystem.refreshDimensionBuilds(state);
 
   return state;
 }

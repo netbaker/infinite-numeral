@@ -333,8 +333,8 @@ export class ChallengeSystem {
 
     if (!cs || !def || !cs.completed || cs.claimed) return null;
 
-    // 发放奖励
-    state.stardust += def.stardustReward;
+    // 发放奖励（dim0_l1：星尘获取 +10%）
+    state.stardust += Math.floor(def.stardustReward * (state.activeMasteryEffects.has('dim0_l1') ? 1.1 : 1));
     let deGain = 0;
     if (def.deReward) {
       state.darkEnergy += def.deReward;

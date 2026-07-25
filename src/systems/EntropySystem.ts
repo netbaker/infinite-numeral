@@ -100,9 +100,12 @@ export class EntropySystem {
     // 5. 检测大崩塌（熵值达到 100）
     let majorEvent = false;
     if (state.entropy >= ENTROPY_CONFIG.COLLAPSE_THRESHOLD) {
-      this.triggerCollapse(state);
-      this._collapsedThisTick = true;
-      majorEvent = true;
+      // S2 奇点免崩：奇点爆发期间跳过本次崩塌（仅免该次，不永久免熵、不消耗道具）
+      if (!(state.activeSynergies.has('S2') && state._singularityBurstActive)) {
+        this.triggerCollapse(state);
+        this._collapsedThisTick = true;
+        majorEvent = true;
+      }
     }
 
     return majorEvent || (this._warningLevel !== null);
@@ -257,7 +260,11 @@ export class EntropySystem {
       growth += ratio * ENTROPY_CONFIG.OUTPUT_ENTROPY_FACTOR * 100 * dtSeconds;
     }
 
-    return growth;
+    // dim3_l4：熵值增长 -15%（×0.85）；S9 稳态三和弦：熵增再 ×0.9（两者顺序相乘、有界）
+    const entropyGrowthMult =
+      (state.activeMasteryEffects.has('dim3_l4') ? 0.85 : 1) *
+      (state.activeSynergies.has('S9') ? 0.9 : 1);
+    return growth * entropyGrowthMult;
   }
 
   /**

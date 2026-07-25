@@ -314,6 +314,9 @@ export function computeChroniclerStartBuffer(sChronicler: number): number {
  */
 export function applyChroniclerStartBuffer(state: GameState, sChronicler: number): number {
   const granted = computeChroniclerStartBuffer(sChronicler);
-  if (granted > 0) state.stardust += granted;
+  if (granted > 0) {
+    // dim0_l1：星尘获取 +10%
+    state.stardust += Math.floor(granted * (state.activeMasteryEffects.has('dim0_l1') ? 1.1 : 1));
+  }
   return granted;
 }

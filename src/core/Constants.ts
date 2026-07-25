@@ -1965,14 +1965,141 @@ export const DIMENSION_SWITCH_NARRATIVES: Record<number, string[]> = {
   4: ['进入奇点维度。深渊在你脚下张开。'],
 };
 
-/** 维度精通奖励（每20点精通解锁一个被动） */
-export const DIMENSION_MASTERY_REWARDS: Record<number, string[]> = {
-  0: ['星尘获取 +10%', '生产者成本 -5%', '点击基础值 +20%', '离线效率 +15%', '全局倍率 +5%'],
-  1: ['质数触发概率 +15%', '质数倍率提升至 ×4', '质核获取 +20%', '因子发现速度 +10%', '质数时自动Prestige建议'],
-  2: ['混沌上限提升至 8x', '混沌持续时间 +30s', '混沌保底机制（最低 1.0x）', '碎片合成效率 +25%', '随机事件触发率 +10%'],
-  3: ['反熵叠加上限 +5层', 'Prestige后保留 10% 数字', '熵晶获取 +30%', '熵值增长 -15%', 'Transcend后额外奇点核心'],
-  4: ['临界爆发倍率提升至 ×200', '爆发持续时间 +5s', '奇点核心可兑换维度晶体', '数字 e300+ 时自动触发爆发', '超越后可保留奇点印记'],
+// ============================================================
+// 维度精通奖励实际化（Sprint 6 Must ②）
+// 单一权威映射表：keyed by dimId → 该维 L1..L5 效果数组。
+// 乘区型（multiplier）折叠进唯一 `dimension` 源（有界）；机制型（mechanic）由宿主系统读标志位生效。
+// 详见 design/sprint6/gdd/mastery-rewards.md
+// ============================================================
+
+/** 精通奖励效果类型 */
+export interface MasteryRewardEffect {
+  /** 写入 state.activeMasteryEffects 的标志位 id（如 'dim0_l5'） */
+  key: string;
+  /** 原文本（UI 展示，替代旧 DIMENSION_MASTERY_REWARDS） */
+  label: string;
+  type: 'multiplier' | 'mechanic';
+  scope:
+    | 'global'
+    | 'dim_rule'
+    | 'resource'
+    | 'cost'
+    | 'offline'
+    | 'click'
+    | 'entropy'
+    | 'trigger'
+    | 'flag';
+  /** 效果数值（常量，运行时只读） */
+  magnitude: number;
+  note?: string;
+}
+
+/**
+ * 单权威维度精通效果表（5 维 × 5 级 = 25 条）。
+ * 每条含 key / label / type / scope / magnitude，运行时只读，由 refreshDimensionBuilds 派生激活集合。
+ */
+export const DIMENSION_MASTERY_EFFECTS: Record<number, MasteryRewardEffect[]> = {
+  0: [
+    { key: 'dim0_l1', label: '星尘获取 +10%', type: 'mechanic', scope: 'resource', magnitude: 0.10 },
+    { key: 'dim0_l2', label: '生产者成本 -5%', type: 'mechanic', scope: 'cost', magnitude: 0.05 },
+    { key: 'dim0_l3', label: '点击基础值 +20%', type: 'mechanic', scope: 'click', magnitude: 0.20 },
+    { key: 'dim0_l4', label: '离线效率 +15%', type: 'mechanic', scope: 'offline', magnitude: 0.15 },
+    { key: 'dim0_l5', label: '全局倍率 +5%', type: 'multiplier', scope: 'global', magnitude: 0.05 },
+  ],
+  1: [
+    { key: 'dim1_l1', label: '质数维度倍率额外 +15%', type: 'multiplier', scope: 'dim_rule', magnitude: 0.15 },
+    { key: 'dim1_l2', label: '质数倍率提升至 ×4', type: 'multiplier', scope: 'dim_rule', magnitude: 4 },
+    { key: 'dim1_l3', label: '质核获取 +20%', type: 'mechanic', scope: 'resource', magnitude: 0.20 },
+    { key: 'dim1_l4', label: '因子发现速度 +10%', type: 'mechanic', scope: 'trigger', magnitude: 0.10 },
+    { key: 'dim1_l5', label: '质数时自动Prestige建议', type: 'mechanic', scope: 'flag', magnitude: 0 },
+  ],
+  2: [
+    { key: 'dim2_l1', label: '混沌上限提升至 8x', type: 'mechanic', scope: 'dim_rule', magnitude: 8 },
+    { key: 'dim2_l2', label: '混沌持续时间 +30s', type: 'mechanic', scope: 'trigger', magnitude: 30 },
+    { key: 'dim2_l3', label: '混沌保底（最低 1.0x）', type: 'mechanic', scope: 'dim_rule', magnitude: 1.0 },
+    { key: 'dim2_l4', label: '碎片合成效率 +25%', type: 'mechanic', scope: 'resource', magnitude: 0.25 },
+    { key: 'dim2_l5', label: '随机事件触发率 +10%', type: 'mechanic', scope: 'trigger', magnitude: 0.10 },
+  ],
+  3: [
+    { key: 'dim3_l1', label: '反熵叠加上限 +5层', type: 'mechanic', scope: 'dim_rule', magnitude: 5 },
+    { key: 'dim3_l2', label: 'Prestige后保留 10% 数字', type: 'mechanic', scope: 'trigger', magnitude: 0.10 },
+    { key: 'dim3_l3', label: '熵晶获取 +30%', type: 'mechanic', scope: 'resource', magnitude: 0.30 },
+    { key: 'dim3_l4', label: '熵值增长 -15%', type: 'mechanic', scope: 'entropy', magnitude: 0.15 },
+    { key: 'dim3_l5', label: 'Transcend后额外奇点核心', type: 'mechanic', scope: 'resource', magnitude: 1 },
+  ],
+  4: [
+    { key: 'dim4_l1', label: '临界爆发倍率 ×200', type: 'multiplier', scope: 'dim_rule', magnitude: 200 },
+    { key: 'dim4_l2', label: '爆发持续时间 +5s', type: 'mechanic', scope: 'trigger', magnitude: 5 },
+    { key: 'dim4_l3', label: '奇点核心可兑换维度晶体', type: 'mechanic', scope: 'flag', magnitude: 0 },
+    { key: 'dim4_l4', label: '数字 e300+ 自动触发爆发', type: 'mechanic', scope: 'trigger', magnitude: 300 },
+    { key: 'dim4_l5', label: '超越后保留 20% 奇点核心', type: 'mechanic', scope: 'resource', magnitude: 0.20 },
+  ],
 };
+
+/**
+ * 乘区型全局精通奖励之总加成比例硬上限（防组合通胀）。
+ * 维度源因精通最多 ×1.25（当前仅 dim0_l5 → ×1.05）。详见 mastery-rewards.md §2.4 / §8。
+ */
+export const MASTERY_GLOBAL_MULT_CAP = 0.25;
+
+// ============================================================
+// 跨维度协同增益（Sprint 6 Must ③）
+// 当一组已精通维度同时达到精通阈值，解锁一条 set-bonus perk（机制/规则型，零乘源、零印记）。
+// 详见 design/sprint6/gdd/dimension-synergy.md
+// ============================================================
+
+/** 协同 perk 机制类型（决定哪个系统读取该标志位） */
+export type SynergyEffectKind =
+  | 'prime_in_anti'
+  | 'burst_no_collapse'
+  | 'chaos_prime_bias'
+  | 'chaos_floor_scale'
+  | 'retain_base_mastery'
+  | 'burst_prime_bonus'
+  | 'click_charge_burst'
+  | 'trinity_burst'
+  | 'steady_triad'
+  | 'chaos_sing_prime';
+
+/** 跨维度协同 perk 定义 */
+export interface DimensionSynergyDef {
+  /** perk id，如 'S1' */
+  id: string;
+  /** 展示名 */
+  name: string;
+  /** 所需维度 id 集合（2 或 3 个） */
+  dims: number[];
+  /** 每维所需精通等级（默认取全局 SYNERGY_MIN_LEVEL） */
+  minLevel: number;
+  /** 机制描述（UI） */
+  desc: string;
+  /** 机制类型（决定哪个系统读取） */
+  effect: SynergyEffectKind;
+  /** 机制数值（常量，运行时只读） */
+  magnitude: number;
+  /** 小众组合标记（支柱三 build 多样性） */
+  niche?: boolean;
+}
+
+/** 协同解锁所需每维精通等级（默认 3 = mastery ≥ 60） */
+export const SYNERGY_MIN_LEVEL = 3;
+
+/**
+ * 10 条跨维度协同 perk 定义（含 2 条小众 S7/S10）。
+ * 全部为机制/规则型；由宿主系统在运行时读取 state.activeSynergies 标志位生效。
+ */
+export const DIMENSION_SYNERGY_DEFS: DimensionSynergyDef[] = [
+  { id: 'S1', name: '反熵质数共鸣', dims: [1, 3], minLevel: SYNERGY_MIN_LEVEL, effect: 'prime_in_anti', magnitude: 3, desc: '反熵维度下质数 ×3 仍生效' },
+  { id: 'S2', name: '奇点免崩', dims: [3, 4], minLevel: SYNERGY_MIN_LEVEL, effect: 'burst_no_collapse', magnitude: 0, desc: '奇点爆发期间免熵崩' },
+  { id: 'S3', name: '质数混沌', dims: [1, 2], minLevel: SYNERGY_MIN_LEVEL, effect: 'chaos_prime_bias', magnitude: 0.5, desc: '混沌重投时质数偏向高值' },
+  { id: 'S4', name: '反熵抬混沌', dims: [2, 3], minLevel: SYNERGY_MIN_LEVEL, effect: 'chaos_floor_scale', magnitude: 0.2, desc: '混沌下限随反熵层数提升' },
+  { id: 'S5', name: '反熵留痕', dims: [0, 3], minLevel: SYNERGY_MIN_LEVEL, effect: 'retain_base_mastery', magnitude: 0.25, desc: 'Prestige 后额外保留基础维度精通' },
+  { id: 'S6', name: '奇点质爆', dims: [1, 4], minLevel: SYNERGY_MIN_LEVEL, effect: 'burst_prime_bonus', magnitude: 2, desc: '奇点爆发期间质数额外 ×2' },
+  { id: 'S7', name: '基础充能', dims: [0, 4], minLevel: SYNERGY_MIN_LEVEL, effect: 'click_charge_burst', magnitude: 0.02, desc: '基础维度点击为奇点充能', niche: true },
+  { id: 'S8', name: '三位一体', dims: [1, 3, 4], minLevel: SYNERGY_MIN_LEVEL, effect: 'trinity_burst', magnitude: 3, desc: '反熵维度触发奇点爆发且质数 → 爆发 ×3' },
+  { id: 'S9', name: '稳态三和弦', dims: [0, 2, 3], minLevel: SYNERGY_MIN_LEVEL, effect: 'steady_triad', magnitude: 0, desc: 'Prestige保留+10%、混沌下限+0.5、熵增×0.9 三安全网叠加' },
+  { id: 'S10', name: '混沌奇点质数', dims: [2, 4, 1], minLevel: SYNERGY_MIN_LEVEL, effect: 'chaos_sing_prime', magnitude: 1.5, desc: '混沌维度预热期质数额外 ×1.5', niche: true },
+];
 
 // ============================================================
 // 基因进化系统配置（v2.0 — GeneEvo）

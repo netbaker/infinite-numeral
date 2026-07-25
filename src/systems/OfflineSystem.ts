@@ -43,7 +43,7 @@ export class OfflineSystem {
     }
 
     // 效率递减计算
-    const efficiency = this._calculateEfficiency(offlineSec);
+    const efficiency = this._calculateEfficiency(state, offlineSec);
     const effectiveSec = offlineSec * efficiency;
 
     return totalOutputPerSec.mul(effectiveSec);
@@ -59,7 +59,7 @@ export class OfflineSystem {
   getOfflineEarnings(state: GameState, offlineMs: number): OfflineResult {
     const maxOfflineSec = OFFLINE_MAX_HOURS * 3600;
     const offlineSec = Math.min(offlineMs / 1000, maxOfflineSec);
-    const efficiency = this._calculateEfficiency(offlineSec);
+    const efficiency = this._calculateEfficiency(state, offlineSec);
 
     return {
       gainedNumber: this.calculateOfflineGain(state, offlineMs),
@@ -77,7 +77,7 @@ export class OfflineSystem {
    * @param offlineSec 离线秒数
    * @returns 效率值（0-1）
    */
-  private _calculateEfficiency(offlineSec: number): number {
+  private _calculateEfficiency(state: GameState, offlineSec: number): number {
     if (offlineSec <= 0) {
       return 0;
     }
@@ -104,6 +104,11 @@ export class OfflineSystem {
       effectiveTime += tier3 * 0.25;
     }
 
-    return effectiveTime / offlineSec;
+    let efficiency = effectiveTime / offlineSec;
+    // dim0_l4：离线效率 +0.15（夹紧 [0,1]）
+    if (state.activeMasteryEffects.has('dim0_l4')) {
+      efficiency = Math.min(1, efficiency + 0.15);
+    }
+    return efficiency;
   }
 }

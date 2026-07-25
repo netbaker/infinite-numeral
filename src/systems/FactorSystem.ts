@@ -172,7 +172,9 @@ export class FactorSystem {
     // 将「因子发现概率 ×(1 + 0.10×Lv)」映射为确定性的门槛降低：
     // 有效数量级 = currentMag + 降低幅度，门槛检查变为 (currentMag + reduction) >= threshold
     const catalystReduction = geneSystem.getCatalystMagnitudeReduction(state);
-    const effectiveMag = currentMag + catalystReduction;
+    let effectiveMag = currentMag + catalystReduction;
+    // dim1_l4：因子发现速度 +10%（映射为等效量级 +0.10，确定性、可测试）
+    if (state.activeMasteryEffects.has('dim1_l4')) effectiveMag += 0.10;
 
     for (const def of FACTOR_DEFS) {
       // 数量级门槛检查（含催化基因降低）

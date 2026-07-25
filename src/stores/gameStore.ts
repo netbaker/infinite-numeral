@@ -549,6 +549,9 @@ export const useGameStore = defineStore('game', () => {
     // 补全维度系统状态（兼容旧存档）
     dimensionSystem.initialize(state);
 
+    // 反序列化后统一重算维度派生缓存（精通奖励 + 协同增益），确保与主存一致
+    dimensionSystem.refreshDimensionBuilds(state);
+
     // 重新计算倍增器
     multiplierSystem.recalculateFromState(state);
 
@@ -631,6 +634,8 @@ export const useGameStore = defineStore('game', () => {
 
     // 0.3 维度系统 tick（精通度增长 + 混沌倍率重投 + 临界爆发检测）
     dimensionSystem.tickMastery(state, deltaTime, rawOutputPerSec.toDecimal());
+    // 精通度可能增长 → 重算派生缓存（精通奖励 + 协同增益），供后续 multiplier / 宿主系统读取
+    dimensionSystem.refreshDimensionBuilds(state);
     dimensionSystem.checkChaosMultiplier(state);
     // 奇点维度临界爆发标记（用于特殊成就 arch_singularity_burst，Story 2.1.2）
     if (dimensionSystem.checkSingularityBurst(state)) {
@@ -840,10 +845,23 @@ export const useGameStore = defineStore('game', () => {
     const globalMul = multiplierSystem.getGlobalMultiplier();
     clickValue = clickValue.mul(globalMul);
 
+    // dim0_l3：点击基础值 +20%
+    if (state.activeMasteryEffects.has('dim0_l3')) {
+      clickValue = clickValue.mul(1.20);
+    }
+
     // 增加 number 和 totalNumber
     state.number = BigNumber.from(state.number).add(clickValue).toDecimal();
     state.totalNumber = BigNumber.from(state.totalNumber).add(clickValue).toDecimal();
     state.totalClicks += 1;
+    // S7 基础充能：奇点维度且爆发激活时，每次点击为爆发条充能 magnitude 秒（上限 +5s/次，避免刷爆）
+    if (
+      state.activeSynergies.has('S7') &&
+      state.currentDimension === 4 &&
+      state._singularityBurstActive
+    ) {
+      state._singularityBurstEndsAt += Math.min(5000, 0.02 * 1000);
+    }
     // 挑战：记录点击
     challengeSystem.recordClick(state);
     state.totalManualEarnings = state.totalManualEarnings.add(clickValue.toDecimal());
@@ -1735,12 +1753,14 @@ export const useGameStore = defineStore('game', () => {
   function unlockDimension(dimId: DimensionId): boolean {
     const state = gameState.value;
     const result = dimensionSystem.unlockDimension(state, dimId);
-    
+
     if (result) {
+      // 解锁维度（即便精通仍为 0）后统一重算派生缓存，保持状态一致
+      dimensionSystem.refreshDimensionBuilds(state);
       showNarration([`🗺️ 维度 ${DIMENSION_DEFS[dimId]?.name || dimId} 已解锁！`], 3000);
       bumpVersion();
     }
-    
+
     return result;
   }
 

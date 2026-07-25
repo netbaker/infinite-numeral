@@ -3,7 +3,8 @@ import type { DimensionId, GameState } from '@/types/game';
 import {
   DIMENSION_DEFS,
   DIMENSION_SWITCH_NARRATIVES,
-  DIMENSION_MASTERY_REWARDS,
+  DIMENSION_MASTERY_EFFECTS,
+  DIMENSION_SYNERGY_DEFS,
   DIMENSION_CRYSTAL_SHOP,
 } from '@/core/Constants';
 import * as personaSystem from '@/systems/PersonaSystem';
@@ -132,15 +133,91 @@ export class DimensionSystem {
   }
 
   /**
-   * 获取当前维度精通奖励描述
+   * 获取当前维度精通奖励描述（读单权威表 DIMENSION_MASTERY_EFFECTS 的 label）
    */
   getMasteryReward(state: GameState, dimId: DimensionId): string | null {
     const level = this.getMasteryLevel(state, dimId);
-    const rewards = DIMENSION_MASTERY_REWARDS[dimId];
-    if (rewards && level > 0 && level <= rewards.length) {
-      return rewards[level - 1];
+    const effects = DIMENSION_MASTERY_EFFECTS[dimId];
+    if (effects && level > 0 && level <= effects.length) {
+      return effects[level - 1].label;
     }
     return null;
+  }
+
+  // ============================================================
+  // Sprint 6 Must ②③：精通奖励实际化 + 跨维度协同增益
+  // 唯一重算入口 = refreshDimensionBuilds（先 applyMasteryRewards 再 evaluateSynergies）。
+  // 两个集合均为派生缓存，幂等重算（clear + 重填）。
+  // ============================================================
+
+  /**
+   * 重算 `state.activeMasteryEffects`：清除后按各维已达成的精通等级填充奖励标志位。
+   * 幂等：等级 L 解锁前 L 条奖励，达成即激活；精通回退时自动移除。
+   */
+  applyMasteryRewards(state: GameState): void {
+    state.activeMasteryEffects.clear();
+    for (let dimId = 0; dimId <= 4; dimId++) {
+      const effects = DIMENSION_MASTERY_EFFECTS[dimId];
+      if (!effects) continue;
+      const lv = this.getMasteryLevel(state, dimId as DimensionId);
+      for (let i = 0; i < lv && i < effects.length; i++) {
+        state.activeMasteryEffects.add(effects[i].key);
+      }
+    }
+  }
+
+  /**
+   * 重算 `state.activeSynergies`：遍历固定 10 条协同定义，组合内每维精通均达阈值则点亮。
+   * 幂等，每 tick 仅 10 次 O(1) 判定，不扫全组合。
+   */
+  evaluateSynergies(state: GameState): void {
+    state.activeSynergies.clear();
+    for (const def of DIMENSION_SYNERGY_DEFS) {
+      const allMet = def.dims.every(
+        (d) => this.getMasteryLevel(state, d as DimensionId) >= def.minLevel,
+      );
+      if (allMet) {
+        state.activeSynergies.add(def.id);
+      }
+    }
+  }
+
+  /**
+   * 唯一重算入口：先写 activeMasteryEffects，再写 activeSynergies。
+   * 由 gameStore 每 tick（tickMastery 后）、unlockDimension 后、反序列化后统一调用。
+   */
+  refreshDimensionBuilds(state: GameState): void {
+    this.applyMasteryRewards(state);
+    this.evaluateSynergies(state);
+  }
+
+  /**
+   * 全局型乘区精通奖励之总加成比例（供 MultiplierSystem 折叠进 dimension 源，受 MASTERY_GLOBAL_MULT_CAP 夹紧）。
+   * 当前仅 dim0_l5 = +0.05。
+   */
+  getMasteryGlobalMultiplierDelta(state: GameState): number {
+    let delta = 0;
+    for (const effects of Object.values(DIMENSION_MASTERY_EFFECTS)) {
+      for (const eff of effects) {
+        if (
+          eff.type === 'multiplier' &&
+          eff.scope === 'global' &&
+          state.activeMasteryEffects.has(eff.key)
+        ) {
+          delta += eff.magnitude;
+        }
+      }
+    }
+    return delta;
+  }
+
+  /**
+   * 反熵叠加层数（Dim-3 分支 / S4 共用）：transcendCount 叠加 dim3_l1 的 +5 层加成。
+   * 注：代码基线无独立「反熵堆栈」模型，dim3_l1「反熵叠加上限 +5层」在此解释为有效层数 +5。
+   */
+  private getAntiEntropyStacks(state: GameState): number {
+    const base = state.transcendCount;
+    return base + (state.activeMasteryEffects.has('dim3_l1') ? 5 : 0);
   }
 
   // ---- 维度产出倍率计算 ----
@@ -166,7 +243,11 @@ export class DimensionSystem {
 
       case 1: { // 质数维度
         if (this.isPrimeDimensionTrigger(state.number)) {
-          multiplier *= 3;
+          // dim1_l2：质数倍率提升至 ×4（覆盖基 3）；dim1_l1：质数维度倍率额外 +15%（主理人重释义）
+          multiplier *= state.activeMasteryEffects.has('dim1_l2') ? 4 : 3;
+          if (state.activeMasteryEffects.has('dim1_l1')) {
+            multiplier *= 1.15;
+          }
         }
         break;
       }
@@ -178,21 +259,36 @@ export class DimensionSystem {
       }
 
       case 3: { // 反熵维度
-        // 每次超越（Transcend）叠加 20% — 使用 transcendCount（不随膨胀清零）
-        const bonus = 1 + state.transcendCount * 0.2;
+        // 每次超越（Transcend）叠加 20% — 使用 getAntiEntropyStacks（含 dim3_l1 +5 层）
+        const bonus = 1 + this.getAntiEntropyStacks(state) * 0.2;
         multiplier *= bonus;
+        // S1 反熵质数共鸣：反熵维度下质数 ×3 仍生效（仍属单源计算，无新乘源）
+        if (state.activeSynergies.has('S1') && this.isPrimeDimensionTrigger(state.number)) {
+          multiplier *= 3;
+        }
         break;
       }
 
       case 4: { // 奇点维度
         const logNum = state.number.log(10).toNumber();
         if (logNum > 300) {
-          // e300+ 触发临界爆发
-          multiplier *= 100;
+          // e300+ 触发临界爆发：基础 ×100，dim4_l1 提升至 ×200
+          let burst = state.activeMasteryEffects.has('dim4_l1') ? 200 : 100;
+          // S6 奇点质爆：爆发期间质数额外 ×2；S8 三位一体：质数 → ×3（均单源）
+          if (state._singularityBurstActive) {
+            if (state.activeSynergies.has('S6') && this.isPrimeDimensionTrigger(state.number)) burst *= 2;
+            if (state.activeSynergies.has('S8') && this.isPrimeDimensionTrigger(state.number)) burst *= 3;
+          }
+          multiplier *= burst;
         } else if (logNum > 280) {
-          // e280+ 预热
-          const factor = (logNum - 280) / 28;  // 0→1
-          multiplier *= 1 + factor * 99;  // 1x → 100x
+          // e280+ 预热：1x → 100x（dim4_l1 时 → 200x）
+          const peak = state.activeMasteryEffects.has('dim4_l1') ? 200 : 100;
+          const factor = (logNum - 280) / 28; // 0→1
+          multiplier *= 1 + factor * (peak - 1);
+          // S10 混沌奇点质数：预热期且质数 → ×1.5（仍单源，GDD 行号误标 Dim-2，实为 Dim-4 预热）
+          if (state.activeSynergies.has('S10') && this.isPrimeDimensionTrigger(state.number)) {
+            multiplier *= 1.5;
+          }
         }
         break;
       }
@@ -209,9 +305,18 @@ export class DimensionSystem {
    * 混沌维度：重投随机倍率（每60秒调用一次）
    */
   rollChaosMultiplier(state: GameState): number {
-    const min = 0.5;
-    const max = 5.0;
-    const rolled = min + Math.random() * (max - min);
+    // dim2_l3：混沌保底（最低 1.0x）；dim2_l1：混沌上限提升至 8x
+    const baseMin = state.activeMasteryEffects.has('dim2_l3') ? 1.0 : 0.5;
+    const baseMax = state.activeMasteryEffects.has('dim2_l1') ? 8.0 : 5.0;
+    // S4 反熵抬混沌：下限随反熵叠加层数提升
+    const floor = Math.max(baseMin, this.getAntiEntropyStacks(state) * 0.2);
+    const range = Math.max(0, baseMax - floor);
+    let rolled = floor + Math.random() * range;
+    // S3 质数混沌：重投时若数字为质数，以 magnitude 权重偏向 [3,5] 高值区间
+    if (state.activeSynergies.has('S3') && this.isPrimeDimensionTrigger(state.number)) {
+      const highRoll = 3 + Math.random() * 2; // [3,5]
+      rolled = rolled * (1 - 0.5) + highRoll * 0.5;
+    }
     state._chaosMultiplier = rolled;
     return rolled;
   }
@@ -223,9 +328,15 @@ export class DimensionSystem {
   checkSingularityBurst(state: GameState): boolean {
     if (state.currentDimension !== 4) return false;
     const logNum = state.number.log(10).toNumber();
-    if (logNum > 300 && !state._singularityBurstActive) {
+    // dim4_l4：e300+ 自动触发爆发；激活时将自动触发阈值下探至 e280 预热期（基线已 >300 自动触发）
+    const autoTrigger =
+      logNum > 300 ||
+      (state.activeMasteryEffects.has('dim4_l4') && logNum > 280);
+    if (autoTrigger && !state._singularityBurstActive) {
       state._singularityBurstActive = true;
-      state._singularityBurstEndsAt = Date.now() + 5000;  // 持续5秒
+      // dim4_l2：爆发持续时间 +5s（基础 5s）
+      const duration = 5000 + (state.activeMasteryEffects.has('dim4_l2') ? 5000 : 0);
+      state._singularityBurstEndsAt = Date.now() + duration;
       return true;
     }
     // 爆发结束
@@ -248,13 +359,16 @@ export class DimensionSystem {
 
     // 基础产出：每秒产出 = outputPerSec * 0.01 * deltaTime
     const baseGain = outputPerSec.mul(deltaTime * 0.01);
-    dimState.resource = dimState.resource.add(baseGain);
 
     // 精通度加速（每20点精通 +10% 资源获取）
     const master = this.getMastery(state, dimId);
     const masterBonus = 1 + Math.floor(master / 20) * 0.1;
-    // 应用精通加成到资源获取
-    dimState.resource = dimState.resource.add(baseGain.mul(masterBonus - 1));
+    // 机制型精通奖励：质核(dim1_l3)/熵晶(dim3_l3)/碎片(dim2_l4) 额外获取加成
+    let effectMult = 1;
+    if (dimId === 1 && state.activeMasteryEffects.has('dim1_l3')) effectMult = 1.20;
+    else if (dimId === 3 && state.activeMasteryEffects.has('dim3_l3')) effectMult = 1.30;
+    else if (dimId === 2 && state.activeMasteryEffects.has('dim2_l4')) effectMult = 1.25;
+    dimState.resource = dimState.resource.add(baseGain.mul(masterBonus).mul(effectMult));
   }
 
   // ---- 工具方法 ----
@@ -385,14 +499,16 @@ export class DimensionSystem {
    */
   checkChaosMultiplier(state: GameState): void {
     if (state.currentDimension !== 2) return;  // Dim-2 是混沌维度
-    
+
     const now = Date.now();
+    // dim2_l2：混沌持续时间 +30s（重投间隔由 60s → 90s）
+    const interval = 60000 + (state.activeMasteryEffects.has('dim2_l2') ? 30000 : 0);
     if (!state._chaosMultiplier || state._chaosMultiplier < 1) {
       // 首次初始化（0.5 ~ 5.0）
       state._chaosMultiplier = 0.5 + Math.random() * 4.5;
       state._lastDimensionSwitch = now;
-    } else if (now - state._lastDimensionSwitch > 60000) {
-      // 每60秒重投（0.5 ~ 5.0）
+    } else if (now - state._lastDimensionSwitch > interval) {
+      // 每 interval 秒重投（0.5 ~ 5.0）
       state._chaosMultiplier = 0.5 + Math.random() * 4.5;
       state._lastDimensionSwitch = now;
     }
@@ -419,8 +535,10 @@ export class DimensionSystem {
    */
   getChaosTimer(state: GameState): number {
     if (state.currentDimension !== 2) return 0;
+    // dim2_l2：混沌持续时间 +30s（与 checkChaosMultiplier 重投间隔一致）
+    const interval = 60000 + (state.activeMasteryEffects.has('dim2_l2') ? 30000 : 0);
     const elapsed = (Date.now() - state._lastDimensionSwitch) / 1000;
-    return Math.max(0, 60 - elapsed);
+    return Math.max(0, interval / 1000 - elapsed);
   }
 
   /**

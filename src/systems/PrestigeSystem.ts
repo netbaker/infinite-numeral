@@ -59,6 +59,8 @@ export class PrestigeSystem {
   executePrestige(state: GameState): GameState {
     const currentNumber = BigNumber.from(state.number);
     const gainedStardust = this.calculateStardustGain(currentNumber);
+    // dim0_l1 星尘获取 +10%（仅当已激活精通奖励）
+    const stardustGain = Math.floor(gainedStardust * (state.activeMasteryEffects.has('dim0_l1') ? 1.1 : 1));
 
     const newState = new GameState();
 
@@ -92,10 +94,15 @@ export class PrestigeSystem {
     // 韧性基因：Prestige 后起始数字 = 10^Lv（对齐 GDD §2.1 / Story 1.3.3）
     const resilienceStart = geneSystem.getResilienceStart(state);
     const prestigeStartNumber = startBonus + resilienceStart;
-    newState.number = new Decimal(prestigeStartNumber);
-    newState.totalNumber = new Decimal(prestigeStartNumber);
-    newState.stardust = state.stardust + gainedStardust;
-    newState.cumulativeStardust = state.cumulativeStardust + gainedStardust;
+    // dim3_l2：Prestige 后保留 10% 数字；S9 稳态三和弦：保留阈值额外 +10%
+    let numberRetainFrac = 0;
+    if (state.activeMasteryEffects.has('dim3_l2')) numberRetainFrac += 0.10;
+    if (state.activeSynergies.has('S9')) numberRetainFrac += 0.10;
+    const retainNumber = state.number.mul(numberRetainFrac);
+    newState.number = new Decimal(prestigeStartNumber).add(retainNumber);
+    newState.totalNumber = new Decimal(prestigeStartNumber).add(retainNumber);
+    newState.stardust = state.stardust + stardustGain;
+    newState.cumulativeStardust = state.cumulativeStardust + stardustGain;
     newState.prestigeCount = state.prestigeCount + 1;
 
     // 保留Prestige后状态
@@ -185,7 +192,22 @@ export class PrestigeSystem {
     newState._runSingularityBurst = state._runSingularityBurst;
     newState._runDarkEnergyEarned = state._runDarkEnergyEarned;
     // 本轮星尘累计（含本次重置获得）
-    newState._runStardustEarned = state._runStardustEarned + gainedStardust;
+    newState._runStardustEarned = state._runStardustEarned + stardustGain;
+
+    // Sprint 6 S5 反熵留痕：Prestige 后基础维度(0) 保留 25% 精通（其余重置为 0）。
+    // 同时补全 newState.dimensionStates（executePrestige 基于 new GameState()，否则维度状态会丢失）。
+    // 保留 unlocked 状态（奇点核心解锁不随 Prestige 清零），重置 resource/crystals/maxNumber。
+    const baseRetainFrac = state.activeSynergies.has('S5') ? 0.25 : 0;
+    for (const [id, ds] of state.dimensionStates) {
+      newState.dimensionStates.set(id, {
+        id: ds.id,
+        unlocked: ds.unlocked,
+        master: id === 0 ? ds.master * baseRetainFrac : 0,
+        resource: new Decimal(0),
+        crystals: 0,
+        maxNumber: new Decimal(0),
+      });
+    }
 
     return newState;
   }
