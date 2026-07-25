@@ -1,6 +1,5 @@
 import { ACHIEVEMENT_DEFS } from '@/core/Constants';
-import type { AchievementDef } from '@/types/game';
-import type { GameState } from '@/types/game';
+import type { AchievementDef, GameState, DimensionId } from '@/types/game';
 import Decimal from 'break_eternity.js';
 
 /**
@@ -88,6 +87,26 @@ export class AchievementSystem {
         if (!def.conditionTarget) return false;
         // 按 EPOCH_CONFIGS 顺序判断当前纪元是否已达到目标纪元或更高
         return this.epochAtLeast(state.currentEpoch, def.conditionTarget);
+      }
+
+      case 'dimension_mastery': {
+        // 全维 L3：遍历全部维度 master 均 >= conditionValue（如 60）
+        if (def.conditionParam?.allDimensions) {
+          for (let d = 0; d <= 4; d++) {
+            const ds = state.dimensionStates.get(d as DimensionId);
+            if (!ds || ds.master < (def.conditionValue ?? 100)) return false;
+          }
+          return true;
+        }
+        const dim = Number(def.conditionTarget ?? 0);
+        const ds = state.dimensionStates.get(dim as DimensionId);
+        if (!ds || ds.master < (def.conditionValue ?? 100)) return false;
+        // Killer tempo 限制：须在重置计数到达阈值【之前】达成（越过即永久失去此挑战）
+        if (def.conditionParam?.beforeTranscend != null
+            && state.transcendCount >= def.conditionParam.beforeTranscend) return false;
+        if (def.conditionParam?.beforeExpansion != null
+            && state.expansionCount >= def.conditionParam.beforeExpansion) return false;
+        return true;
       }
 
       default:

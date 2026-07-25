@@ -57,10 +57,11 @@ const GROUP_LABELS: Record<string, string> = {
   exploration: '🌌 探索',
   legend:      '✨ 传说',
   archive:     '🗂️ 档案',
+  dimension:   '🧭 维度精通',
 };
 
 const groups = computed(() => {
-  const order = ['growth', 'prestige', 'producer', 'exploration', 'legend', 'archive'];
+  const order = ['growth', 'prestige', 'producer', 'exploration', 'legend', 'archive', 'dimension'];
   return order.map((key) => ({
     key,
     label: GROUP_LABELS[key],

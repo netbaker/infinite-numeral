@@ -293,6 +293,11 @@ export const useGameStore = defineStore('game', () => {
     for (const def of collected) {
       enqueueCodexNotification(def);
     }
+    // Sprint 6b C③ P0：知识（category:'knowledge'）解锁可能揭示/放宽维度协同门槛
+    // → 立即幂等重算 activeSynergies（O(10)），确保门控协同即时生效，不延迟到下次 tick。
+    if (collected.some((d) => d.category === 'knowledge')) {
+      dimensionSystem.refreshDimensionBuilds(gameState.value);
+    }
     setTimeout(() => { narrationMessage.value = ''; }, duration);
   }
 
@@ -636,6 +641,18 @@ export const useGameStore = defineStore('game', () => {
     dimensionSystem.tickMastery(state, deltaTime, rawOutputPerSec.toDecimal());
     // 精通度可能增长 → 重算派生缓存（精通奖励 + 协同增益），供后续 multiplier / 宿主系统读取
     dimensionSystem.refreshDimensionBuilds(state);
+    // Sprint 6b B：维度精通变化后评估成就（含 dimension_mastery 分支）。
+    // 主 tick 此前未调用 checkAchievements（仅纪元变更处理函数 L751 调），导致 13 条维度成就永不点亮。
+    const newDimAchievements = achievementSystem.checkAchievements(state);
+    for (const def of newDimAchievements) {
+      if (!state.achievements.has(def.id)) {
+        state.achievements.set(def.id, { id: def.id, unlocked: false });
+      }
+      const achState = state.achievements.get(def.id)!;
+      achState.unlocked = true;
+      achState.unlockedAt = Date.now();
+      pushAchievement({ id: def.id, name: def.name, description: def.description, icon: def.icon });
+    }
     dimensionSystem.checkChaosMultiplier(state);
     // 奇点维度临界爆发标记（用于特殊成就 arch_singularity_burst，Story 2.1.2）
     if (dimensionSystem.checkSingularityBurst(state)) {

@@ -135,29 +135,41 @@
     <!-- 维度晶体商店（晶体消费出口） -->
     <div v-if="crystalShop.length > 0" class="crystal-shop">
       <h4>💎 维度晶体商店</h4>
-      <div
-        v-for="item in crystalShop"
-        :key="item.id"
-        class="shop-item"
-        :class="{ 'shop-item--owned': purchasedCrystalUpgrades.has(item.id) }"
-      >
-        <div class="shop-info">
-          <span class="shop-name">{{ item.name }}</span>
-          <span class="shop-desc">{{ item.description }}</span>
-        </div>
-        <button
-          class="btn-buy-crystal"
-          :disabled="!canBuyCrystal(item)"
-          @click="onBuyCrystal(item.id)"
-        >
-          <template v-if="purchasedCrystalUpgrades.has(item.id)">已拥有</template>
-          <template v-else>💎 {{ item.cost }}</template>
-        </button>
+      <!-- Sprint 6b A：累计进度行 + 就近余额（商店区常显，避免滚动脱钩） -->
+      <div class="shop-progress">
+        <span>已购 {{ purchasedCrystalUpgrades.size }}/{{ crystalShop.length }}</span>
+        <span class="shop-balance">💎 {{ store.dimensionCrystals }}</span>
       </div>
+      <!-- Sprint 6b A：已购满空态（取代三个灰按钮，避免"满级仍可点"歧义） -->
+      <div v-if="purchasedCrystalUpgrades.size >= crystalShop.length" class="shop-all-owned">
+        ✅ 维度共鸣已全部激活（永久 +{{ crystalShopMaxBonusPct }}% 全局）
+      </div>
+      <template v-else>
+        <div
+          v-for="item in crystalShop"
+          :key="item.id"
+          class="shop-item"
+          :class="{ 'shop-item--owned': purchasedCrystalUpgrades.has(item.id) }"
+        >
+          <div class="shop-info">
+            <span class="shop-name">{{ item.name }}</span>
+            <span class="shop-desc">{{ item.description }}</span>
+          </div>
+          <button
+            class="btn-buy-crystal"
+            :disabled="!canBuyCrystal(item)"
+            :title="crystalTip(item)"
+            @click="onBuyCrystal(item.id)"
+          >
+            <template v-if="purchasedCrystalUpgrades.has(item.id)">已拥有</template>
+            <template v-else>💎 {{ item.cost }}</template>
+          </button>
+        </div>
+      </template>
     </div>
     </template>
 
-    <!-- 跨维度协同增益（Sprint 6 Must ③） -->
+    <!-- 跨维度协同增益（Sprint 6 Must ③ + Sprint 6b C 知识门控） -->
     <div v-else class="synergy-tab">
       <p class="synergy-intro">
         当一组维度同时达到精通 Lv.{{ SYNERGY_MIN_LEVEL }}（mastery ≥ {{ SYNERGY_MIN_LEVEL * 20 }}）时解锁协同增益。
@@ -167,17 +179,33 @@
         v-for="syn in synergyList"
         :key="syn.id"
         class="synergy-card"
-        :class="{ 'synergy-active': syn.active, 'synergy-niche': syn.niche }"
+        :class="{ 'synergy-active': syn.active, 'synergy-niche': syn.niche, 'synergy-gate-locked': syn.gateLocked }"
       >
-        <div class="syn-head">
-          <span class="syn-id">{{ syn.id }}</span>
-          <span class="syn-name">{{ syn.name }}</span>
-          <span v-if="syn.niche" class="syn-niche" title="小众组合">★</span>
-          <span v-if="syn.active" class="syn-badge active">已激活</span>
-          <span v-else class="syn-badge locked">未激活</span>
-        </div>
-        <div class="syn-desc">{{ syn.desc }}</div>
-        <div class="syn-req">需求：{{ syn.reqDims.join(' + ') }} 均 ≥ Lv.{{ syn.minLevel }}</div>
+        <!-- Sprint 6b C①：知识门控未解锁 → 未知羁绊（不泄露 dims/desc） -->
+        <template v-if="syn.gateLocked">
+          <div class="syn-head">
+            <span class="syn-id">🔒</span>
+            <span class="syn-name">未知羁绊</span>
+          </div>
+          <div class="syn-desc">需先发现知识：{{ syn.gateName }}</div>
+        </template>
+        <template v-else>
+          <div class="syn-head">
+            <span class="syn-id">{{ syn.id }}</span>
+            <span class="syn-name">{{ syn.name }}</span>
+            <span v-if="syn.niche" class="syn-niche" title="小众组合">★</span>
+            <span v-if="syn.knowledgeGate" class="syn-badge revealed" title="知识揭示">✨ 已揭示</span>
+            <span v-if="syn.active" class="syn-badge active">已激活</span>
+            <span v-else class="syn-badge locked">未激活</span>
+          </div>
+          <div class="syn-desc">{{ syn.desc }}</div>
+          <!-- Sprint 6b C②：知识 flavor（纯 UI 叙事） -->
+          <div v-if="syn.knowledgeFlavor" class="syn-flavor">{{ syn.knowledgeFlavor }}</div>
+          <div class="syn-req">
+            需求：{{ syn.reqDims.join(' + ') }} 均 ≥ Lv.{{ syn.effMin }}
+            <span v-if="syn.easeActive" class="syn-ease">（知识放宽）</span>
+          </div>
+        </template>
       </div>
     </div>
   </div>
@@ -193,6 +221,8 @@ import {
   DIMENSION_SYNERGY_DEFS,
   DIMENSION_DEFS,
   SYNERGY_MIN_LEVEL,
+  CRYSTAL_SHOP_MAX_BONUS,
+  KNOWLEDGE_ENTRY_DEFS,
 } from '@/core/Constants';
 import type { DimensionCrystalShopItem } from '@/core/Constants';
 import type { DimensionPanelData, DimensionId } from '@/types/game';
@@ -227,11 +257,26 @@ const activeMastery = computed<Set<string>>(() => {
 const synergyList = computed(() => {
   void store.stateVersion;
   const active = store.gameState.activeSynergies;
-  return DIMENSION_SYNERGY_DEFS.map((def) => ({
-    ...def,
-    active: active.has(def.id),
-    reqDims: def.dims.map((d) => DIMENSION_DEFS[d]?.name ?? `Dim-${d}`),
-  }));
+  const codex = store.gameState.codexEntries;
+  return DIMENSION_SYNERGY_DEFS.map((def) => {
+    // Sprint 6b C①：知识门控未解锁 → 隐藏（不泄露 dims/desc）
+    const gateUnlocked = def.knowledgeGate ? codex.get(def.knowledgeGate)?.unlocked : true;
+    const gateLocked = !!def.knowledgeGate && !gateUnlocked;
+    // Sprint 6b C③：知识放宽门槛（仅 S10）激活时有效 minLevel 取 min(minLevel, 2)
+    const easeActive = !!def.knowledgeEase && gateUnlocked;
+    const effMin = easeActive ? Math.min(def.minLevel, 2) : def.minLevel;
+    return {
+      ...def,
+      active: active.has(def.id),
+      reqDims: def.dims.map((d) => DIMENSION_DEFS[d]?.name ?? `Dim-${d}`),
+      gateLocked,
+      gateName: def.knowledgeGate
+        ? (KNOWLEDGE_ENTRY_DEFS.find((k) => k.id === def.knowledgeGate)?.title ?? def.knowledgeGate)
+        : '',
+      easeActive,
+      effMin,
+    };
+  });
 });
 
 const panelData = computed<DimensionPanelData[]>(() =>
@@ -251,6 +296,8 @@ const isBursting = computed(() => store.isSingularityBursting);
 
 // 维度晶体商店
 const crystalShop = DIMENSION_CRYSTAL_SHOP;
+// Sprint 6b A：由商品数据派生的永久全局加成上限（= 0.85），供空态展示引用
+const crystalShopMaxBonusPct = Math.round(CRYSTAL_SHOP_MAX_BONUS * 100);
 const purchasedCrystalUpgrades = computed<Set<string>>(() => {
   void store.stateVersion;
   return store.gameState.purchasedCrystalUpgrades;
@@ -259,6 +306,13 @@ function canBuyCrystal(item: DimensionCrystalShopItem): boolean {
   void store.stateVersion;
   if (purchasedCrystalUpgrades.value.has(item.id)) return false;
   return store.gameState.dimensionCrystals.gte(item.cost);
+}
+// Sprint 6b A：不足/hover 提示（已购显示"已拥有"，余额不足显示"晶体不足"）
+function crystalTip(item: DimensionCrystalShopItem): string {
+  void store.stateVersion;
+  if (purchasedCrystalUpgrades.value.has(item.id)) return '已拥有';
+  if (!store.gameState.dimensionCrystals.gte(item.cost)) return '晶体不足';
+  return '';
 }
 
 const canSynthesize = computed(() => {
@@ -783,5 +837,55 @@ function onBuyCrystal(itemId: string) {
 }
 .synergy-active .syn-req {
   color: #aaccff;
+}
+
+/* ===== Sprint 6b A：晶体商店进度/余额/满购空态 ===== */
+.shop-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.85em;
+  color: #8888bb;
+  background: #1a1a2a;
+  border: 1px solid #333366;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+}
+.shop-balance {
+  color: #88ddff;
+  font-weight: bold;
+}
+.shop-all-owned {
+  text-align: center;
+  color: #66ffaa;
+  background: rgba(68, 170, 102, 0.12);
+  border: 1px solid #44aa66;
+  border-radius: 8px;
+  padding: 14px 12px;
+  font-size: 0.95em;
+}
+
+/* ===== Sprint 6b C：知识门控协同展示态 ===== */
+.synergy-card.synergy-gate-locked {
+  border-style: dashed;
+  opacity: 0.6;
+}
+.syn-badge.revealed {
+  background: rgba(212, 175, 55, 0.18);
+  color: var(--color-milestone, #d4af37);
+}
+.syn-flavor {
+  font-style: italic;
+  font-size: 0.8em;
+  color: #aaa9d0;
+  border-left: 2px solid rgba(212, 175, 55, 0.4);
+  padding-left: 8px;
+  margin-bottom: 6px;
+}
+.syn-ease {
+  color: #66ffaa;
+  font-weight: bold;
 }
 </style>

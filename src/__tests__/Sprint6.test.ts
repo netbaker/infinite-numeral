@@ -119,6 +119,7 @@ describe('Sprint 6 Must ③ 跨维度协同增益 — 10 条 perk 全布接', ()
 
   it('S8（三维度组合 dims[1,3,4]）需三维度均 ≥ L3 才点亮', () => {
     const s = stateWithMastery({ 1: 60, 3: 60 }); // dim4 缺失
+    s.codexEntries.set('know_trilogy', { id: 'know_trilogy', unlocked: true }); // Sprint 6b C：S8 知识门控已揭示
     dimensionSystem.evaluateSynergies(s);
     expect(s.activeSynergies.has('S8')).toBe(false);
     s.dimensionStates.set(4, dimState(4, { master: 60 }));
@@ -126,8 +127,12 @@ describe('Sprint 6 Must ③ 跨维度协同增益 — 10 条 perk 全布接', ()
     expect(s.activeSynergies.has('S8')).toBe(true);
   });
 
-  it('满精通（全维度 master=100）点亮全部 10 条协同', () => {
+  it('满精通（全维度 master=100）+ 揭示全部知识门控 → 点亮全部 10 条协同', () => {
     const s = stateWithMastery({ 0: 100, 1: 100, 2: 100, 3: 100, 4: 100 });
+    // Sprint 6b C：S7/S8/S10 为知识门控协同，揭示后（知识已发现）才点亮
+    for (const id of ['know_resonance', 'know_trilogy', 'know_chaos_sing']) {
+      s.codexEntries.set(id, { id, unlocked: true });
+    }
     dimensionSystem.evaluateSynergies(s);
     for (const d of DIMENSION_SYNERGY_DEFS) {
       expect(s.activeSynergies.has(d.id)).toBe(true);

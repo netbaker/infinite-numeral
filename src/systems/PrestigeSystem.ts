@@ -77,6 +77,9 @@ export class PrestigeSystem {
     newState._allGeneTypesEver = state._allGeneTypesEver; // 跨轮累积字段，随重置保留
     newState.numeralImprints = state.numeralImprints;
     newState.persona = state.persona;
+    // Sprint 6b 晶体商店持久化修复：已购升级(永久+85%)与晶体余额跨重置保留，否则加成静默丢失
+    newState.dimensionCrystals = new Decimal(state.dimensionCrystals);
+    newState.purchasedCrystalUpgrades = new Set(state.purchasedCrystalUpgrades);
 
     // 计算起步加成
     let startBonus = 0;

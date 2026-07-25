@@ -173,8 +173,17 @@ export class DimensionSystem {
   evaluateSynergies(state: GameState): void {
     state.activeSynergies.clear();
     for (const def of DIMENSION_SYNERGY_DEFS) {
+      // Sprint 6b C①：知识门控——未解锁对应知识词条时，协同保持隐藏且不激活
+      // （绝不 register 任何 MultiplierSystem 源，仅 toggle activeSynergies）
+      if (def.knowledgeGate && !state.codexEntries.get(def.knowledgeGate)?.unlocked) continue;
+      // Sprint 6b C③：知识放宽门槛（仅 S10 单例）——知识解锁后有效 minLevel 取 min(minLevel, 2)，
+      // 仅降门槛、绝不改 magnitude（全局协同贡献恒为 0，_consistency.md 上界不变）
+      const effMin = (def.knowledgeEase && def.knowledgeGate
+        && state.codexEntries.get(def.knowledgeGate)?.unlocked)
+        ? Math.min(def.minLevel, 2)
+        : def.minLevel;
       const allMet = def.dims.every(
-        (d) => this.getMasteryLevel(state, d as DimensionId) >= def.minLevel,
+        (d) => this.getMasteryLevel(state, d as DimensionId) >= effMin,
       );
       if (allMet) {
         state.activeSynergies.add(def.id);

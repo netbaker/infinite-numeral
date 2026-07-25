@@ -78,6 +78,9 @@ export class ExpansionSystem {
     newState._allGeneTypesEver = state._allGeneTypesEver;
     newState.numeralImprints = state.numeralImprints;
     newState.persona = state.persona;
+    // Sprint 6b 晶体商店持久化修复：已购升级(永久+85%)与晶体余额跨重置保留，否则加成静默丢失
+    newState.dimensionCrystals = new Decimal(state.dimensionCrystals);
+    newState.purchasedCrystalUpgrades = new Set(state.purchasedCrystalUpgrades);
 
     // Sprint 6 阻断修复：Expansion 按 GDD §4.1 重置 master 回退（master 清零），
     // 但保留 unlocked 结构（避免维度重新锁死）；resource/crystals/maxNumber 重置。

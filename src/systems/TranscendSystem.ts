@@ -72,6 +72,9 @@ export class TranscendSystem {
     newState._runCollapses = state._runCollapses;
     newState.numeralImprints = state.numeralImprints;
     newState.persona = state.persona;
+    // Sprint 6b 晶体商店持久化修复：已购升级(永久+85%)与晶体余额跨重置保留，否则加成静默丢失
+    newState.dimensionCrystals = new Decimal(state.dimensionCrystals);
+    newState.purchasedCrystalUpgrades = new Set(state.purchasedCrystalUpgrades);
 
     // Sprint 6 阻断修复：Transcend 不重置 master（GDD §4.1 仅列 prestige/expansion 重置 master），
     // 故 master 完整保留；resource/crystals/maxNumber 重置为新轮起点。transcend 不走 S5（S5 为 prestige 专属）。

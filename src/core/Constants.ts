@@ -883,6 +883,153 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
     group: 'archive',
     rewardSingularity: 10,
   },
+
+  // —— 维度精通里程碑（Sprint 6 Should ④，group:'dimension'，纯徽章零加成零印记）——
+  {
+    id: 'dim_milestone_0_3',
+    name: '基础·熟手',
+    description: '基础维度精通达到 Lv.3（master ≥ 60）',
+    hint: '深耕基础维度……',
+    icon: '🧱',
+    conditionType: 'dimension_mastery',
+    conditionValue: 60,
+    conditionTarget: '0',
+    group: 'dimension',
+  },
+  {
+    id: 'dim_milestone_1_3',
+    name: '质数·熟手',
+    description: '质数维度精通达到 Lv.3（master ≥ 60）',
+    hint: '深耕质数维度……',
+    icon: '🔢',
+    conditionType: 'dimension_mastery',
+    conditionValue: 60,
+    conditionTarget: '1',
+    group: 'dimension',
+  },
+  {
+    id: 'dim_milestone_2_3',
+    name: '混沌·熟手',
+    description: '混沌维度精通达到 Lv.3（master ≥ 60）',
+    hint: '深耕混沌维度……',
+    icon: '🎲',
+    conditionType: 'dimension_mastery',
+    conditionValue: 60,
+    conditionTarget: '2',
+    group: 'dimension',
+  },
+  {
+    id: 'dim_milestone_3_3',
+    name: '反熵·熟手',
+    description: '反熵维度精通达到 Lv.3（master ≥ 60）',
+    hint: '深耕反熵维度……',
+    icon: '🔄',
+    conditionType: 'dimension_mastery',
+    conditionValue: 60,
+    conditionTarget: '3',
+    group: 'dimension',
+  },
+  {
+    id: 'dim_milestone_4_3',
+    name: '奇点·熟手',
+    description: '奇点维度精通达到 Lv.3（master ≥ 60）',
+    hint: '深耕奇点维度……',
+    icon: '🕳️',
+    conditionType: 'dimension_mastery',
+    conditionValue: 60,
+    conditionTarget: '4',
+    group: 'dimension',
+  },
+  {
+    id: 'dim_milestone_0_5',
+    name: '基础·宗师',
+    description: '基础维度精通达到 Lv.5（master ≥ 100）',
+    hint: '把基础维度推到极致……',
+    icon: '🧱',
+    conditionType: 'dimension_mastery',
+    conditionValue: 100,
+    conditionTarget: '0',
+    group: 'dimension',
+  },
+  {
+    id: 'dim_milestone_1_5',
+    name: '质数·宗师',
+    description: '质数维度精通达到 Lv.5（master ≥ 100）',
+    hint: '把质数维度推到极致……',
+    icon: '🔢',
+    conditionType: 'dimension_mastery',
+    conditionValue: 100,
+    conditionTarget: '1',
+    group: 'dimension',
+  },
+  {
+    id: 'dim_milestone_2_5',
+    name: '混沌·宗师',
+    description: '混沌维度精通达到 Lv.5（master ≥ 100）',
+    hint: '把混沌维度推到极致……',
+    icon: '🎲',
+    conditionType: 'dimension_mastery',
+    conditionValue: 100,
+    conditionTarget: '2',
+    group: 'dimension',
+  },
+  {
+    id: 'dim_milestone_3_5',
+    name: '反熵·宗师',
+    description: '反熵维度精通达到 Lv.5（master ≥ 100）',
+    hint: '把反熵维度推到极致……',
+    icon: '🔄',
+    conditionType: 'dimension_mastery',
+    conditionValue: 100,
+    conditionTarget: '3',
+    group: 'dimension',
+  },
+  {
+    id: 'dim_milestone_4_5',
+    name: '奇点·宗师',
+    description: '奇点维度精通达到 Lv.5（master ≥ 100）',
+    hint: '把奇点维度推到极致……',
+    icon: '🕳️',
+    conditionType: 'dimension_mastery',
+    conditionValue: 100,
+    conditionTarget: '4',
+    group: 'dimension',
+  },
+  {
+    id: 'dim_milestone_all_3',
+    name: '五维均衡',
+    description: '五个维度精通均达到 Lv.3（master ≥ 60）',
+    hint: '让五维共同成长……',
+    icon: '🧭',
+    conditionType: 'dimension_mastery',
+    conditionValue: 60,
+    conditionParam: { allDimensions: true },
+    group: 'dimension',
+  },
+  {
+    id: 'dim_challenge_prime_fast',
+    name: '质数速成',
+    description: '在第 3 次超越之前把质数维度精通推到 Lv.4（master ≥ 80）',
+    hint: '抢在超越之前专精质数维度',
+    icon: '⚡',
+    conditionType: 'dimension_mastery',
+    conditionValue: 80,
+    conditionTarget: '1',
+    conditionParam: { beforeTranscend: 3 },
+    group: 'dimension',
+  },
+  {
+    id: 'dim_challenge_sing_blitz',
+    name: '奇点突袭',
+    description: '在第 2 次膨胀之前把奇点维度精通推到 Lv.3（master ≥ 60）',
+    hint: '抢在膨胀之前专精奇点维度',
+    icon: '🌟',
+    conditionType: 'dimension_mastery',
+    conditionValue: 60,
+    conditionTarget: '4',
+    conditionParam: { beforeExpansion: 2 },
+    group: 'dimension',
+  },
 ];
 
 // ============================================================
@@ -1202,6 +1349,57 @@ export const KNOWLEDGE_ENTRY_DEFS: CodexEntryDef[] = [
     content: [
       'IEEE 754 双精度浮点数的最大值约为 1.8×10³⁰⁸，是计算机能直接表示的最大有限数字。',
       '一旦越过 e308，计算机也会"溢出"——这是数字在机器世界里能抵达的绝对天花板。',
+    ],
+  },
+
+  // —— Sprint 6b C 知识点跨系统联动（category:'knowledge'，锚定真实 DIMENSION_SWITCH_NARRATIVES 文本）——
+  // narrativeTriggers 必须逐字符等于 gameStore.switchDimension → showNarration 实际触发的文本，
+  // 否则条目无法经 CodexSystem.onNarrativeTriggered 收录（不得编造 narration）。
+  {
+    id: 'know_resonance',
+    title: '基础与奇点的回响',
+    category: 'knowledge',
+    icon: '🔗',
+    unlockLog10: 0,
+    // 真实锚点：切换至基础维度 / 奇点维度的叙事文本（DIMENSION_SWITCH_NARRATIVES[0]/[4]）
+    narrativeTriggers: ['返回基础维度。一切归于平静。', '进入奇点维度。深渊在你脚下张开。'],
+    content: [
+      '基础维度的每一次点击，都在为奇点积蓄力量——最朴素与最深渊，原是同一股脉动的两端。',
+      '当你在两种极致之间往返，协同的羁绊便自行显形。',
+    ],
+  },
+  {
+    id: 'know_trilogy',
+    title: '三位一体的临界',
+    category: 'knowledge',
+    icon: '🔱',
+    unlockLog10: 0,
+    // 真实锚点：切换至质数 / 反熵 / 奇点维度的叙事文本（DIMENSION_SWITCH_NARRATIVES[1]/[3]/[4]）
+    narrativeTriggers: [
+      '进入质数维度。质数的力量在你指尖跃动。',
+      '进入反熵维度。你逆流向而行。',
+      '进入奇点维度。深渊在你脚下张开。',
+    ],
+    content: [
+      '质数、反熵、奇点——当三者在同一刻共振，临界处的爆发便被改写。',
+      '这不是三者的相加，而是它们在边界上的相互成全。',
+    ],
+  },
+  {
+    id: 'know_chaos_sing',
+    title: '混沌中的质数锋芒',
+    category: 'knowledge',
+    icon: '🌀',
+    unlockLog10: 0,
+    // 真实锚点：切换至混沌 / 奇点 / 质数维度的叙事文本（DIMENSION_SWITCH_NARRATIVES[2]/[4]/[1]）
+    narrativeTriggers: [
+      '进入混沌维度。骰子的声音在远处回响……',
+      '进入奇点维度。深渊在你脚下张开。',
+      '进入质数维度。质数的力量在你指尖跃动。',
+    ],
+    content: [
+      '混沌的预热期里，质数仍藏着锋芒——哪怕尚未抵达 Lv.3，羁绊也愿提前为你松动门槛。',
+      '知识不是数值，而是让世界更早向你敞开的一把钥匙。',
     ],
   },
 ];
@@ -1869,6 +2067,11 @@ export const DIMENSION_CRYSTAL_SHOP: DimensionCrystalShopItem[] = [
   },
 ];
 
+/** Sprint 6b A：晶体商店永久全局加成上限（冻结：S6 不再新增商品）。
+ * = Σ DIMENSION_CRYSTAL_SHOP[].value = 0.10 + 0.25 + 0.50 = 0.85。
+ * 由商品数据派生，避免魔法数；UI 与验收测试引用此常量。 */
+export const CRYSTAL_SHOP_MAX_BONUS: number = DIMENSION_CRYSTAL_SHOP.reduce((s, i) => s + i.value, 0);
+
 // ============================================================
 // 维度系统配置（v2.0 核心机制）
 // ============================================================
@@ -2079,6 +2282,13 @@ export interface DimensionSynergyDef {
   magnitude: number;
   /** 小众组合标记（支柱三 build 多样性） */
   niche?: boolean;
+  // ---- Sprint 6b C 知识点跨系统联动（可选，均不改变 magnitude / 不注册乘源）----
+  /** 方向①：揭示门控——需先解锁的 Codex 知识词条 id；未解锁时本协同隐藏且不激活 */
+  knowledgeGate?: string;
+  /** 方向②：知识解锁后在面板展示的叙事 flavor（纯 UI，零数值） */
+  knowledgeFlavor?: string;
+  /** 方向③：知识解锁后生效门槛由 minLevel 放宽至 min(minLevel,2)（仅降门槛、绝不改 magnitude）；单例仅 S10 */
+  knowledgeEase?: boolean;
 }
 
 /** 协同解锁所需每维精通等级（默认 3 = mastery ≥ 60） */
@@ -2095,10 +2305,10 @@ export const DIMENSION_SYNERGY_DEFS: DimensionSynergyDef[] = [
   { id: 'S4', name: '反熵抬混沌', dims: [2, 3], minLevel: SYNERGY_MIN_LEVEL, effect: 'chaos_floor_scale', magnitude: 0.2, desc: '混沌下限随反熵层数提升' },
   { id: 'S5', name: '反熵留痕', dims: [0, 3], minLevel: SYNERGY_MIN_LEVEL, effect: 'retain_base_mastery', magnitude: 0.25, desc: 'Prestige 后额外保留基础维度精通' },
   { id: 'S6', name: '奇点质爆', dims: [1, 4], minLevel: SYNERGY_MIN_LEVEL, effect: 'burst_prime_bonus', magnitude: 2, desc: '奇点爆发期间质数额外 ×2' },
-  { id: 'S7', name: '基础充能', dims: [0, 4], minLevel: SYNERGY_MIN_LEVEL, effect: 'click_charge_burst', magnitude: 0.02, desc: '基础维度点击为奇点充能', niche: true },
-  { id: 'S8', name: '三位一体', dims: [1, 3, 4], minLevel: SYNERGY_MIN_LEVEL, effect: 'trinity_burst', magnitude: 3, desc: '反熵维度触发奇点爆发且质数 → 爆发 ×3' },
+  { id: 'S7', name: '基础充能', dims: [0, 4], minLevel: SYNERGY_MIN_LEVEL, effect: 'click_charge_burst', magnitude: 0.02, desc: '基础维度点击为奇点充能', niche: true, knowledgeGate: 'know_resonance', knowledgeFlavor: '基础维度的每一次点击，都在为奇点积蓄力量。' },
+  { id: 'S8', name: '三位一体', dims: [1, 3, 4], minLevel: SYNERGY_MIN_LEVEL, effect: 'trinity_burst', magnitude: 3, desc: '反熵维度触发奇点爆发且质数 → 爆发 ×3', knowledgeGate: 'know_trilogy', knowledgeFlavor: '质数、反熵、奇点——三位一体，在临界处共鸣。' },
   { id: 'S9', name: '稳态三和弦', dims: [0, 2, 3], minLevel: SYNERGY_MIN_LEVEL, effect: 'steady_triad', magnitude: 0, desc: 'Prestige保留+10%、混沌下限+0.5、熵增×0.9 三安全网叠加' },
-  { id: 'S10', name: '混沌奇点质数', dims: [2, 4, 1], minLevel: SYNERGY_MIN_LEVEL, effect: 'chaos_sing_prime', magnitude: 1.5, desc: '混沌维度预热期质数额外 ×1.5', niche: true },
+  { id: 'S10', name: '混沌奇点质数', dims: [2, 4, 1], minLevel: SYNERGY_MIN_LEVEL, effect: 'chaos_sing_prime', magnitude: 1.5, desc: '混沌维度预热期质数额外 ×1.5', niche: true, knowledgeGate: 'know_chaos_sing', knowledgeFlavor: '混沌、奇点、质数交织，预热期亦藏锋芒。', knowledgeEase: true },
 ];
 
 // ============================================================

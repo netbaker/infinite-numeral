@@ -496,7 +496,8 @@ export type AchievementConditionType =
   | 'click_count'         // 总点击次数 >= value
   | 'epoch_reach'         // 到达指定纪元（target=epochId）
   | 'stardust_total'      // 累计星尘 >= value
-  | 'singularity_total';  // 奇点数量 >= value
+  | 'singularity_total'   // 奇点数量 >= value
+  | 'dimension_mastery';  // 维度精通度 >= value（target=dimId）
 
 /** 成就静态定义 */
 export interface AchievementDef {
@@ -517,7 +518,16 @@ export interface AchievementDef {
   /** 条件目标（producer_level / epoch_reach 时使用） */
   conditionTarget?: string;
   /** 分组标签 */
-  group: 'growth' | 'prestige' | 'producer' | 'exploration' | 'legend' | 'archive';
+  group: 'growth' | 'prestige' | 'producer' | 'exploration' | 'legend' | 'archive' | 'dimension';
+  /** 维度精通挑战附加参数（conditionType='dimension_mastery' 专用，Sprint 6b Should ④） */
+  conditionParam?: {
+    /** 全维 master 均 >= conditionValue（如全维 Lv.3） */
+    allDimensions?: boolean;
+    /** Killer tempo：须在第 N 次超越【之前】达成（超出阈值即永久失去） */
+    beforeTranscend?: number;
+    /** Killer tempo：须在第 N 次膨胀【之前】达成（超出阈值即永久失去） */
+    beforeExpansion?: number;
+  };
   /** 特殊成就奖励（奇点核心数量）；普通成就无此字段 */
   rewardSingularity?: number;
 }
