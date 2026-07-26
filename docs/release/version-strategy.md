@@ -52,7 +52,7 @@
 | B | `0.2.0` | 保守，仅从 `0.1.0` 小幅 bump | 低估内容深度，玩家可能困惑"为何 0.2 却有维度/基因" |
 | C | `2.1.0` | 延续内部 "v2.0" 叙事 | 须跳过陈旧 `v2.0.0` tag（避免复用）；与团队外部认知需对齐 |
 
-> ⚠️ **最终版本号是人工决策（LEAD 签字）**。以上为发布负责人建议，不在本角色单方面拍板。确定后回填 `P0-1` / `B4` 并同步 `build.gradle`。
+> ✅ **最终版本号已决策（LEAD 拍板 2026-07-27）：`1.0.0-beta.1`（versionCode 1000001）**。已回填 `P0-1` / `B4` 并同步 `build.gradle`。仅签名密钥材料（B1）仍为人工阻塞项，见 `release-checklist.md`。
 
 ---
 
@@ -81,7 +81,7 @@ betaOffset ∈ [0, 99]：正式版 = 0；beta.N = N（1..99）
 
 - **Play 商店要求**：同一 `applicationId` 的 `versionCode` 必须严格递增且全局唯一。公式保证跨主版本仍有序。
 - **侧载场景**：不强制，但保持单调递增是良好卫生。
-- 当前 `build.gradle` 的 `versionCode 2` 为遗留值，发布前须按公式重设。
+- 当前 `build.gradle` 已回填为 `versionCode 1000001` / `versionName "1.0.0-beta.1"`（2026-07-27，公式 `1.0.0-beta.1` → 1000001）。
 
 > 简化备选：若团队不愿用公式，可采用"每次发布人工 +1"的单调整数（如从 `1000001` 起）。公式仅作推荐规范。
 
@@ -113,6 +113,6 @@ betaOffset ∈ [0, 99]：正式版 = 0；beta.N = N（1..99）
 
 ## 7. 待 LEAD 决策项（阻塞/签字）
 
-- [ ] ⛔ 最终版本号（推荐 `1.0.0-beta.1`，或备选 B/C）
-- [ ] ⛔ 回填 `build.gradle` 的 `versionName`/`versionCode`（按 §4 公式）
+- [x] ✅ 已决策：最终版本号 = `1.0.0-beta.1`（LEAD 拍板 2026-07-27；备选 B/C 未采用）
+- [x] ✅ 已回填：`build.gradle` → `versionName "1.0.0-beta.1"` / `versionCode 1000001`（按 §4 公式）
 - [ ] 是否启用 Play App Signing（影响未来密钥策略，见 `signing-and-release-ci.md` §A）

@@ -11,7 +11,7 @@
 
 | # | 任务 | 负责人 | 命令/动作 | 产出 | 门控 |
 |---|------|--------|-----------|------|------|
-| P0-1 | 确认发布版本号与 `versionCode` | LEAD + RL | 见 `version-strategy.md`，在 `android/app/build.gradle` 写入 `versionName`/`versionCode` | 单一版本真相源 | ⛔ 未定版本号不得构建 |
+| P0-1 | 确认发布版本号与 `versionCode` | LEAD + RL | 见 `version-strategy.md`，在 `android/app/build.gradle` 写入 `versionName`/`versionCode` | 单一版本真相源 | ✅ 已定 1.0.0-beta.1 (versionCode 1000001) |
 | P0-2 | 准备 GitHub Secrets（签名密钥材料） | LEAD（密钥归属人） | 见 `signing-and-release-ci.md` §A，将 `KEYSTORE_BASE64`/`KEY_ALIAS`/`KEY_PASSWORD`/`KEYSTORE_PASSWORD` 存入仓库 Secrets | 4 个 Secret 就位 | ⛔ 缺失任一 = 阻塞 |
 | P0-3 | 确认"静音发布"预期 | LEAD | 确认本次为**零音频**发布（audio-polish 已确认策略文档，无回归风险） | 决策记录 | 非阻塞（确认即可） |
 | P0-4 | 视觉 P0 债（C1）纳入 backlog | LEAD + ART | 将 300+ 硬编码色板 / 无 `prefers-reduced-motion` / 无 ARIA 列入后续 fast-follow | backlog 条目 | 非阻塞 |
@@ -25,7 +25,7 @@
 | B1 | 自动化测试全绿 | ENG + QA | `npm test` | 316 passed / 0 failed（基线）；`vue-tsc --noEmit` 0 errors | ⛔ |
 | B2 | Web 构建通过 | ENG | `npm run build` | `dist/` 产物 | ⛔ |
 | B3 | 准备玩家发行说明 | RL | 维护 `docs/release/changelog.md`（已就绪，作为 GitHub Release 正文） | changelog.md | 非阻塞（建议） |
-| B4 | 确认 `build.gradle` 版本号已同步 | ENG | 核对 `versionName`/`versionCode` 与 P0-1 决策一致 | 版本号一致 | ⛔ |
+| B4 | 确认 `build.gradle` 版本号已同步 | ENG | 核对 `versionName`/`versionCode` 与 P0-1 决策一致 | 版本号一致 | ✅ 已同步 1.0.0-beta.1 / 1000001 |
 | B5 | 确认 CI Debug 流程仍绿（对照基线） | ENG | 推送 master 触发 `build-apk.yml`，或本地 `npm ci && npm run build && npm test` | Debug APK  artifact | 非阻塞（保险） |
 
 > 注：`build-apk.yml`（ENG 加固版）已含 `npm test` 门禁 + Gradle 缓存，**不改动**。
@@ -98,10 +98,10 @@
 | 条件 | 状态 | 归属 |
 |------|------|------|
 | 测试/类型/构建全绿（B1–B2） | ⏳ 待触发 | ENG/QA |
-| 版本号与 `build.gradle` 一致（P0-1/B4） | ⏳ 待定 | LEAD/ENG |
+| 版本号与 `build.gradle` 一致（P0-1/B4） | ✅ 已定 1.0.0-beta.1 (versionCode 1000001) | LEAD/ENG |
 | 4 个签名 Secret 就位（S2–S3） | ⛔ **阻塞** | LEAD |
 | 静音发布确认（P0-3） | ⏳ 待确认 | LEAD |
 | 真机冒烟 + 存档兼容通过（T2–T3） | ⏳ 待内测 | QA |
 | 发布签字（D1） | ⛔ **人工审批** | LEAD |
 
-> **当前唯一硬阻塞项 = 签名密钥材料（LEAD 提供）**。其余在 LEAD 拍板版本号后即可并行推进。
+> **当前唯一硬阻塞项 = 签名密钥材料（LEAD 提供）**。版本号已定为 `1.0.0-beta.1`（versionCode 1000001），可并行推进签名准备（P0-2 / S1–S3）。
