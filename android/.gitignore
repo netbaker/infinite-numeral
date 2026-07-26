@@ -53,9 +53,11 @@ captures/
 .idea/navEditor.xml
 
 # Keystore files
-# Uncomment the following lines if you do not want to check your keystore files in.
-#*.jks
-#*.keystore
+# 签名密钥绝不可提交（signing secrets）。取消注释以加防御纵深：
+# release-android.yml 运行时写入 android/release-keystore.jks，CI 已 rm + ephemeral runner 兜底，此处再防误提交。
+# 注意：已跟踪的 debug.keystore 不受 gitignore 影响，仍正常纳入版本控制。
+*.jks
+*.keystore
 
 # External native build folder generated in Android Studio 2.2 and later
 .externalNativeBuild

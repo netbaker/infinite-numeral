@@ -31,8 +31,8 @@ jobs:
 
       - name: Install Android build tools
         run: |
-          sdkmanager "platforms;android-34" \
-                    "build-tools;34.0.0" \
+          sdkmanager "platforms;android-36" \
+                    "build-tools;35.0.0" \
                     "platform-tools"
 
       - name: Install npm dependencies
