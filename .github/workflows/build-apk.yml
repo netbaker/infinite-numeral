@@ -43,14 +43,31 @@ jobs:
       - name: Build web app
         run: npm run build
 
+      # Phase 6 打磨（eng-polish）：测试门禁——npm test 失败则 CI 失败
+      - name: Run tests
+        run: npm test
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+
       - name: Sync Capacitor
         run: npx cap sync android
+
+      # Gradle 缓存：加速 assembleDebug（基于 android/**/*.gradle* 与 gradle-wrapper.properties 的 hash）
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('android/**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       - name: Build Debug APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace --info 2>&1 | tee ../build.log
+          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee ../build.log
         timeout-minutes: 10
 
       - name: Upload build log (on failure)

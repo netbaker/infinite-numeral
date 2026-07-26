@@ -314,7 +314,6 @@ export class MultiplierSystem {
    * @param state 当前游戏状态
    */
   registerDimensionMultiplier(state: GameState): void {
-    this.unregister('dimension_global');
     const dimMult = dimensionSystem.calculateDimensionMultiplier(state);
     // 全局型精通奖励折叠进唯一 dimension 源：dim0_l5 等 global 型 magnitude 之和，
     // 受 MASTERY_GLOBAL_MULT_CAP（0.25）夹紧 → 维度源因精通最多 ×1.25。无新 source。
@@ -322,12 +321,20 @@ export class MultiplierSystem {
       Math.max(dimensionSystem.getMasteryGlobalMultiplierDelta(state), 0),
       MASTERY_GLOBAL_MULT_CAP,
     );
-    this.register({
-      id: 'dimension_global',
-      source: 'dimension',
-      target: '',
-      value: dimMult * (1 + masteryDelta),
-    });
+    // Phase 6 打磨（性能）：每 tick 调用，原 unregister + register 会对 _entries
+    // 做两次全量 filter + 重分配。'dimension_global' 为唯一固定条目，
+    // 改为原地复用（multiply 顺序无关 → 数组顺序不影响结果），消除每 tick 数组重分配。
+    const existing = this._entries.find((e) => e.id === 'dimension_global');
+    if (existing) {
+      existing.value = dimMult * (1 + masteryDelta);
+    } else {
+      this._entries.push({
+        id: 'dimension_global',
+        source: 'dimension',
+        target: '',
+        value: dimMult * (1 + masteryDelta),
+      });
+    }
   }
 
   /**

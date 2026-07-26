@@ -145,6 +145,23 @@ export class ProducerSystem {
     let totalOutput = BigNumber.zero();
     const now = Date.now();
 
+    // Phase 6 打磨（性能）：全局倍率对所有生产者相同，逐生产者倍率可在遍历
+    // 一次 entries 后 O(1) 取得，避免原实现每个生产者都 O(entries) 遍历 _entries。
+    // 语义与原 getGlobalMultiplier / getProducerMultiplier 完全一致：
+    //   global = product{e.target === ''} e.value；
+    //   producerMap[id] = product{e.target === id} e.value（精确匹配 producerId；
+    //   'all_producers' 由因子系统产出，但原 getProducerMultiplier 从不匹配它，故同样忽略）。
+    const entries = multiplierSystem.getEntries();
+    let globalMul = 1;
+    const producerMul = new Map<string, number>();
+    for (const e of entries) {
+      if (e.target === '') {
+        globalMul *= e.value;
+      } else if (e.target !== 'all_producers') {
+        producerMul.set(e.target, (producerMul.get(e.target) ?? 1) * e.value);
+      }
+    }
+
     for (const config of PRODUCER_CONFIGS) {
       const producerState = state.producers.get(config.id);
       if (!producerState || producerState.level === 0) {
@@ -159,11 +176,10 @@ export class ProducerSystem {
 
       const level = BigNumber.from(producerState.level);
       const baseOutput = BigNumber.from(config.baseOutput);
-      const producerMultiplier = multiplierSystem.getProducerMultiplier(config.id);
-      const globalMultiplier = multiplierSystem.getGlobalMultiplier();
+      const producerMultiplier = producerMul.get(config.id) ?? 1;
 
       // 产出 = level × baseOutput × producerMultiplier × globalMultiplier
-      const output = level.mul(baseOutput).mul(producerMultiplier).mul(globalMultiplier);
+      const output = level.mul(baseOutput).mul(producerMultiplier).mul(globalMul);
       totalOutput = totalOutput.add(output);
     }
 

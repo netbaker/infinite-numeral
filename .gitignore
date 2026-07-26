@@ -69,3 +69,10 @@ ai-weekly-news/
 
 # Memory/working files
 .workbuddy/
+
+# ===== Phase 6 打磨 · 技术债（eng-polish）=====
+# 本地 / 松散构建产物（根级松散 apk、dev-dist）
+dev-dist/
+*.apk
+# Vite 缓存（vite.config.ts.timestamp-*.mjs 由 Vite 在仓库根生成）
+vite.config.ts.timestamp-*.mjs

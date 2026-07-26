@@ -756,8 +756,8 @@ export const useGameStore = defineStore('game', () => {
       }
     }
 
-    // 6. 更新显示字符串
-    updateDisplayStrings(state);
+    // 6. 更新显示字符串（传入本 tick 已算出的 rawOutputPerSec，避免重复计算 calculateTotalOutput）
+    updateDisplayStrings(state, rawOutputPerSec);
 
     // 7. 检查成就
     const newAchievements = achievementSystem.checkAchievements(state);
@@ -1684,15 +1684,18 @@ export const useGameStore = defineStore('game', () => {
 
   /**
    * 更新显示字符串
+   *
+   * @param precomputedOutputPerSec 可选：主循环已算出的原始产出/秒。
+   *   传入可避免每 tick 在 updateDisplayStrings 内重复计算 calculateTotalOutput
+   *   （Phase 6 打磨性能优化）。不传则保持原行为（独立重算）。
    */
-  function updateDisplayStrings(state: GameState): void {
+  function updateDisplayStrings(state: GameState, precomputedOutputPerSec?: BigNumber): void {
     const skin = state.activeNumberSkin;
     displayNumber.value = format(BigNumber.from(state.number), skin);
     displayTotalNumber.value = format(BigNumber.from(state.totalNumber), skin);
-    displayOutputPerSec.value = format(
-      producerSystem.calculateTotalOutput(state, multiplierSystem),
-      skin,
-    );
+    const outputPerSec =
+      precomputedOutputPerSec ?? producerSystem.calculateTotalOutput(state, multiplierSystem);
+    displayOutputPerSec.value = format(outputPerSec, skin);
   }
 
   /**

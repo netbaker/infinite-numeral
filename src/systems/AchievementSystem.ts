@@ -1,6 +1,5 @@
 import { ACHIEVEMENT_DEFS } from '@/core/Constants';
 import type { AchievementDef, GameState, DimensionId } from '@/types/game';
-import Decimal from 'break_eternity.js';
 
 /**
  * 成就系统
@@ -54,10 +53,12 @@ export class AchievementSystem {
   private evaluate(def: AchievementDef, state: GameState): boolean {
     switch (def.conditionType) {
       case 'number_reach':
-        return new Decimal(state.number).gte(new Decimal(def.conditionValue));
+        // Phase 6 打磨（性能）：state.number 已是 Decimal，无需 new Decimal 复制；
+        // gte 直接接受 number 字面量，省去每条件两次 Decimal 分配。
+        return state.number.gte(def.conditionValue);
 
       case 'total_number_reach':
-        return new Decimal(state.totalNumber).gte(new Decimal(def.conditionValue));
+        return state.totalNumber.gte(def.conditionValue);
 
       case 'prestige_count':
         return state.prestigeCount >= def.conditionValue;
