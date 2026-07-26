@@ -1,0 +1,150 @@
+name: Release Android (Signed)
+
+# 发布负责人（release-polish / 路远行）创建的签名 Release 工作流。
+# 触发：打 tag v*（自动发版）或手动 workflow_dispatch（含 AAB 开关）。
+# 与现存 build-apk.yml（Debug）并存，互不修改。
+# 签名密钥通过 GitHub Secrets 注入，绝不进仓库。
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      build_aab:
+        description: '同时构建 AAB（用于未来 Google Play 内部测试轨道 / 内部应用共享）'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write   # 用于创建 GitHub Release（softprops/action-gh-release）
+
+jobs:
+  release-android:
+    name: Build & sign Android Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      # compileSdk/targetSdk = 36 (android/variables.gradle)；安装对应 platform。
+      # build-tools;35.0.0 与 build-apk.yml 保持一致，消除两 workflow 环境差异（eng-polish 已对齐）。
+      - name: Install Android build tools
+        run: |
+          sdkmanager "platforms;android-36" \
+                    "build-tools;35.0.0" \
+                    "platform-tools"
+
+      - name: Install npm dependencies
+        run: npm ci --prefer-offline --no-audit --no-fund
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+
+      # 构建前门禁：vue-tsc 类型检查 + vite 构建
+      - name: Build web app
+        run: npm run build
+
+      # 发布门禁：测试不过则 CI 失败，不产出签名包
+      - name: Run tests
+        run: npm test
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+
+      # 还原签名密钥（来自 GitHub Secrets，运行时存在，绝不进仓库）
+      - name: Decode signing keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/release-keystore.jks
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('android/**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      # 通过 AGP 原生命令行参数注入签名，无需修改 build.gradle
+      - name: Build signed Release APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=release-keystore.jks \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD" \
+            --no-daemon --stacktrace
+        env:
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+
+      - name: Build signed Release AAB (optional)
+        if: ${{ github.event.inputs.build_aab == 'true' }}
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew bundleRelease \
+            -Pandroid.injected.signing.store.file=release-keystore.jks \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD" \
+            --no-daemon --stacktrace
+        env:
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+
+      - name: Upload signed APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: infinite-numeral-android-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 90
+
+      - name: Upload signed AAB
+        if: ${{ github.event.inputs.build_aab == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: infinite-numeral-android-release-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 90
+
+      # 仅在打 tag 时创建 GitHub Release；正文取自 docs/release/changelog.md
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body_path: docs/release/changelog.md
+          files: android/app/build/outputs/apk/release/app-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 防御性清理：移除临时密钥文件（产物已上传，runner 亦为临时）
+      - name: Cleanup keystore
+        if: always()
+        run: rm -f android/release-keystore.jks
