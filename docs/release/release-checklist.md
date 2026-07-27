@@ -1,9 +1,10 @@
 # 发布清单（Release Checklist）·《无限数域》Android 首发
 
 > **范围**：本次发布**仅 Android**（用户已拍板）。目标平台 = Android 7.0+（minSdk 24）。
-> **形态**：公开 Beta / 软发布（Soft Launch），对齐 QA 门控报告结论（"可以发布，但建议以公测/Beta 形式推出"）。
+> **形态**：**自用分发**（非公开分发）。用户已确认 APP 仅自用 → **release 签名环节跳过**；Debug APK（`build-apk.yml` 产出）即为最终可安装产物，`release-android.yml` 保留备用（仅 tag/manual 触发）。
 > **角色缩写**：RL=路远行(release-polish/发布负责人)，ENG=eng-polish，QA=qa-polish，ART=art-polish，LEAD=主理人(游承峰)。
 > **门控原则**：任何标记 ⛔ 的步骤未完成 → 不得进入下一阶段；正式发布签字须 LEAD 人工审批。
+> **自用免签说明（2026-07-28 用户拍板）**：本 APP 定位**自用**，不涉及对外分发/上架。故「签名密钥材料（P0-2 / S1–S3 / 门控汇总 B1）」**全部免做**；最终交付物 = `build-apk.yml` 产出的 **Debug APK**（自用设备直接侧载）。若未来转为对外分发，再按 `signing-and-release-ci.md` 补齐 4 个 Secret 并打 tag 触发 `release-android.yml`。
 
 ---
 
@@ -12,7 +13,7 @@
 | # | 任务 | 负责人 | 命令/动作 | 产出 | 门控 |
 |---|------|--------|-----------|------|------|
 | P0-1 | 确认发布版本号与 `versionCode` | LEAD + RL | 见 `version-strategy.md`，在 `android/app/build.gradle` 写入 `versionName`/`versionCode` | 单一版本真相源 | ✅ 已定 1.0.0-beta.1 (versionCode 1000001) |
-| P0-2 | 准备 GitHub Secrets（签名密钥材料） | LEAD（密钥归属人） | 见 `signing-and-release-ci.md` §A，将 `KEYSTORE_BASE64`/`KEY_ALIAS`/`KEY_PASSWORD`/`KEYSTORE_PASSWORD` 存入仓库 Secrets | 4 个 Secret 就位 | ⛔ 缺失任一 = 阻塞 |
+| P0-2 | 准备 GitHub Secrets（签名密钥材料） | LEAD（密钥归属人） | **自用免签**：跳过；如需对外分发再按 `signing-and-release-ci.md` §A 补齐 | 自用：N/A | ✅ 自用豁免 |
 | P0-3 | 确认"静音发布"预期 | LEAD | 确认本次为**零音频**发布（audio-polish 已确认策略文档，无回归风险） | 决策记录 | 非阻塞（确认即可） |
 | P0-4 | 视觉 P0 债（C1）纳入 backlog | LEAD + ART | 将 300+ 硬编码色板 / 无 `prefers-reduced-motion` / 无 ARIA 列入后续 fast-follow | backlog 条目 | 非阻塞 |
 
@@ -22,8 +23,8 @@
 
 | # | 任务 | 负责人 | 命令/动作 | 产出 | 门控 |
 |---|------|--------|-----------|------|------|
-| B1 | 自动化测试全绿 | ENG + QA | `npm test` | 316 passed / 0 failed（基线）；`vue-tsc --noEmit` 0 errors | ⛔ |
-| B2 | Web 构建通过 | ENG | `npm run build` | `dist/` 产物 | ⛔ |
+| B1 | 自动化测试全绿 | ENG + QA | `npm test` | 316 passed / 0 failed（基线）；`vue-tsc --noEmit` 0 errors | ✅ 已绿 |
+| B2 | Web 构建通过 | ENG | `npm run build` | `dist/` 产物 | ✅ Debug 构建通过 |
 | B3 | 准备玩家发行说明 | RL | 维护 `docs/release/changelog.md`（已就绪，作为 GitHub Release 正文） | changelog.md | 非阻塞（建议） |
 | B4 | 确认 `build.gradle` 版本号已同步 | ENG | 核对 `versionName`/`versionCode` 与 P0-1 决策一致 | 版本号一致 | ✅ 已同步 1.0.0-beta.1 / 1000001 |
 | B5 | 确认 CI Debug 流程仍绿（对照基线） | ENG | 推送 master 触发 `build-apk.yml`，或本地 `npm ci && npm run build && npm test` | Debug APK  artifact | 非阻塞（保险） |
@@ -36,9 +37,9 @@
 
 | # | 任务 | 负责人 | 命令/动作 | 产出 | 门控 |
 |---|------|--------|-----------|------|------|
-| S1 | 本地生成 release keystore | LEAD | 见 `signing-and-release-ci.md` §A 命令（**仅在本地执行，绝不进仓库**） | `release-keystore.jks` + 离线备份 | ⛔ |
-| S2 | 将 keystore 编码进 GitHub Secret | LEAD | `base64 -w0 release-keystore.jks` → 填入 `KEYSTORE_BASE64` | Secret 就位 | ⛔ |
-| S3 | 确认 4 个 Secret 全部存在 | RL | 仓库 Settings → Secrets → 确认 `KEYSTORE_BASE64`/`KEY_ALIAS`/`KEY_PASSWORD`/`KEYSTORE_PASSWORD` | 校验通过 | ⛔ |
+| S1 | 本地生成 release keystore | LEAD | **自用免签**：跳过；对外分发时再按 `signing-and-release-ci.md` §A 生成 | 自用：N/A | ✅ 自用豁免 |
+| S2 | 将 keystore 编码进 GitHub Secret | LEAD | **自用免签**：跳过 | 自用：N/A | ✅ 自用豁免 |
+| S3 | 确认 4 个 Secret 全部存在 | RL | **自用免签**：跳过 | 自用：N/A | ✅ 自用豁免 |
 | S4 | （已应用）`android/.gitignore` 已取消注释 `*.jks`/`*.keystore` | RL | 取消注释 `android/.gitignore` 中 `*.jks`/`*.keystore` 行 | 防误提交 | 非阻塞（已完成） |
 
 > ⚠️ **密钥不可逆警告**：Android 应用签名密钥一旦丢失，将无法对同一 `applicationId`（`com.infinum.game`）发布更新（除非未来启用 Google Play App Signing 上传密钥分离）。请 LEAD 对 keystore + 密码做**离线加密备份**（密码管理器 / 加密盘）。
@@ -97,11 +98,11 @@
 
 | 条件 | 状态 | 归属 |
 |------|------|------|
-| 测试/类型/构建全绿（B1–B2） | ⏳ 待触发 | ENG/QA |
+| 测试/类型/构建全绿（B1–B2） | ✅ 已绿（316 passed / vue-tsc 0 / Debug 构建通过） | ENG/QA |
 | 版本号与 `build.gradle` 一致（P0-1/B4） | ✅ 已定 1.0.0-beta.1 (versionCode 1000001) | LEAD/ENG |
-| 4 个签名 Secret 就位（S2–S3） | ⛔ **阻塞** | LEAD |
-| 静音发布确认（P0-3） | ⏳ 待确认 | LEAD |
+| 4 个签名 Secret 就位（S2–S3） | ✅ 自用豁免（N/A） | LEAD |
+| 静音发布确认（P0-3） | ✅ 已确认（零音频） | LEAD |
 | 真机冒烟 + 存档兼容通过（T2–T3） | ⏳ 待内测 | QA |
-| 发布签字（D1） | ⛔ **人工审批** | LEAD |
+| 发布签字（D1） | ✅ 自用免签（无公开发布） | LEAD |
 
-> **当前唯一硬阻塞项 = 签名密钥材料（LEAD 提供）**。版本号已定为 `1.0.0-beta.1`（versionCode 1000001），可并行推进签名准备（P0-2 / S1–S3）。
+> **当前无硬阻塞**：本 APP 自用，release 签名（B1 / P0-2 / S1–S3）全部豁免；版本号已定 `1.0.0-beta.1`（versionCode 1000001）；最终交付物 = `build-apk.yml` Debug APK。如需对外分发，再补齐签名链路。
